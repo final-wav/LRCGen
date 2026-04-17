@@ -98,6 +98,9 @@ const el = {
   previewToggleBtn:   $('previewToggleBtn'),
   lrcPreview:         $('lrcPreview'),
   toast:              $('toast'),
+  // tap sync
+  tapSyncBtn:         $('tapSyncBtn'),
+  tapSyncOverlay:     $('tapSyncOverlay'),
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -146,6 +149,13 @@ function handleFile(file) {
   el.dropZone.classList.add('hidden');
   el.transcribeBtn.disabled = false;
   S._pendingFile = file;
+  updateTapSyncBtn();
+}
+
+function updateTapSyncBtn() {
+  if (el.tapSyncBtn) {
+    el.tapSyncBtn.disabled = !(S._pendingFile && el.lyricsInput.value.trim().length > 0);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1005,6 +1015,14 @@ async function exportLRC() {
 // Keyboard shortcuts
 // ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
+  // Tap sync mode takes full keyboard priority
+  if (tapState.active) {
+    if (e.code === 'Space')     { e.preventDefault(); tapMark(); return; }
+    if (e.code === 'Backspace') { e.preventDefault(); tapUndo(); return; }
+    if (e.code === 'Escape')    { e.preventDefault(); closeTapOverlay(); toast('Tap Sync abgebrochen.'); return; }
+    return; // swallow all other keys in tap mode
+  }
+
   if (el.editorSection.classList.contains('hidden')) return;
   if (isInput()) return;
 
@@ -1059,6 +1077,284 @@ window.addEventListener('resize', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Tap Sync
+// ─────────────────────────────────────────────────────────────────────────────
+let tapAudio = null; // HTMLAudioElement for tap sync playback
+
+const tapState = {
+  active:     false,
+  lines:      [],    // string[] — lyric lines
+  times:      [],    // number[] — times[i] = start of line i
+  currentIdx: 0,     // = times.length; 0 = before first tap
+  started:    false, // has first tap (= playback) happened
+  rafId:      null,
+  source:     'upload', // 'upload' | 'editor'
+};
+
+function openTapSync(source) {
+  let lines, audioUrl;
+
+  if (source === 'upload') {
+    lines = el.lyricsInput.value.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) { toast('Bitte Lyrics eingeben.', 'error'); return; }
+    if (!S._pendingFile) { toast('Bitte Audiodatei auswählen.', 'error'); return; }
+    audioUrl = URL.createObjectURL(S._pendingFile);
+  } else {
+    if (!S.segments.length) { toast('Keine Segmente vorhanden.', 'error'); return; }
+    if (!S.fileId) { toast('Kein Audio geladen.', 'error'); return; }
+    lines = [...S.segments].sort((a, b) => a.start - b.start).map(s => s.text);
+    audioUrl = `/api/audio/${S.fileId}`;
+    // Pause editor playback
+    if (ws && S.isPlaying) ws.pause();
+  }
+
+  // Clean up any previous tap audio
+  if (tapAudio) { tapAudio.pause(); tapAudio.src = ''; tapAudio = null; }
+  tapAudio = new Audio(audioUrl);
+  tapAudio.preload = 'auto';
+  tapAudio.addEventListener('ended', () => {
+    if (tapState.active && tapState.times.length > 0) finishTapSync();
+  });
+
+  Object.assign(tapState, {
+    active: true, lines, times: [],
+    currentIdx: 0, started: false, source,
+  });
+
+  renderTapLines();
+  $('tapFinishBtn').disabled = true;
+  $('tapSyncOverlay').classList.remove('hidden');
+  $('tapSyncOverlay').focus();
+
+  if (tapState.rafId) cancelAnimationFrame(tapState.rafId);
+  tapState.rafId = requestAnimationFrame(tapRAF);
+}
+
+function tapRAF() {
+  if (!tapState.active) return;
+
+  const t   = tapAudio ? tapAudio.currentTime : 0;
+  const dur = tapAudio ? (tapAudio.duration || 0) : 0;
+
+  const tEl = $('tapTimeDisplay');
+  if (tEl) tEl.textContent = fmt(t);
+
+  const cEl = $('tapCountDisplay');
+  if (cEl) cEl.textContent = `${tapState.times.length} / ${tapState.lines.length}`;
+
+  if (dur > 0) {
+    const pb = $('tapAudioProgress');
+    if (pb) pb.style.width = ((t / dur) * 100).toFixed(2) + '%';
+  }
+
+  tapState.rafId = requestAnimationFrame(tapRAF);
+}
+
+function renderTapLines() {
+  const container = $('tapLinesList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const idx = tapState.currentIdx; // = times.length
+
+  tapState.lines.forEach((text, i) => {
+    const div = document.createElement('div');
+    div.className = 'tap-line';
+    div.dataset.idx = i;
+
+    if (!tapState.started) {
+      // Before first tap: line 0 shown as "next up", rest upcoming
+      if (i === 0) {
+        div.classList.add('tap-line-next');
+        div.innerHTML = `<span class="tap-line-text">${escHTML(text)}</span>`;
+      } else {
+        div.classList.add('tap-line-upcoming');
+        div.innerHTML = `<span class="tap-line-text">${escHTML(text)}</span>`;
+      }
+    } else if (i < idx - 1) {
+      // Done: start time recorded AND next line started
+      div.classList.add('tap-line-done');
+      div.innerHTML = `
+        <span class="tap-line-check">✓</span>
+        <span class="tap-line-text">${escHTML(text)}</span>
+        <span class="tap-line-time">${fmt(tapState.times[i])}</span>`;
+    } else if (i === idx - 1) {
+      // Currently singing (start tapped, end not yet)
+      div.classList.add('tap-line-current');
+      div.innerHTML = `<span class="tap-line-text">${escHTML(text)}</span>`;
+    } else {
+      // Upcoming
+      div.classList.add('tap-line-upcoming');
+      div.innerHTML = `<span class="tap-line-text">${escHTML(text)}</span>`;
+    }
+
+    container.appendChild(div);
+  });
+
+  // Scroll active/next line into view
+  const active = container.querySelector('.tap-line-current, .tap-line-next');
+  if (active) active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+  // Update hint text
+  const hEl = $('tapHint');
+  if (!hEl) return;
+  if (!tapState.started) {
+    hEl.innerHTML = `<span class="tap-space-hint">SPACE</span> drücken um Wiedergabe zu starten &amp; erste Zeile zu markieren`;
+  } else {
+    const remaining = tapState.lines.length - tapState.currentIdx;
+    if (remaining > 0) {
+      hEl.textContent = `${remaining} ${remaining === 1 ? 'Zeile' : 'Zeilen'} übrig — Space wenn die nächste Zeile beginnt`;
+    } else {
+      hEl.textContent = 'Alle Zeilen markiert!';
+    }
+  }
+}
+
+function escHTML(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function tapMark() {
+  if (!tapState.active) return;
+  if (tapState.currentIdx >= tapState.lines.length) return;
+
+  const t = tapAudio ? tapAudio.currentTime : 0;
+
+  if (!tapState.started) {
+    // First tap: start playback + record time[0]
+    tapState.started = true;
+    tapAudio.play().catch(() => {});
+    tapState.times.push(t);     // times[0] = start of line 0
+    tapState.currentIdx = 1;   // line 0 is now the "currently singing" line
+    renderTapLines();
+    return;
+  }
+
+  // Record start time for next line
+  tapState.times.push(t);
+  tapState.currentIdx++;
+
+  // Flash the new current line
+  const newCur = $('tapLinesList')?.querySelector('.tap-line-current');
+  if (newCur) {
+    // Re-render first, then trigger flash
+  }
+  renderTapLines();
+
+  // Briefly flash the current line block
+  const curEl = $('tapLinesList')?.querySelector('.tap-line-current');
+  if (curEl) {
+    curEl.classList.remove('tapped');
+    void curEl.offsetWidth; // force reflow
+    curEl.classList.add('tapped');
+  }
+
+  // Enable finish button once at least 1 line is fully tapped
+  const fb = $('tapFinishBtn');
+  if (fb) fb.disabled = false;
+
+  // Auto-finish when all lines are tapped
+  if (tapState.currentIdx >= tapState.lines.length) {
+    if ($('tapHint')) $('tapHint').textContent = 'Alle Zeilen markiert — fertig!';
+    setTimeout(finishTapSync, 600);
+  }
+}
+
+function tapUndo() {
+  if (!tapState.active || tapState.times.length === 0) return;
+
+  tapState.times.pop();
+  tapState.currentIdx = Math.max(0, tapState.currentIdx - 1);
+
+  if (tapState.currentIdx === 0) {
+    // Revert to pre-first-tap state
+    tapState.started = false;
+    if (tapAudio) { tapAudio.pause(); tapAudio.currentTime = 0; }
+    const fb = $('tapFinishBtn');
+    if (fb) fb.disabled = true;
+  } else {
+    // Seek audio back to start of the now-current line
+    const seekTime = tapState.times[tapState.currentIdx - 1];
+    if (tapAudio) tapAudio.currentTime = seekTime;
+  }
+
+  renderTapLines();
+  toast('Zurückgegangen.', '');
+}
+
+async function finishTapSync() {
+  if (!tapState.active) return;
+
+  const lines = tapState.lines;
+  const times = tapState.times;
+
+  if (!times.length) { closeTapOverlay(); return; }
+
+  if (tapAudio) tapAudio.pause();
+
+  // Calculate average line duration as fallback for the last segment's end
+  const audioDur = (tapAudio && !isNaN(tapAudio.duration)) ? tapAudio.duration : S.duration;
+  const avgDur   = times.length > 1
+    ? (times[times.length - 1] - times[0]) / (times.length - 1)
+    : 3;
+
+  // Build segments (only for lines that got tapped)
+  const segs = lines.slice(0, times.length).map((text, i) => ({
+    id:    uid(),
+    start: parseFloat(times[i].toFixed(3)),
+    end:   parseFloat((i < times.length - 1
+      ? times[i + 1]
+      : Math.min(times[i] + avgDur, audioDur || times[i] + avgDur)
+    ).toFixed(3)),
+    text,
+  }));
+
+  const src = tapState.source;
+  closeTapOverlay();
+
+  if (src === 'upload') {
+    // Upload the file if not already done, then init editor
+    try {
+      if (!S.fileId) {
+        const form = new FormData();
+        form.append('file', S._pendingFile);
+        showPhase('progress');
+        setProgress(30, 'Lade Datei hoch…');
+        const r = await fetch('/api/upload', { method: 'POST', body: form });
+        if (!r.ok) throw new Error((await r.json()).error || 'Upload fehlgeschlagen');
+        S.fileId = (await r.json()).file_id;
+        setProgress(100, 'Fertig!');
+        await sleep(200);
+      }
+      initEditor(segs);
+      toast(`Tap Sync: ${segs.length} Zeilen übernommen.`, 'success');
+    } catch (e) {
+      showPhase('upload');
+      toast('Upload fehlgeschlagen: ' + e.message, 'error');
+    }
+  } else {
+    // Editor mode: replace segments
+    pushHistory();
+    S.segments = segs;
+    renderSegmentBlocks();
+    renderSegmentList();
+    updateLrcPreview();
+    toast(`Tap Sync: ${segs.length} Zeilen neu eingetaktet.`, 'success');
+  }
+}
+
+function closeTapOverlay() {
+  tapState.active = false;
+  if (tapState.rafId) { cancelAnimationFrame(tapState.rafId); tapState.rafId = null; }
+  if (tapAudio) { tapAudio.pause(); tapAudio.src = ''; tapAudio = null; }
+  $('tapSyncOverlay').classList.add('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Event bindings
 // ─────────────────────────────────────────────────────────────────────────────
 function init() {
@@ -1082,6 +1378,7 @@ function init() {
     el.fileInfo.classList.add('hidden');
     el.dropZone.classList.remove('hidden');
     el.transcribeBtn.disabled = true;
+    if (el.tapSyncBtn) el.tapSyncBtn.disabled = true;
     el.fileInput.value = '';
   });
 
@@ -1114,6 +1411,15 @@ function init() {
     showPhase('upload');
     startTranscription(S.fileId);
   });
+
+  // Tap Sync
+  el.tapSyncBtn?.addEventListener('click', () => openTapSync('upload'));
+  $('tapSyncEditorBtn')?.addEventListener('click', () => openTapSync('editor'));
+  $('tapCancelBtn')?.addEventListener('click', () => { closeTapOverlay(); toast('Tap Sync abgebrochen.'); });
+  $('tapFinishBtn')?.addEventListener('click', finishTapSync);
+
+  // Update tap sync button when lyrics change
+  el.lyricsInput.addEventListener('input', updateTapSyncBtn);
 
   // Transport
   el.playPauseBtn.addEventListener('click', () => ws?.playPause());

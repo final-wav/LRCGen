@@ -625,3 +625,157 @@ kbd {
 /* Main scroll in editor phase */
 body.editor-active .main { overflow: hidden; padding: 0; }
 body.editor-active #editorSection { padding: 14px 20px 14px; }
+
+/* ── Action row gap ─────────────────────────────────────────── */
+.action-row { gap: 10px; }
+
+/* ── Tap Sync Overlay ───────────────────────────────────────── */
+.tap-overlay {
+  position: fixed; inset: 0;
+  background: rgba(5, 5, 14, 0.97);
+  display: flex; flex-direction: column;
+  z-index: 8000; outline: none;
+}
+
+/* Header */
+.tap-header {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 16px;
+  padding: 12px 22px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+.tap-meta { display: flex; align-items: center; gap: 14px; }
+.tap-time {
+  font-family: var(--mono); font-size: 1.05rem;
+  color: var(--accent-lite); font-weight: 600; min-width: 72px;
+}
+.tap-count { font-size: .78rem; color: var(--text-3); white-space: nowrap; }
+.tap-instr {
+  flex: 1; text-align: center;
+  font-size: .74rem; color: var(--text-3);
+}
+.tap-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Stage — scrollable lines */
+.tap-stage {
+  flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 30px 24px;
+}
+.tap-lines-list {
+  display: flex; flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%; max-width: 720px;
+}
+
+/* Individual tap line */
+.tap-line {
+  border-radius: 10px;
+  padding: 10px 20px;
+  display: flex; align-items: center; gap: 12px;
+  transition: opacity .2s, background .15s;
+}
+
+/* Done lines */
+.tap-line-done {
+  background: rgba(16,185,129,.05);
+  opacity: 0.5;
+}
+.tap-line-done .tap-line-text {
+  font-size: .86rem; color: var(--text-2);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255,255,255,.2);
+}
+.tap-line-check { color: var(--success); font-size: .8rem; flex-shrink: 0; }
+.tap-line-time {
+  margin-left: auto; flex-shrink: 0;
+  font-family: var(--mono); font-size: .7rem; color: var(--success);
+}
+
+/* Currently singing line */
+.tap-line-current {
+  background: rgba(124,58,237,.18);
+  border: 1px solid rgba(124,58,237,.45);
+  padding: 20px 28px;
+  box-shadow: 0 0 32px rgba(124,58,237,.25);
+  animation: tapLinePulse 2.2s ease-in-out infinite;
+}
+.tap-line-current .tap-line-text {
+  font-size: 1.4rem; font-weight: 700;
+  color: #fff; letter-spacing: .01em;
+  text-align: center; width: 100%;
+  line-height: 1.3;
+}
+
+/* "Next" line before first tap */
+.tap-line-next {
+  background: rgba(124,58,237,.08);
+  border: 1px dashed rgba(124,58,237,.35);
+  padding: 18px 28px;
+}
+.tap-line-next .tap-line-text {
+  font-size: 1.2rem; color: var(--text);
+  text-align: center; width: 100%;
+}
+
+/* Upcoming lines */
+.tap-line-upcoming {
+  opacity: 0.28;
+}
+.tap-line-upcoming .tap-line-text {
+  font-size: .9rem; color: var(--text-2);
+}
+
+/* Shared text element */
+.tap-line-text { flex: 1; }
+
+/* Pulse animation for current line */
+@keyframes tapLinePulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(124,58,237,.2); }
+  50%       { box-shadow: 0 0 44px rgba(124,58,237,.55); }
+}
+
+/* Flash on tap */
+@keyframes tapFlash {
+  0%   { background: rgba(124,58,237,.6); box-shadow: 0 0 60px rgba(124,58,237,.7); }
+  100% { background: rgba(124,58,237,.18); box-shadow: 0 0 32px rgba(124,58,237,.25); }
+}
+.tap-line-current.tapped {
+  animation: tapFlash .35s ease-out forwards;
+}
+
+/* Footer */
+.tap-footer {
+  flex-shrink: 0;
+  padding: 14px 22px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.tap-footer-bar {
+  height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden;
+}
+.tap-audio-progress {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--blue));
+  transition: width .1s linear;
+}
+.tap-hint-text {
+  font-size: .82rem; color: var(--text-3);
+  text-align: center; min-height: 28px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.tap-space-hint {
+  display: inline-block;
+  padding: 4px 18px; border: 2px solid var(--accent);
+  border-radius: 7px; font-size: .78rem; color: var(--accent-lite);
+  font-weight: 700; letter-spacing: .08em;
+  animation: tapSpacePulse 1.6s ease-in-out infinite;
+}
+@keyframes tapSpacePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: .65; transform: scale(.96); }
+}

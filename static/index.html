@@ -132,6 +132,12 @@
       </div>
 
       <div class="action-row">
+        <button id="tapSyncBtn" class="btn btn-secondary btn-lg" disabled title="Lyrics manuell eintakten — Spacebar drücken wenn jede Zeile beginnt">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          Tap Sync
+        </button>
         <button id="transcribeBtn" class="btn btn-primary btn-lg" disabled>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
@@ -223,6 +229,12 @@
               </svg>
             </button>
             <div class="tl-actions-sep"></div>
+            <button id="tapSyncEditorBtn" class="btn btn-ghost btn-sm" title="Tap Sync — Zeilen manuell eintakten">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Tap
+            </button>
             <button id="addSegmentBtn" class="btn btn-secondary btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Zeile
@@ -358,6 +370,43 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
+
+<!-- ── Tap Sync Overlay ──────────────────────────────────────── -->
+<div id="tapSyncOverlay" class="tap-overlay hidden" tabindex="-1">
+
+  <!-- Header bar -->
+  <div class="tap-header">
+    <div class="tap-meta">
+      <span id="tapTimeDisplay" class="tap-time">0:00.00</span>
+      <span id="tapCountDisplay" class="tap-count">0 / 0</span>
+    </div>
+    <div class="tap-instr">
+      <kbd>Space</kbd> Nächste Zeile &nbsp;·&nbsp;
+      <kbd>Backspace</kbd> Zurück &nbsp;·&nbsp;
+      <kbd>Esc</kbd> Abbrechen
+    </div>
+    <div class="tap-header-right">
+      <button id="tapFinishBtn" class="btn btn-secondary btn-sm" disabled>✓ Fertig</button>
+      <button id="tapCancelBtn" class="btn btn-ghost btn-sm">✕</button>
+    </div>
+  </div>
+
+  <!-- Stage: scrollable list of lines -->
+  <div class="tap-stage">
+    <div id="tapLinesList" class="tap-lines-list"></div>
+  </div>
+
+  <!-- Footer: audio progress + hint -->
+  <div class="tap-footer">
+    <div class="tap-footer-bar">
+      <div id="tapAudioProgress" class="tap-audio-progress"></div>
+    </div>
+    <p id="tapHint" class="tap-hint-text">
+      <span class="tap-space-hint">SPACE</span>
+    </p>
+  </div>
+
+</div>
 
 <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 <script src="/static/app.js"></script>
