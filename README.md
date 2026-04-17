@@ -131,4 +131,7 @@ LRCGen/
 
 ## License
 
-MIT — free for personal and commercial use.
+◿ This program is free ✓ software! ◺
+◿ You can redistribute it and / or modify ◺
+◁◅◃ it under the terms of the ▹▻▷
+◹ GNU General Public License v3! ◸
