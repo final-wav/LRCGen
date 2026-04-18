@@ -460,13 +460,40 @@ async function decodeVocalsWaveform() {
   }
 }
 
-function setWaveVocalsMode(on) {
-  if (on && !S.vocalsAudioBuf) {
-    // Trigger decode first; will redraw when done
-    decodeVocalsWaveform();
-  }
-  S.useVocalsWaveform = on;
+async function setWaveVocalsMode(on) {
   const btn = $('waveVocalsBtn');
+
+  // If turning on but no isolation done yet, run it now
+  if (on && !S.vocalsJobId) {
+    if (!uvrAvailable || !S.fileId) return;
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    try {
+      const uvrModel = $('uvrModelSelect')?.value || 'UVR-MDX-NET-Inst_HQ_3';
+      const form = new FormData();
+      form.append('file_id', S.fileId);
+      form.append('uvr_model_id', uvrModel);
+      const r = await fetch('/api/isolate', { method: 'POST', body: form });
+      if (!r.ok) throw new Error('Isolation konnte nicht gestartet werden');
+      const { job_id } = await r.json();
+      // Poll to completion
+      while (true) {
+        await new Promise(res => setTimeout(res, 1500));
+        const jr  = await fetch(`/api/job/${job_id}`);
+        const job = await jr.json();
+        if (btn) btn.title = `Vocals: ${job.progress || 0}%`;
+        if (job.status === 'done') { S.vocalsJobId = job_id; break; }
+        if (job.status === 'error') throw new Error(job.error || 'Fehler');
+      }
+    } catch (e) {
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+      toast('Vocal Isolation fehlgeschlagen: ' + e.message, 'error');
+      return;
+    }
+    if (btn) { btn.classList.remove('loading'); btn.disabled = false; btn.title = 'Vocals-Waveform umschalten'; }
+  }
+
+  if (on && !S.vocalsAudioBuf) decodeVocalsWaveform();
+  S.useVocalsWaveform = on;
   if (btn) btn.classList.toggle('active', on);
   drawWaveformBg();
   drawWaveformFg();
@@ -475,7 +502,8 @@ function setWaveVocalsMode(on) {
 function updateWaveVocalsBtn() {
   const btn = $('waveVocalsBtn');
   if (!btn) return;
-  btn.classList.toggle('hidden', !S.vocalsJobId);
+  // Show whenever UVR is available in the editor (not just after a job)
+  btn.classList.toggle('hidden', !uvrAvailable || !S.fileId);
   btn.classList.toggle('active', S.useVocalsWaveform && !!S.vocalsWavePeaks);
 }
 
