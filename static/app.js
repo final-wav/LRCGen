@@ -1213,9 +1213,6 @@ function openTapSync(source) {
     useVocals: false, isolating: false, isolationJobId: null,
   });
 
-  // Canvas size
-  initTapWaveCanvas();
-
   // Vocals toggle visibility
   const vBtn = $('tapVocalsBtn');
   if (vBtn) {
@@ -1230,11 +1227,19 @@ function openTapSync(source) {
   $('tapSyncOverlay').classList.remove('hidden');
   $('tapSyncOverlay').focus();
 
+  // Canvas size — MUST be after overlay is visible so clientWidth is non-zero
+  initTapWaveCanvas();
+
   if (tapState.rafId) cancelAnimationFrame(tapState.rafId);
   tapState.rafId = requestAnimationFrame(tapRAF);
 
   // Decode waveform in background
   decodeTapAudio(audioUrl);
+
+  // Auto-start vocals isolation if lyrics-section toggle is enabled
+  if (source === 'upload' && $('tapVocalsAutoToggle')?.checked && uvrAvailable) {
+    runTapVocalsIsolation();
+  }
 }
 
 // ── RAF loop ──────────────────────────────────────────────────
@@ -1670,8 +1675,12 @@ function init() {
   // Check if audio-separator is installed
   fetch('/api/uvr_available').then(r => r.json()).then(d => {
     uvrAvailable = d.available;
-    if (!d.available && uvrInstallHint) {
-      uvrInstallHint.style.display = 'block';
+    const tapVocalsCard = $('tapVocalsLyricsCard');
+    if (d.available) {
+      if (tapVocalsCard) tapVocalsCard.style.display = '';
+    } else {
+      if (tapVocalsCard) tapVocalsCard.style.display = 'none';
+      if (uvrInstallHint) uvrInstallHint.style.display = 'block';
       if (uvrToggle) uvrToggle.disabled = true;
     }
   }).catch(() => {});
