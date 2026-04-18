@@ -172,6 +172,69 @@ async def get_job(job_id: str):
     return jobs[job_id]
 
 
+@app.post("/api/isolate")
+async def isolate_vocals(
+    file_id:      str = Form(...),
+    uvr_model_id: str = Form("UVR-MDX-NET-Inst_HQ_3"),
+):
+    """Vocal isolation only — no Whisper. Returns a job_id to poll via /api/job/{job_id}."""
+    if not re.fullmatch(r"[0-9a-f\-]{36}", file_id):
+        return JSONResponse({"error": "Ungültige Datei-ID"}, status_code=400)
+    if uvr_model_id not in UVR_MODELS:
+        uvr_model_id = "UVR-MDX-NET-Inst_HQ_3"
+
+    audio_path = None
+    for ext in ALLOWED_EXTS:
+        p = Path(f"uploads/{file_id}{ext}")
+        if p.exists():
+            audio_path = str(p)
+            break
+    if not audio_path:
+        return JSONResponse({"error": "Audio-Datei nicht gefunden"}, status_code=404)
+
+    job_id = str(uuid.uuid4())
+    jobs[job_id] = {"status": "pending", "message": "Starte Vocal Isolation…",
+                    "result": None, "error": None, "progress": 0}
+
+    threading.Thread(
+        target=_run_isolation_job,
+        args=(job_id, audio_path, uvr_model_id),
+        daemon=True,
+    ).start()
+    return {"job_id": job_id}
+
+
+@app.get("/api/vocals/{job_id}")
+async def serve_vocals(job_id: str):
+    """Serve the isolated vocals audio for a completed isolation job."""
+    if not re.fullmatch(r"[0-9a-f\-]{36}", job_id):
+        return JSONResponse({"error": "Ungültige ID"}, status_code=400)
+    job = jobs.get(job_id)
+    if not job:
+        return JSONResponse({"error": "Job nicht gefunden"}, status_code=404)
+    if job["status"] != "done":
+        return JSONResponse({"error": "Noch nicht fertig"}, status_code=202)
+    path = Path(job.get("vocals_path", ""))
+    if not path.exists():
+        return JSONResponse({"error": "Vocals-Datei nicht gefunden"}, status_code=404)
+    ext = path.suffix.lower()
+    return FileResponse(str(path), media_type=MIME_MAP.get(ext, "audio/wav"))
+
+
+def _run_isolation_job(job_id: str, audio_path: str, uvr_model_id: str):
+    try:
+        vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
+        if Path(vocals_path).resolve() != Path(audio_path).resolve():
+            _set(job_id, status="done", progress=100,
+                 message="Vocals isoliert ✓", vocals_path=vocals_path)
+        else:
+            _set(job_id, status="error", progress=100,
+                 error="Vocal Isolation fehlgeschlagen (Fallback auf Original)",
+                 message="Isolation fehlgeschlagen — versuche ein anderes Modell.")
+    except Exception as exc:
+        _set(job_id, status="error", error=str(exc), message=f"Fehler: {exc}")
+
+
 @app.post("/api/export")
 async def export_lrc(request: Request):
     data     = await request.json()
@@ -216,6 +279,9 @@ def _run_job(job_id: str, audio_path: str, model_name: str,
         # ── Step 1: Vocal isolation ────────────────────────────────────────────
         if use_uvr:
             transcribe_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
+            # Expose isolated file via /api/vocals/{job_id} if we got a real stems file
+            if Path(transcribe_path).resolve() != Path(audio_path).resolve():
+                jobs[job_id]["vocals_path"] = transcribe_path
 
         # ── Step 2: Whisper ────────────────────────────────────────────────────
         _set(job_id, status="loading_model", progress=50,

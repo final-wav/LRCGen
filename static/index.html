@@ -257,6 +257,13 @@
             <div class="tl-label-cell" style="height:28px"></div>
             <div class="tl-label-cell" style="height:90px">
               <span class="track-name">WAVEFORM</span>
+              <button id="waveVocalsBtn" class="btn-wave-vocals hidden" title="Vocals-Waveform umschalten">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10">
+                  <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                </svg>
+                VOC
+              </button>
             </div>
             <div class="tl-label-cell" style="height:64px">
               <span class="track-name">LYRICS</span>
@@ -386,9 +393,21 @@
       <kbd>Esc</kbd> Abbrechen
     </div>
     <div class="tap-header-right">
+      <button id="tapVocalsBtn" class="btn btn-ghost btn-sm tap-vocals-btn" style="display:none" title="Vocals isolieren (UVR5) für einfacheres Mithören">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        </svg>
+        Vocals
+      </button>
       <button id="tapFinishBtn" class="btn btn-secondary btn-sm" disabled>✓ Fertig</button>
       <button id="tapCancelBtn" class="btn btn-ghost btn-sm">✕</button>
     </div>
+  </div>
+
+  <!-- Waveform strip -->
+  <div class="tap-wave-wrap">
+    <canvas id="tapWaveCanvas" class="tap-wave-canvas"></canvas>
   </div>
 
   <!-- Stage: scrollable list of lines -->
