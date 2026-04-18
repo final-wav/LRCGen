@@ -1316,11 +1316,19 @@ function drawTapWaveform() {
   const playheadX = Math.floor(w * 0.3); // playhead fixed at 30% from left
 
   if (!tapState.wavePeaks) {
-    // Waiting for decode — show static line + playhead
-    ctx.fillStyle = 'rgba(255,255,255,.07)';
-    ctx.fillRect(0, h / 2 - 1, w, 2);
-    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    // Waiting for decode — draw placeholder bars
+    const barW = 3, gap = 2, step = barW + gap;
+    const amp = h * 0.28;
+    for (let px = 0; px < w; px += step) {
+      const a = Math.abs(Math.sin(px * 0.07)) * amp + 4;
+      ctx.fillStyle = px < playheadX ? 'rgba(124,58,237,.35)' : 'rgba(255,255,255,.12)';
+      ctx.fillRect(px, h / 2 - a, barW, a * 2);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,.8)';
     ctx.fillRect(playheadX, 0, 1, h);
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText('Loading waveform\u2026', playheadX + 8, h / 2 + 4);
     return;
   }
 
