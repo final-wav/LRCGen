@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,31 +26,31 @@
     </div>
     <div class="header-right">
       <div class="ctrl-group">
-        <label class="ctrl-label">Modell</label>
+        <label class="ctrl-label">Model</label>
         <select id="modelSelect" class="select">
-          <option value="tiny">Tiny — schnell</option>
-          <option value="base" selected>Base — empfohlen</option>
+          <option value="tiny">Tiny — fast</option>
+          <option value="base" selected>Base — recommended</option>
           <option value="small">Small</option>
           <option value="medium">Medium</option>
-          <option value="large">Large — sehr genau</option>
+          <option value="large">Large — very accurate</option>
         </select>
       </div>
       <div class="ctrl-group">
-        <label class="ctrl-label">Sprache</label>
+        <label class="ctrl-label">Language</label>
         <select id="langSelect" class="select">
           <option value="">Auto</option>
-          <option value="en">Englisch</option>
-          <option value="de">Deutsch</option>
-          <option value="tr">Türkisch</option>
-          <option value="fr">Französisch</option>
-          <option value="es">Spanisch</option>
-          <option value="it">Italienisch</option>
-          <option value="ja">Japanisch</option>
-          <option value="ko">Koreanisch</option>
-          <option value="zh">Chinesisch</option>
-          <option value="ar">Arabisch</option>
-          <option value="pt">Portugiesisch</option>
-          <option value="ru">Russisch</option>
+          <option value="en">English</option>
+          <option value="de">German</option>
+          <option value="tr">Turkish</option>
+          <option value="fr">French</option>
+          <option value="es">Spanish</option>
+          <option value="it">Italian</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="zh">Chinese</option>
+          <option value="ar">Arabic</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
         </select>
       </div>
     </div>
@@ -67,9 +67,9 @@
           <path d="M9 18V5l12-2v13"/>
           <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
         </svg>
-        <p class="drop-title">Audio hier fallen lassen</p>
+        <p class="drop-title">Drop audio here</p>
         <p class="drop-sub">MP3 &nbsp;·&nbsp; FLAC &nbsp;·&nbsp; WAV &nbsp;·&nbsp; M4A &nbsp;·&nbsp; OGG</p>
-        <button class="btn btn-outline" id="browseBtn">Datei auswählen</button>
+        <button class="btn btn-outline" id="browseBtn">Choose file</button>
         <input type="file" id="fileInput" accept=".mp3,.flac,.wav,.m4a,.ogg,.opus,.aac" hidden>
       </div>
 
@@ -78,7 +78,7 @@
           <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
         </svg>
         <span id="fileNameDisplay"></span>
-        <button class="btn btn-ghost btn-xs" id="changeFileBtn">Ändern</button>
+        <button class="btn btn-ghost btn-xs" id="changeFileBtn">Change</button>
       </div>
 
       <!-- Vocal Isolation card -->
@@ -102,20 +102,20 @@
                 <span class="badge badge-uvr">UVR5</span>
               </span>
               <span class="uvr-sub" id="uvrSubText">
-                Instrumentals vor der Transkription entfernen — gibt Whisper eine saubere Vocals-Spur und verbessert die Genauigkeit spürbar.
+                Remove instrumentals before transcription — gives Whisper a clean vocals track and noticeably improves accuracy.
               </span>
             </div>
           </div>
           <div class="uvr-right" id="uvrModelWrap">
-            <label class="label">Modell</label>
+            <label class="label">Model</label>
             <select id="uvrModelSelect" class="select">
-              <option value="UVR-MDX-NET-Inst_HQ_3">MDX-Net HQ3 — schnell &amp; präzise (empfohlen)</option>
-              <option value="UVR-MDX-NET-Voc_FT">MDX-Net Voc_FT — vocal-optimiert</option>
-              <option value="UVR_MDXNET_KARA_2">MDX-Net KARA 2 — Karaoke, sauberste Stimme</option>
-              <option value="htdemucs_ft">Demucs htdemucs_ft — beste Qualität, langsam</option>
+              <option value="UVR-MDX-NET-Inst_HQ_3">MDX-Net HQ3 — fast &amp; accurate (recommended)</option>
+              <option value="UVR-MDX-NET-Voc_FT">MDX-Net Voc_FT — vocal-optimized</option>
+              <option value="UVR_MDXNET_KARA_2">MDX-Net KARA 2 — Karaoke, cleanest voice</option>
+              <option value="htdemucs_ft">Demucs htdemucs_ft — best quality, slow</option>
             </select>
             <span class="uvr-model-hint" id="uvrInstallHint" style="display:none">
-              ⚠️ <code>audio-separator</code> nicht installiert —
+              ⚠️ <code>audio-separator</code> not installed —
               <code>pip install "audio-separator[cpu]"</code>
             </span>
           </div>
@@ -125,10 +125,10 @@
       <div class="card mt-4">
         <div class="card-header">
           <span class="card-title">Lyrics <span class="badge">optional</span></span>
-          <span class="card-hint">Eigene Lyrics → präzisere Ausrichtung</span>
+          <span class="card-hint">Your own lyrics → more accurate alignment</span>
         </div>
         <textarea id="lyricsInput" class="textarea" rows="7"
-          placeholder="Lyrics eingeben — eine Zeile = eine LRC-Zeile&#10;&#10;Leer lassen: Whisper erkennt Text &amp; Timing automatisch"></textarea>
+          placeholder="Enter lyrics — one line = one LRC line&#10;&#10;Leave empty: Whisper detects text &amp; timing automatically"></textarea>
       </div>
 
       <!-- Vocals for Tap Sync (only shown when UVR is available) -->
@@ -155,11 +155,20 @@
               </span>
             </div>
           </div>
+          <div class="uvr-right active" id="tapVocalsModelWrap">
+            <label class="label">Model</label>
+            <select id="tapVocalsModelSelect" class="select">
+              <option value="UVR-MDX-NET-Inst_HQ_3">MDX-Net HQ3 — fast &amp; accurate (recommended)</option>
+              <option value="UVR-MDX-NET-Voc_FT">MDX-Net Voc_FT — vocal-optimized</option>
+              <option value="UVR_MDXNET_KARA_2">MDX-Net KARA 2 — Karaoke, cleanest voice</option>
+              <option value="htdemucs_ft">Demucs htdemucs_ft — best quality, slow</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <div class="action-row">
-        <button id="tapSyncBtn" class="btn btn-secondary btn-lg" disabled title="Lyrics manuell eintakten — Spacebar drücken wenn jede Zeile beginnt">
+        <button id="tapSyncBtn" class="btn btn-secondary btn-lg" disabled title="Manually tap in lyrics — press Spacebar when each line begins">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
           </svg>
@@ -170,7 +179,7 @@
             <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
             <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v5M8 23h8"/>
           </svg>
-          Transkribieren
+          Transcribe
         </button>
       </div>
     </section>
@@ -179,7 +188,7 @@
     <section id="progressSection" class="hidden">
       <div class="progress-card">
         <div class="spinner-ring"></div>
-        <p id="progressLabel" class="progress-label">Starte…</p>
+        <p id="progressLabel" class="progress-label">Starting…</p>
         <div class="progress-track">
           <div class="progress-bar" id="progressBar"></div>
         </div>
@@ -195,8 +204,8 @@
           </div>
         </div>
 
-        <p class="progress-hint" id="progressHint">Beim ersten Start werden Modelle heruntergeladen.</p>
-        <button id="cancelBtn" class="btn btn-ghost btn-sm">Abbrechen</button>
+        <p class="progress-hint" id="progressHint">Models are downloaded on first run.</p>
+        <button id="cancelBtn" class="btn btn-ghost btn-sm">Cancel</button>
       </div>
     </section>
 
@@ -211,14 +220,14 @@
 
           <!-- Transport -->
           <div class="transport">
-            <button id="seekBackBtn" class="btn btn-icon" title="−5 Sek">
+            <button id="seekBackBtn" class="btn btn-icon" title="−5 sec">
               <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
             </button>
             <button id="playPauseBtn" class="btn btn-icon btn-play" title="Play / Pause  [Space]">
               <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg>
               <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" class="hidden"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
             </button>
-            <button id="seekFwdBtn" class="btn btn-icon" title="+5 Sek">
+            <button id="seekFwdBtn" class="btn btn-icon" title="+5 sec">
               <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18 6h-2v12h2V6zm-3.5 6L6 6v12z"/></svg>
             </button>
             <div class="time-display">
@@ -236,27 +245,37 @@
 
           <!-- Zoom -->
           <div class="zoom-ctrl">
-            <button id="zoomOutBtn" class="btn btn-icon btn-xs-icon" title="Rauszoomen">−</button>
+            <button id="zoomOutBtn" class="btn btn-icon btn-xs-icon" title="Zoom out">−</button>
             <input type="range" id="zoomSlider" class="zoom-slider" min="15" max="600" step="5" value="80">
-            <button id="zoomInBtn" class="btn btn-icon btn-xs-icon" title="Reinzoomen">+</button>
+            <button id="zoomInBtn" class="btn btn-icon btn-xs-icon" title="Zoom in">+</button>
             <span id="zoomLabel" class="zoom-label">100%</span>
             <span class="zoom-hint"><kbd>Ctrl+Scroll</kbd></span>
           </div>
 
           <!-- Actions -->
           <div class="tl-actions">
-            <button id="undoBtn" class="btn btn-icon btn-xs-icon" title="Rückgängig  [Ctrl+Z]" disabled>
+            <button id="undoBtn" class="btn btn-icon btn-xs-icon" title="Undo  [Ctrl+Z]" disabled>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14">
                 <polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
               </svg>
             </button>
-            <button id="redoBtn" class="btn btn-icon btn-xs-icon" title="Wiederholen  [Ctrl+Y]" disabled>
+            <button id="redoBtn" class="btn btn-icon btn-xs-icon" title="Redo  [Ctrl+Y]" disabled>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="14" height="14">
                 <polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/>
               </svg>
             </button>
             <div class="tl-actions-sep"></div>
-            <button id="tapSyncEditorBtn" class="btn btn-ghost btn-sm" title="Tap Sync — Zeilen manuell eintakten">
+            <button id="newSongBtn" class="btn btn-ghost btn-sm" title="Load new song — discard current session">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="18" x2="12" y2="12"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+              </svg>
+              New Song
+            </button>
+            <div class="tl-actions-sep"></div>
+            <button id="tapSyncEditorBtn" class="btn btn-ghost btn-sm" title="Tap Sync — manually tap in lines">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
@@ -264,14 +283,14 @@
             </button>
             <button id="addSegmentBtn" class="btn btn-secondary btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Zeile
+              Line
             </button>
             <button id="sortBtn" class="btn btn-ghost btn-sm">↕ Sort</button>
             <button id="retranscribeBtn" class="btn btn-ghost btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                 <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
               </svg>
-              Neu
+              Retry
             </button>
           </div>
         </div>
@@ -284,7 +303,7 @@
             <div class="tl-label-cell" style="height:28px"></div>
             <div class="tl-label-cell" style="height:90px">
               <span class="track-name">WAVEFORM</span>
-              <button id="waveVocalsBtn" class="btn-wave-vocals hidden" title="Vocals-Waveform umschalten">
+              <button id="waveVocalsBtn" class="btn-wave-vocals hidden" title="Toggle vocals waveform">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10">
                   <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -294,7 +313,7 @@
             </div>
             <div class="tl-label-cell" style="height:64px">
               <span class="track-name">LYRICS</span>
-              <span class="track-sub">Ziehen zum Verschieben</span>
+              <span class="track-sub">Drag to move</span>
             </div>
           </div>
 
@@ -330,10 +349,10 @@
         <div class="tl-hint-bar">
           <kbd>Space</kbd> Play/Pause &nbsp;·&nbsp;
           <kbd>Enter</kbd> Marker @ Playhead &nbsp;·&nbsp;
-          <kbd>Ctrl+Scroll</kbd> Zoomen &nbsp;·&nbsp;
-          Block ziehen zum Verschieben &nbsp;·&nbsp;
-          Ränder ziehen zum Trimmen &nbsp;·&nbsp;
-          Doppelklick → Zeile editieren
+          <kbd>Ctrl+Scroll</kbd> Zoom &nbsp;·&nbsp;
+          Drag block to move &nbsp;·&nbsp;
+          Drag edges to trim &nbsp;·&nbsp;
+          Double-click → edit line
         </div>
       </div>
 
@@ -348,11 +367,11 @@
                 <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
                 <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
               </svg>
-              Lyrics &amp; Zeitstempel
+              Lyrics &amp; timestamps
             </span>
           </div>
           <div class="seg-list-header">
-            <span>Zeit</span><span>Text</span><span></span>
+            <span>Time</span><span>Text</span><span></span>
           </div>
           <div id="segmentsList" class="segments-list"></div>
         </div>
@@ -364,17 +383,17 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              Exportieren
+              Export
             </span>
           </div>
           <div class="export-meta">
             <div class="input-group">
-              <label class="label">Titel</label>
-              <input type="text" id="titleInput" class="input" placeholder="Song-Titel">
+              <label class="label">Title</label>
+              <input type="text" id="titleInput" class="input" placeholder="Song title">
             </div>
             <div class="input-group">
-              <label class="label">Künstler</label>
-              <input type="text" id="artistInput" class="input" placeholder="Künstlername">
+              <label class="label">Artist</label>
+              <input type="text" id="artistInput" class="input" placeholder="Artist name">
             </div>
           </div>
           <div class="export-actions">
@@ -383,16 +402,16 @@
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              LRC laden
+              Download LRC
             </button>
             <button id="copyLrcBtn" class="btn btn-secondary btn-sm">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
                 <rect x="9" y="9" width="13" height="13" rx="2"/>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
               </svg>
-              Kopieren
+              Copy
             </button>
-            <button id="previewToggleBtn" class="btn btn-ghost btn-sm">👁 Vorschau</button>
+            <button id="previewToggleBtn" class="btn btn-ghost btn-sm">👁 Preview</button>
           </div>
           <pre id="lrcPreview" class="lrc-preview hidden"></pre>
         </div>
@@ -415,19 +434,19 @@
       <span id="tapCountDisplay" class="tap-count">0 / 0</span>
     </div>
     <div class="tap-instr">
-      <kbd>Space</kbd> Nächste Zeile &nbsp;·&nbsp;
-      <kbd>Backspace</kbd> Zurück &nbsp;·&nbsp;
-      <kbd>Esc</kbd> Abbrechen
+      <kbd>Space</kbd> Next line &nbsp;·&nbsp;
+      <kbd>Backspace</kbd> Back &nbsp;·&nbsp;
+      <kbd>Esc</kbd> Cancel
     </div>
     <div class="tap-header-right">
-      <button id="tapVocalsBtn" class="btn btn-ghost btn-sm tap-vocals-btn" style="display:none" title="Vocals isolieren (UVR5) für einfacheres Mithören">
+      <button id="tapVocalsBtn" class="btn btn-ghost btn-sm tap-vocals-btn" style="display:none" title="Isolate vocals (UVR5) for easier listening">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
           <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
         </svg>
         Vocals
       </button>
-      <button id="tapFinishBtn" class="btn btn-secondary btn-sm" disabled>✓ Fertig</button>
+      <button id="tapFinishBtn" class="btn btn-secondary btn-sm" disabled>✓ Done</button>
       <button id="tapCancelBtn" class="btn btn-ghost btn-sm">✕</button>
     </div>
   </div>
@@ -435,6 +454,19 @@
   <!-- Waveform strip -->
   <div class="tap-wave-wrap">
     <canvas id="tapWaveCanvas" class="tap-wave-canvas"></canvas>
+  </div>
+
+  <!-- Vocals isolation loading screen (shown while UVR runs) -->
+  <div id="tapIsolatingScreen" class="tap-isolating-screen hidden">
+    <div class="tap-isolating-inner">
+      <div class="spinner-ring tap-isolating-spinner"></div>
+      <p id="tapIsolatingStatus" class="tap-isolating-status">Preparing vocal model…</p>
+      <div class="tap-isolating-bar-wrap">
+        <div id="tapIsolatingBar" class="tap-isolating-bar"></div>
+      </div>
+      <p id="tapIsolatingPct" class="tap-isolating-pct">0%</p>
+      <button id="tapIsolatingSkip" class="btn btn-ghost btn-sm">Skip — tap to original audio</button>
+    </div>
   </div>
 
   <!-- Stage: scrollable list of lines -->

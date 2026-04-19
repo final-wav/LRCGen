@@ -689,6 +689,30 @@ body.editor-active #editorSection { padding: 14px 20px 14px; }
   width: 100%; height: 64px;
 }
 
+/* Vocals isolation loading screen */
+.tap-isolating-screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 5, 14, 0.93);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+.tap-isolating-inner {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; text-align: center; max-width: 380px; padding: 0 24px;
+}
+.tap-isolating-spinner { width: 36px; height: 36px; border-width: 3px; }
+.tap-isolating-status { font-size: .88rem; color: var(--text-2); margin: 0; }
+.tap-isolating-bar-wrap {
+  width: 260px; height: 5px; background: var(--surface3);
+  border-radius: 3px; overflow: hidden;
+}
+.tap-isolating-bar {
+  height: 100%; width: 0%; background: var(--accent);
+  border-radius: 3px; transition: width .4s ease;
+}
+.tap-isolating-pct { font-size: .75rem; color: var(--text-3); margin: 0; font-family: var(--mono); }
+
 /* Vocals toggle button states */
 .tap-vocals-btn { gap: 5px; }
 .tap-vocals-btn.active { color: var(--success) !important; border-color: rgba(16,185,129,.5) !important; background: rgba(16,185,129,.08) !important; }

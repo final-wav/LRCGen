@@ -147,7 +147,7 @@ function handleFile(file) {
   if (!file) return;
   const ext = file.name.split('.').pop().toLowerCase();
   if (!['mp3','flac','wav','m4a','ogg','opus','aac'].includes(ext)) {
-    toast('Format nicht unterstützt.', 'error'); return;
+    toast('Format not supported.', 'error'); return;
   }
   S.filename = file.name;
   el.fileNameDisplay.textContent = file.name;
@@ -180,18 +180,18 @@ async function startTranscription(reuseFileId = null) {
 
   showPhase('progress');
   setProgressStep(useUVR ? 'separate' : 'whisper');
-  setProgress(8, 'Lade Datei hoch…');
+  setProgress(8, 'Uploading file…');
 
   try {
     if (!reuseFileId) {
       const form = new FormData();
       form.append('file', S._pendingFile);
       const r = await fetch('/api/upload', { method:'POST', body:form });
-      if (!r.ok) throw new Error((await r.json()).error || 'Upload fehlgeschlagen');
+      if (!r.ok) throw new Error((await r.json()).error || 'Upload failed');
       S.fileId = (await r.json()).file_id;
     }
 
-    setProgress(22, 'Starte Job…');
+    setProgress(22, 'Starting job…');
 
     const tf = new FormData();
     tf.append('file_id',          S.fileId);
@@ -249,7 +249,7 @@ async function pollJob(jobId, useUVR = false) {
     if (S.jobCancelled) break;
 
     const r = await fetch(`/api/job/${jobId}`);
-    if (!r.ok) { toast('Fehler beim Abfragen.', 'error'); return; }
+    if (!r.ok) { toast('Error polling status.', 'error'); return; }
     const job = await r.json();
 
     el.progressLabel.textContent = job.message || '…';
@@ -264,7 +264,7 @@ async function pollJob(jobId, useUVR = false) {
     }
 
     if (job.status === 'done') {
-      setProgress(100, 'Fertig!');
+      setProgress(100, 'Done!');
       setProgressStep('whisper'); // both done
       // If UVR was used and the job has a vocals file, expose the timeline waveform toggle
       if (useUVR && job.vocals_path) S.vocalsJobId = jobId;
@@ -446,7 +446,7 @@ async function decodeVocalsWaveform() {
   try {
     const ctx  = new (window.AudioContext || window.webkitAudioContext)();
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error('Vocals nicht verfügbar');
+    if (!resp.ok) throw new Error('Vocals not available');
     const ab   = await resp.arrayBuffer();
     S.vocalsAudioBuf  = await ctx.decodeAudioData(ab);
     ctx.close();
@@ -463,30 +463,29 @@ async function decodeVocalsWaveform() {
 async function setWaveVocalsMode(on) {
   const btn = $('waveVocalsBtn');
 
-  // If turning on but no isolation done yet, run it now
+  // If turning on but isolation not done yet, run it now
   if (on && !S.vocalsJobId) {
     if (!uvrAvailable || !S.fileId) return;
-    if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+    if (btn) { btn.classList.add('loading'); btn.disabled = true; btn.title = 'Vocals werden isoliert…'; }
     try {
       const uvrModel = $('uvrModelSelect')?.value || 'UVR-MDX-NET-Inst_HQ_3';
       const form = new FormData();
       form.append('file_id', S.fileId);
       form.append('uvr_model_id', uvrModel);
       const r = await fetch('/api/isolate', { method: 'POST', body: form });
-      if (!r.ok) throw new Error('Isolation konnte nicht gestartet werden');
+      if (!r.ok) throw new Error('Isolation could not be started');
       const { job_id } = await r.json();
-      // Poll to completion
       while (true) {
         await new Promise(res => setTimeout(res, 1500));
         const jr  = await fetch(`/api/job/${job_id}`);
         const job = await jr.json();
         if (btn) btn.title = `Vocals: ${job.progress || 0}%`;
         if (job.status === 'done') { S.vocalsJobId = job_id; break; }
-        if (job.status === 'error') throw new Error(job.error || 'Fehler');
+        if (job.status === 'error') throw new Error(job.error || 'Error');
       }
     } catch (e) {
-      if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
-      toast('Vocal Isolation fehlgeschlagen: ' + e.message, 'error');
+      if (btn) { btn.classList.remove('loading'); btn.disabled = false; btn.title = 'Vocals-Waveform umschalten'; }
+      toast('Vocal isolation failed: ' + e.message, 'error');
       return;
     }
     if (btn) { btn.classList.remove('loading'); btn.disabled = false; btn.title = 'Vocals-Waveform umschalten'; }
@@ -502,7 +501,7 @@ async function setWaveVocalsMode(on) {
 function updateWaveVocalsBtn() {
   const btn = $('waveVocalsBtn');
   if (!btn) return;
-  // Show whenever UVR is available in the editor (not just after a job)
+  // Show whenever UVR is available and a file is loaded — clicking triggers isolation if needed
   btn.classList.toggle('hidden', !uvrAvailable || !S.fileId);
   btn.classList.toggle('active', S.useVocalsWaveform && !!S.vocalsWavePeaks);
 }
@@ -921,7 +920,7 @@ function renderSegmentList() {
     });
 
     const delBtn = document.createElement('button');
-    delBtn.className = 'btn-row-action del'; delBtn.title = 'Löschen';
+    delBtn.className = 'btn-row-action del'; delBtn.title = 'Delete';
     delBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
     delBtn.addEventListener('click', e => {
       e.stopPropagation();
@@ -1100,7 +1099,7 @@ async function exportLRC() {
       artist:   el.artistInput.value.trim(),
     }),
   });
-  if (!res.ok) { toast('Export fehlgeschlagen.', 'error'); return; }
+  if (!res.ok) { toast('Export failed.', 'error'); return; }
   const blob = await res.blob();
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
@@ -1110,7 +1109,7 @@ async function exportLRC() {
   a.download = m ? m[1] : 'lyrics.lrc';
   a.click();
   URL.revokeObjectURL(url);
-  toast('LRC heruntergeladen!', 'success');
+  toast('LRC downloaded!', 'success');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1121,7 +1120,7 @@ document.addEventListener('keydown', e => {
   if (tapState.active) {
     if (e.code === 'Space')     { e.preventDefault(); tapMark(); return; }
     if (e.code === 'Backspace') { e.preventDefault(); tapUndo(); return; }
-    if (e.code === 'Escape')    { e.preventDefault(); closeTapOverlay(); toast('Tap Sync abgebrochen.'); return; }
+    if (e.code === 'Escape')    { e.preventDefault(); closeTapOverlay(); toast('Tap Sync cancelled.'); return; }
     return; // swallow all other keys in tap mode
   }
 
@@ -1193,9 +1192,13 @@ const tapState = {
   started:    false, // has first tap (= playback) happened
   rafId:      null,
   source:     'upload', // 'upload' | 'editor'
-  // waveform
-  wavePeaks:    null,  // Float32Array
+  // waveform — two cached peak arrays, wavePeaks points to the active one
+  wavePeaks:    null,  // active peaks shown in canvas (points to songPeaks or vocalPeaks)
+  songPeaks:    null,  // decoded peaks for original audio
+  vocalPeaks:   null,  // decoded peaks for isolated vocals
   waveDuration: 0,
+  songDecodeId:  0,    // increment to cancel stale song decode
+  vocalDecodeId: 0,    // increment to cancel stale vocal decode
   // vocals isolation
   originalUrl:    null,
   vocalsUrl:      null,
@@ -1221,11 +1224,11 @@ function openTapSync(source) {
 
   if (source === 'upload') {
     lines = el.lyricsInput.value.trim().split('\n').map(l => l.trim()).filter(Boolean);
-    if (!lines.length) { toast('Bitte Lyrics eingeben.', 'error'); return; }
-    if (!S.fileId)     { toast('Kein Audio hochgeladen.', 'error'); return; }
+    if (!lines.length) { toast('Please enter lyrics.', 'error'); return; }
+    if (!S.fileId)     { toast('No audio uploaded.', 'error'); return; }
   } else {
-    if (!S.segments.length) { toast('Keine Segmente vorhanden.', 'error'); return; }
-    if (!S.fileId)           { toast('Kein Audio geladen.', 'error'); return; }
+    if (!S.segments.length) { toast('No segments available.', 'error'); return; }
+    if (!S.fileId)           { toast('No audio loaded.', 'error'); return; }
     lines = [...S.segments].sort((a, b) => a.start - b.start).map(s => s.text);
     if (ws && S.isPlaying) ws.pause();
   }
@@ -1236,7 +1239,8 @@ function openTapSync(source) {
   Object.assign(tapState, {
     active: true, lines, times: [],
     currentIdx: 0, started: false, source,
-    wavePeaks: null, waveDuration: 0,
+    wavePeaks: null, songPeaks: null, vocalPeaks: null, waveDuration: 0,
+    songDecodeId: 0, vocalDecodeId: 0,
     originalUrl: audioUrl, vocalsUrl: null,
     useVocals: false, isolating: false, isolationJobId: null,
   });
@@ -1261,8 +1265,8 @@ function openTapSync(source) {
   if (tapState.rafId) cancelAnimationFrame(tapState.rafId);
   tapState.rafId = requestAnimationFrame(tapRAF);
 
-  // Decode waveform in background
-  decodeTapAudio(audioUrl);
+  // Decode original song waveform in background
+  decodeTapSong(audioUrl);
 
   // Auto-start vocals isolation if lyrics-section toggle is enabled
   if (source === 'upload' && $('tapVocalsAutoToggle')?.checked && uvrAvailable) {
@@ -1300,32 +1304,57 @@ function initTapWaveCanvas() {
   canvas.height = 64;
 }
 
-async function decodeTapAudio(url) {
-  tapState.wavePeaks    = null;
-  tapState.waveDuration = 0;
+// Shared peak-computation helper — fetches + decodes, returns {peaks, duration}
+async function _decodePeaks(url) {
+  const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+  const resp = await fetch(url);
+  if (!resp.ok) { ctx.close(); throw new Error(`Audio fetch failed: HTTP ${resp.status}`); }
+  const ab   = await resp.arrayBuffer();
+  const buf  = await ctx.decodeAudioData(ab);
+  ctx.close();
+  const totalPx = Math.ceil(buf.duration * TAP_PPS);
+  const data    = buf.getChannelData(0);
+  const sRate   = buf.sampleRate;
+  const peaks   = new Float32Array(totalPx);
+  for (let px = 0; px < totalPx; px++) {
+    const iStart = Math.floor((px / TAP_PPS) * sRate);
+    const iEnd   = Math.min(Math.ceil(((px + 1) / TAP_PPS) * sRate), data.length);
+    let max = 0;
+    for (let i = iStart; i < iEnd; i++) { const v = Math.abs(data[i]); if (v > max) max = v; }
+    peaks[px] = max;
+  }
+  return { peaks, duration: buf.duration };
+}
+
+// Decode the original song — stored in tapState.songPeaks
+async function decodeTapSong(url) {
+  const myId = ++tapState.songDecodeId;
+  tapState.songPeaks = null;
+  if (!tapState.useVocals) tapState.wavePeaks = null; // show loading indicator
   try {
-    const ctx  = new (window.AudioContext || window.webkitAudioContext)();
-    const resp = await fetch(url);
-    const ab   = await resp.arrayBuffer();
-    const buf  = await ctx.decodeAudioData(ab);
-    ctx.close();
-
-    const totalPx = Math.ceil(buf.duration * TAP_PPS);
-    const data    = buf.getChannelData(0);
-    const sRate   = buf.sampleRate;
-    const peaks   = new Float32Array(totalPx);
-
-    for (let px = 0; px < totalPx; px++) {
-      const iStart = Math.floor((px / TAP_PPS) * sRate);
-      const iEnd   = Math.min(Math.ceil(((px + 1) / TAP_PPS) * sRate), data.length);
-      let max = 0;
-      for (let i = iStart; i < iEnd; i++) { const v = Math.abs(data[i]); if (v > max) max = v; }
-      peaks[px] = max;
-    }
-    tapState.wavePeaks    = peaks;
-    tapState.waveDuration = buf.duration;
+    const { peaks, duration } = await _decodePeaks(url);
+    if (myId !== tapState.songDecodeId) return; // a newer song decode started — discard
+    tapState.songPeaks    = peaks;
+    tapState.waveDuration = duration;
+    if (!tapState.useVocals) tapState.wavePeaks = tapState.songPeaks;
   } catch (e) {
-    console.warn('Tap waveform decode failed:', e);
+    console.warn('Tap song waveform decode failed:', e);
+  }
+}
+
+// Decode the isolated vocals — stored in tapState.vocalPeaks
+async function decodeTapVocals(url) {
+  const myId = ++tapState.vocalDecodeId;
+  tapState.vocalPeaks = null;
+  if (tapState.useVocals) tapState.wavePeaks = null; // show loading indicator
+  try {
+    const { peaks, duration } = await _decodePeaks(url);
+    if (myId !== tapState.vocalDecodeId) return; // stale
+    tapState.vocalPeaks   = peaks;
+    tapState.waveDuration = duration;
+    if (tapState.useVocals) tapState.wavePeaks = tapState.vocalPeaks;
+  } catch (e) {
+    console.warn('Tap vocal waveform decode failed:', e);
   }
 }
 
@@ -1370,7 +1399,9 @@ function drawTapWaveform() {
     const sPx = Math.floor(sTime * TAP_PPS);
     if (sPx >= peaks.length) continue;
     const amp = peaks[sPx] * mid * 0.92;
-    ctx.fillStyle = px < playheadX ? '#7c3aed' : '#22224a';
+    ctx.fillStyle = px < playheadX
+      ? (tapState.useVocals ? '#16a34a' : '#7c3aed')
+      : (tapState.useVocals ? '#14532d' : '#22224a');
     ctx.fillRect(px, mid - amp, 1, amp * 2 || 1);
   }
 
@@ -1401,48 +1432,74 @@ function drawTapWaveform() {
 }
 
 // ── Vocals isolation toggle ───────────────────────────────────
+function _tapIsolatingShow(status, pct) {
+  const scr = $('tapIsolatingScreen');
+  if (!scr) return;
+  scr.classList.remove('hidden');
+  const st = $('tapIsolatingStatus'); if (st) st.textContent = status;
+  const bar = $('tapIsolatingBar');   if (bar) bar.style.width = pct + '%';
+  const p   = $('tapIsolatingPct');   if (p)   p.textContent  = pct + '%';
+}
+function _tapIsolatingHide() {
+  const scr = $('tapIsolatingScreen');
+  if (scr) scr.classList.add('hidden');
+}
+
 async function runTapVocalsIsolation() {
   if (tapState.isolating || !S.fileId) return;
   tapState.isolating = true;
 
   const btn      = $('tapVocalsBtn');
-  const uvrModel = $('uvrModelSelect')?.value || 'UVR-MDX-NET-Inst_HQ_3';
-  if (btn) { btn.disabled = true; btn.classList.add('loading'); btn.lastChild.textContent = ' Isoliere…'; }
+  const uvrModel = $('tapVocalsModelSelect')?.value || $('uvrModelSelect')?.value || 'UVR-MDX-NET-Inst_HQ_3';
+  if (btn) { btn.disabled = true; btn.classList.add('loading'); btn.lastChild.textContent = ' Isolating…'; }
+
+  _tapIsolatingShow('Loading vocal model…', 0);
 
   try {
     const form = new FormData();
     form.append('file_id',      S.fileId);
     form.append('uvr_model_id', uvrModel);
     const r = await fetch('/api/isolate', { method: 'POST', body: form });
-    if (!r.ok) throw new Error('Isolation konnte nicht gestartet werden');
+    if (!r.ok) throw new Error('Isolation could not be started');
     const { job_id } = await r.json();
     tapState.isolationJobId = job_id;
 
-    // Poll until done
-    while (tapState.active) {
+    // Poll until done or skipped
+    while (tapState.active && tapState.isolating) {
       await sleep(1500);
-      if (!tapState.active) return;
+      if (!tapState.active || !tapState.isolating) break;
       const jr  = await fetch(`/api/job/${job_id}`);
       const job = await jr.json();
 
-      if (btn) btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> ${job.progress || 0}%`;
+      const pct = typeof job.progress === 'number' ? job.progress : 0;
+      const statusMsg = job.status === 'separating_model' ? 'Loading vocal model…'
+                      : job.status === 'separating'       ? 'Isolating vocals…'
+                      : 'Processing…';
+      _tapIsolatingShow(statusMsg, pct);
+      if (btn) btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> ${pct}%`;
 
       if (job.status === 'done') {
         tapState.vocalsUrl  = `/api/vocals/${job_id}`;
         tapState.useVocals  = true;
         tapState.isolating  = false;
+        _tapIsolatingHide();
         _switchTapAudio(tapState.vocalsUrl);
-        decodeTapAudio(tapState.vocalsUrl);
+        decodeTapVocals(tapState.vocalsUrl);
         if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.classList.add('active'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Vocals ●`; }
-        toast('Vocals isoliert — Waveform aktualisiert.', 'success');
+        toast('Vocals isolated — waveform updated.', 'success');
         return;
       }
-      if (job.status === 'error') throw new Error(job.error || 'Fehler');
+      if (job.status === 'error') throw new Error(job.error || 'Error');
     }
-  } catch (e) {
+    // Skipped by user
+    _tapIsolatingHide();
     tapState.isolating = false;
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Vocals`; }
-    toast('Vocals-Isolation fehlgeschlagen: ' + e.message, 'error');
+  } catch (e) {
+    _tapIsolatingHide();
+    tapState.isolating = false;
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Vocals`; }
+    toast('Vocal isolation failed: ' + e.message, 'error');
   }
 }
 
@@ -1457,25 +1514,26 @@ function toggleTapVocals() {
 
   const btn = $('tapVocalsBtn');
   if (tapState.useVocals) {
-    // Switch back to original
-    tapState.useVocals = false;
+    // Switch back to original — use cached song peaks (instant)
+    tapState.useVocals  = false;
+    tapState.wavePeaks  = tapState.songPeaks;
     _switchTapAudio(tapState.originalUrl);
-    decodeTapAudio(tapState.originalUrl);
     if (btn) { btn.classList.remove('active'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Vocals`; }
   } else {
-    // Switch to isolated vocals (already processed)
-    tapState.useVocals = true;
+    // Switch to isolated vocals — use cached vocal peaks (instant, null = loading state)
+    tapState.useVocals  = true;
+    tapState.wavePeaks  = tapState.vocalPeaks;
     _switchTapAudio(tapState.vocalsUrl);
-    decodeTapAudio(tapState.vocalsUrl);
     if (btn) { btn.classList.add('active'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Vocals ●`; }
   }
 }
 
 function _switchTapAudio(url) {
+  if (!url) return;
   const wasPlaying  = tapState.started && tapAudio && !tapAudio.paused;
-  const currentTime = tapAudio ? tapAudio.currentTime : 0;
+  const currentTime = (tapAudio && isFinite(tapAudio.currentTime)) ? tapAudio.currentTime : 0;
   _makeTapAudio(url);
-  tapAudio.currentTime = currentTime;
+  try { tapAudio.currentTime = currentTime; } catch (_) {}
   if (wasPlaying) tapAudio.play().catch(() => {});
 }
 
@@ -1528,13 +1586,13 @@ function renderTapLines() {
   const hEl = $('tapHint');
   if (!hEl) return;
   if (!tapState.started) {
-    hEl.innerHTML = `<span class="tap-space-hint">SPACE</span> drücken um Wiedergabe zu starten &amp; erste Zeile zu markieren`;
+    hEl.innerHTML = `<span class="tap-space-hint">SPACE</span> to start playback &amp; mark the first line`;
   } else {
     const remaining = tapState.lines.length - tapState.currentIdx;
     if (remaining > 0) {
-      hEl.textContent = `${remaining} ${remaining === 1 ? 'Zeile' : 'Zeilen'} übrig — Space wenn die nächste Zeile beginnt`;
+      hEl.textContent = `${remaining} ${remaining === 1 ? 'line' : 'lines'} remaining — Space when the next line begins`;
     } else {
-      hEl.textContent = 'Alle Zeilen markiert!';
+      hEl.textContent = 'All lines marked!';
     }
   }
 }
@@ -1588,7 +1646,7 @@ function tapMark() {
 
   // Auto-finish when all lines are tapped
   if (tapState.currentIdx >= tapState.lines.length) {
-    if ($('tapHint')) $('tapHint').textContent = 'Alle Zeilen markiert — fertig!';
+    if ($('tapHint')) $('tapHint').textContent = 'All lines marked — done!';
     setTimeout(finishTapSync, 600);
   }
 }
@@ -1612,7 +1670,7 @@ function tapUndo() {
   }
 
   renderTapLines();
-  toast('Zurückgegangen.', '');
+  toast('Went back.', '');
 }
 
 async function finishTapSync() {
@@ -1651,7 +1709,7 @@ async function finishTapSync() {
   if (src === 'upload') {
     // File was uploaded before opening the overlay — S.fileId is set
     initEditor(segs);
-    toast(`Tap Sync: ${segs.length} Zeilen übernommen.`, 'success');
+    toast(`Tap Sync: ${segs.length} lines applied.`, 'success');
   } else {
     pushHistory();
     S.segments = segs;
@@ -1663,15 +1721,19 @@ async function finishTapSync() {
       updateWaveVocalsBtn();
       if (!S.vocalsAudioBuf) decodeVocalsWaveform();
     }
-    toast(`Tap Sync: ${segs.length} Zeilen neu eingetaktet.`, 'success');
+    toast(`Tap Sync: ${segs.length} lines re-tapped.`, 'success');
   }
 }
 
 function closeTapOverlay() {
-  tapState.active    = false;
-  tapState.wavePeaks = null;
+  tapState.active     = false;
+  tapState.isolating  = false; // stop any running isolation poll
+  tapState.wavePeaks  = null;
+  tapState.songPeaks  = null;
+  tapState.vocalPeaks = null;
   if (tapState.rafId) { cancelAnimationFrame(tapState.rafId); tapState.rafId = null; }
   if (tapAudio) { tapAudio.pause(); tapAudio.src = ''; tapAudio = null; }
+  _tapIsolatingHide();
   $('tapSyncOverlay').classList.add('hidden');
 }
 
@@ -1730,7 +1792,7 @@ function init() {
   // Transcribe
   el.transcribeBtn.addEventListener('click', () => startTranscription());
   el.cancelBtn?.addEventListener('click', () => {
-    S.jobCancelled = true; showPhase('upload'); toast('Abgebrochen.');
+    S.jobCancelled = true; showPhase('upload'); toast('Cancelled.');
   });
   el.retranscribeBtn?.addEventListener('click', () => {
     if (ws) { ws.destroy(); ws = null; }
@@ -1738,11 +1800,48 @@ function init() {
     startTranscription(S.fileId);
   });
 
+  // New Song — discard current session, return to upload
+  $('newSongBtn')?.addEventListener('click', () => {
+    if (S.segments && S.segments.length) {
+      if (!confirm('Discard current session and load a new song?')) return;
+    }
+    // Tear down audio / waveform
+    if (ws) { try { ws.destroy(); } catch (_) {} ws = null; }
+    // Reset session state
+    S._pendingFile      = null;
+    S.fileId            = null;
+    S.filename          = '';
+    S.segments          = [];
+    S.selectedIdx       = -1;
+    S.vocalsJobId       = null;
+    S.vocalsAudioBuf    = null;
+    S.vocalsWavePeaks   = null;
+    S.useVocalsWaveform = false;
+    S.jobCancelled      = false;
+    // Reset history
+    if (Array.isArray(S.history)) S.history.length = 0;
+    S.historyIdx = -1;
+    if (typeof refreshUndoRedo === 'function') refreshUndoRedo();
+    // Reset UI
+    el.fileInfo.classList.add('hidden');
+    el.dropZone.classList.remove('hidden');
+    el.transcribeBtn.disabled = true;
+    if (el.tapSyncBtn) el.tapSyncBtn.disabled = true;
+    if (el.fileInput) el.fileInput.value = '';
+    if (el.lyricsInput) el.lyricsInput.value = '';
+    if (el.fileNameDisplay) el.fileNameDisplay.textContent = '';
+    // Hide waveform VOC button
+    const wvb = $('waveVocalsBtn'); if (wvb) wvb.classList.add('hidden');
+    // Back to upload view
+    showPhase('upload');
+    toast('Ready for a new song.', 'success');
+  });
+
   // Tap Sync — upload file first, then open overlay
   el.tapSyncBtn?.addEventListener('click', async () => {
-    if (!S._pendingFile) { toast('Bitte Audiodatei auswählen.', 'error'); return; }
+    if (!S._pendingFile) { toast('Please select an audio file.', 'error'); return; }
     const lyrics = el.lyricsInput.value.trim().split('\n').map(l => l.trim()).filter(Boolean);
-    if (!lyrics.length) { toast('Bitte Lyrics eingeben.', 'error'); return; }
+    if (!lyrics.length) { toast('Please enter lyrics.', 'error'); return; }
 
     if (!S.fileId) {
       // Upload first so the overlay can load audio and isolation can run
@@ -1753,10 +1852,10 @@ function init() {
         const form = new FormData();
         form.append('file', S._pendingFile);
         const r = await fetch('/api/upload', { method: 'POST', body: form });
-        if (!r.ok) throw new Error((await r.json()).error || 'Upload fehlgeschlagen');
+        if (!r.ok) throw new Error((await r.json()).error || 'Upload failed');
         S.fileId = (await r.json()).file_id;
       } catch (e) {
-        toast('Upload fehlgeschlagen: ' + e.message, 'error');
+        toast('Upload failed: ' + e.message, 'error');
         el.tapSyncBtn.innerHTML = origHTML;
         updateTapSyncBtn();
         return;
@@ -1768,9 +1867,15 @@ function init() {
   });
 
   $('tapSyncEditorBtn')?.addEventListener('click', () => openTapSync('editor'));
-  $('tapCancelBtn')?.addEventListener('click', () => { closeTapOverlay(); toast('Tap Sync abgebrochen.'); });
+  $('tapCancelBtn')?.addEventListener('click', () => { closeTapOverlay(); toast('Tap Sync cancelled.'); });
   $('tapFinishBtn')?.addEventListener('click', finishTapSync);
   $('tapVocalsBtn')?.addEventListener('click', toggleTapVocals);
+  $('tapIsolatingSkip')?.addEventListener('click', () => {
+    tapState.isolating = false; // breaks the polling loop
+    _tapIsolatingHide();
+    const btn = $('tapVocalsBtn');
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg> Vocals`; }
+  });
   $('waveVocalsBtn')?.addEventListener('click', () => setWaveVocalsMode(!S.useVocalsWaveform));
 
   // Update tap sync button when lyrics change
@@ -1802,19 +1907,19 @@ function init() {
     renderSegmentBlocks();
     renderSegmentList();
     updateLrcPreview();
-    toast('Nach Zeitstempel sortiert.');
+    toast('Sorted by timestamp.');
   });
 
   // Export
   el.exportBtn.addEventListener('click', exportLRC);
   el.copyLrcBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(generateLRC())
-      .then(() => toast('In Zwischenablage kopiert!', 'success'))
-      .catch(() => toast('Kopieren fehlgeschlagen.', 'error'));
+      .then(() => toast('Copied to clipboard!', 'success'))
+      .catch(() => toast('Copy failed.', 'error'));
   });
   el.previewToggleBtn.addEventListener('click', () => {
     const hidden = el.lrcPreview.classList.toggle('hidden');
-    el.previewToggleBtn.textContent = hidden ? '👁 Vorschau' : '✕ Vorschau';
+    el.previewToggleBtn.textContent = hidden ? '👁 Preview' : '✕ Preview';
     if (!hidden) el.lrcPreview.textContent = generateLRC();
   });
   el.titleInput.addEventListener('input', updateLrcPreview);

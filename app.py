@@ -47,22 +47,22 @@ MIME_MAP = {
 UVR_MODELS = {
     "UVR-MDX-NET-Inst_HQ_3": {
         "filename":    "UVR-MDX-NET-Inst_HQ_3.onnx",
-        "description": "MDX-Net HQ3 – schnell & sehr präzise (empfohlen)",
+        "description": "MDX-Net HQ3 – fast & very accurate (recommended)",
         "vocals_stem": "Vocals",
     },
     "UVR-MDX-NET-Voc_FT": {
         "filename":    "UVR-MDX-NET-Voc_FT.onnx",
-        "description": "MDX-Net Voc_FT – vocal-optimiert",
+        "description": "MDX-Net Voc_FT – vocal-optimized",
         "vocals_stem": "Vocals",
     },
     "UVR_MDXNET_KARA_2": {
         "filename":    "UVR_MDXNET_KARA_2.onnx",
-        "description": "MDX-Net KARA 2 – Karaoke-Removal, sauberere Stimme",
+        "description": "MDX-Net KARA 2 – Karaoke removal, cleaner voice",
         "vocals_stem": "Vocals",
     },
     "htdemucs_ft": {
         "filename":    "htdemucs_ft",
-        "description": "Demucs htdemucs_ft – beste Qualität, langsamer",
+        "description": "Demucs htdemucs_ft – best quality, slower",
         "vocals_stem": "vocals",
     },
 }
@@ -99,7 +99,7 @@ async def uvr_models():
 async def upload_audio(file: UploadFile = File(...)):
     ext = Path(file.filename).suffix.lower()
     if ext not in ALLOWED_EXTS:
-        return JSONResponse({"error": f"Format nicht unterstützt: {ext}"}, status_code=400)
+        return JSONResponse({"error": f"Format not supported: {ext}"}, status_code=400)
 
     file_id   = str(uuid.uuid4())
     save_path = Path(f"uploads/{file_id}{ext}")
@@ -110,12 +110,12 @@ async def upload_audio(file: UploadFile = File(...)):
 @app.get("/api/audio/{file_id}")
 async def serve_audio(file_id: str):
     if not re.fullmatch(r"[0-9a-f\-]{36}", file_id):
-        return JSONResponse({"error": "Ungültige ID"}, status_code=400)
+        return JSONResponse({"error": "Invalid ID"}, status_code=400)
     for ext in ALLOWED_EXTS:
         path = Path(f"uploads/{file_id}{ext}")
         if path.exists():
             return FileResponse(str(path), media_type=MIME_MAP.get(ext, "audio/mpeg"))
-    return JSONResponse({"error": "Datei nicht gefunden"}, status_code=404)
+    return JSONResponse({"error": "File not found"}, status_code=404)
 
 
 @app.post("/api/transcribe")
@@ -129,10 +129,10 @@ async def transcribe(
 ):
     allowed_whisper = {"tiny", "base", "small", "medium", "large", "large-v2", "large-v3"}
     if model_name not in allowed_whisper:
-        return JSONResponse({"error": "Ungültiger Whisper-Modellname"}, status_code=400)
+        return JSONResponse({"error": "Invalid Whisper model name"}, status_code=400)
 
     if not re.fullmatch(r"[0-9a-f\-]{36}", file_id):
-        return JSONResponse({"error": "Ungültige Datei-ID"}, status_code=400)
+        return JSONResponse({"error": "Invalid file ID"}, status_code=400)
 
     if uvr_model_id not in UVR_MODELS:
         uvr_model_id = "UVR-MDX-NET-Inst_HQ_3"
@@ -145,10 +145,10 @@ async def transcribe(
             break
 
     if not audio_path:
-        return JSONResponse({"error": "Audio-Datei nicht gefunden"}, status_code=404)
+        return JSONResponse({"error": "Audio file not found"}, status_code=404)
 
     job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "pending", "message": "Wird gestartet…",
+    jobs[job_id] = {"status": "pending", "message": "Starting…",
                     "result": None, "error": None, "progress": 0}
 
     use_uvr = vocal_isolation.lower() == "true"
@@ -166,9 +166,9 @@ async def transcribe(
 @app.get("/api/job/{job_id}")
 async def get_job(job_id: str):
     if not re.fullmatch(r"[0-9a-f\-]{36}", job_id):
-        return JSONResponse({"error": "Ungültige ID"}, status_code=400)
+        return JSONResponse({"error": "Invalid ID"}, status_code=400)
     if job_id not in jobs:
-        return JSONResponse({"error": "Job nicht gefunden"}, status_code=404)
+        return JSONResponse({"error": "Job not found"}, status_code=404)
     return jobs[job_id]
 
 
@@ -179,7 +179,7 @@ async def isolate_vocals(
 ):
     """Vocal isolation only — no Whisper. Returns a job_id to poll via /api/job/{job_id}."""
     if not re.fullmatch(r"[0-9a-f\-]{36}", file_id):
-        return JSONResponse({"error": "Ungültige Datei-ID"}, status_code=400)
+        return JSONResponse({"error": "Invalid file ID"}, status_code=400)
     if uvr_model_id not in UVR_MODELS:
         uvr_model_id = "UVR-MDX-NET-Inst_HQ_3"
 
@@ -190,10 +190,10 @@ async def isolate_vocals(
             audio_path = str(p)
             break
     if not audio_path:
-        return JSONResponse({"error": "Audio-Datei nicht gefunden"}, status_code=404)
+        return JSONResponse({"error": "Audio file not found"}, status_code=404)
 
     job_id = str(uuid.uuid4())
-    jobs[job_id] = {"status": "pending", "message": "Starte Vocal Isolation…",
+    jobs[job_id] = {"status": "pending", "message": "Starting vocal isolation…",
                     "result": None, "error": None, "progress": 0}
 
     threading.Thread(
@@ -208,15 +208,15 @@ async def isolate_vocals(
 async def serve_vocals(job_id: str):
     """Serve the isolated vocals audio for a completed isolation job."""
     if not re.fullmatch(r"[0-9a-f\-]{36}", job_id):
-        return JSONResponse({"error": "Ungültige ID"}, status_code=400)
+        return JSONResponse({"error": "Invalid ID"}, status_code=400)
     job = jobs.get(job_id)
     if not job:
-        return JSONResponse({"error": "Job nicht gefunden"}, status_code=404)
+        return JSONResponse({"error": "Job not found"}, status_code=404)
     if job["status"] != "done":
-        return JSONResponse({"error": "Noch nicht fertig"}, status_code=202)
+        return JSONResponse({"error": "Not yet finished"}, status_code=202)
     path = Path(job.get("vocals_path", ""))
     if not path.exists():
-        return JSONResponse({"error": "Vocals-Datei nicht gefunden"}, status_code=404)
+        return JSONResponse({"error": "Vocals file not found"}, status_code=404)
     ext = path.suffix.lower()
     return FileResponse(str(path), media_type=MIME_MAP.get(ext, "audio/wav"))
 
@@ -226,13 +226,13 @@ def _run_isolation_job(job_id: str, audio_path: str, uvr_model_id: str):
         vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
         if Path(vocals_path).resolve() != Path(audio_path).resolve():
             _set(job_id, status="done", progress=100,
-                 message="Vocals isoliert ✓", vocals_path=vocals_path)
+                 message="Vocals isolated ✓", vocals_path=vocals_path)
         else:
             _set(job_id, status="error", progress=100,
-                 error="Vocal Isolation fehlgeschlagen (Fallback auf Original)",
-                 message="Isolation fehlgeschlagen — versuche ein anderes Modell.")
+                 error="Vocal isolation failed (falling back to original)",
+                 message="Isolation failed — try a different model.")
     except Exception as exc:
-        _set(job_id, status="error", error=str(exc), message=f"Fehler: {exc}")
+        _set(job_id, status="error", error=str(exc), message=f"Error: {exc}")
 
 
 @app.post("/api/export")
@@ -285,14 +285,14 @@ def _run_job(job_id: str, audio_path: str, model_name: str,
 
         # ── Step 2: Whisper ────────────────────────────────────────────────────
         _set(job_id, status="loading_model", progress=50,
-             message=f"Lade Whisper-Modell '{model_name}'… "
-                     f"(beim ersten Start wird das Modell heruntergeladen)")
+             message=f"Loading Whisper model '{model_name}'… "
+                     f"(the model is downloaded on first run)")
 
         import whisper
         model = whisper.load_model(model_name)
 
         _set(job_id, status="transcribing", progress=65,
-             message="Transkribiere Audio… Das kann je nach Länge einige Minuten dauern.")
+             message="Transcribing audio… This may take several minutes depending on length.")
 
         opts: dict = {"word_timestamps": True, "verbose": False}
         if language:
@@ -320,11 +320,11 @@ def _run_job(job_id: str, audio_path: str, model_name: str,
         else:
             segments = raw_segments
 
-        _set(job_id, status="done", progress=100, message="Fertig!",
+        _set(job_id, status="done", progress=100, message="Done!",
              result={"segments": segments, "language": result.get("language", "?")})
 
     except Exception as exc:
-        _set(job_id, status="error", error=str(exc), message=f"Fehler: {exc}")
+        _set(job_id, status="error", error=str(exc), message=f"Error: {exc}")
 
 
 # ─── Vocal separation ──────────────────────────────────────────────────────────
@@ -340,13 +340,35 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
     stem_key   = model_info["vocals_stem"]   # e.g. "Vocals" or "vocals"
 
     _set(job_id, status="separating_model", progress=10,
-         message=f"Lade Vocal-Separations-Modell '{uvr_model_id}'… "
-                 f"(beim ersten Start: ca. 100–300 MB Download)")
+         message=f"Loading vocal separation model '{uvr_model_id}'… "
+                 f"(first run: approx. 100–300 MB download)")
+
+    out_dir_path = Path("uploads").resolve()
+    out_dir      = str(out_dir_path)
+
+    # Helper: given whatever audio-separator returns (abs path, rel path, or bare
+    # filename), find the real file on disk.
+    def _resolve(f: str) -> Optional[Path]:
+        if not f:
+            return None
+        p = Path(f)
+        candidates = [p, out_dir_path / p.name, Path.cwd() / p]
+        for c in candidates:
+            try:
+                if c.exists():
+                    return c.resolve()
+            except OSError:
+                pass
+        return None
+
+    # Snapshot uploads dir BEFORE separation so we can identify new files after.
+    try:
+        before_files = {p.name for p in out_dir_path.iterdir() if p.is_file()}
+    except OSError:
+        before_files = set()
 
     try:
         from audio_separator.separator import Separator  # type: ignore
-
-        out_dir = str(Path("uploads"))
 
         sep = Separator(
             output_dir=out_dir,
@@ -358,38 +380,67 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
         sep.load_model(model_filename=model_file)
 
         _set(job_id, status="separating", progress=25,
-             message=f"Isoliere Vocals mit '{uvr_model_id}'… "
-                     f"Das kann 1–3 Minuten dauern (je nach CPU/GPU und Song-Länge).")
+             message=f"Isolating vocals with '{uvr_model_id}'… "
+                     f"This can take 1–3 minutes (depending on CPU/GPU and song length).")
 
-        output_files: list = sep.separate(audio_path)
+        output_files = sep.separate(audio_path) or []
 
-        # Find the stem that contains vocals
+        # Resolve every returned path into something that actually exists on disk.
+        resolved = [r for r in (_resolve(f) for f in output_files) if r is not None]
+
+        # Fallback: if the library returned nothing usable, diff the output dir.
+        if not resolved:
+            try:
+                after_files = {p.name for p in out_dir_path.iterdir() if p.is_file()}
+                new_names   = after_files - before_files
+                resolved    = [out_dir_path / n for n in new_names]
+            except OSError:
+                resolved = []
+
+        # Prefer a path whose stem matches the expected vocals key.
         vocals_path = None
-        for f in output_files:
-            stem = Path(f).stem
-            if stem_key.lower() in stem.lower():
-                vocals_path = f
+        for p in resolved:
+            if stem_key.lower() in p.stem.lower():
+                vocals_path = p
                 break
 
-        if vocals_path and Path(vocals_path).exists():
+        if vocals_path and vocals_path.exists():
             _set(job_id, progress=48,
-                 message="Vocals isoliert ✓  Starte Whisper-Transkription…")
-            return vocals_path
+                 message="Vocals isolated ✓  Starting Whisper transcription…")
+            return str(vocals_path)
 
-        # Fallback: just use whatever the first output is
-        if output_files and Path(output_files[0]).exists():
+        # Secondary: any file with "vocal" in name (some models use "Vocal", "vocals", etc.)
+        for p in resolved:
+            if "vocal" in p.stem.lower():
+                _set(job_id, progress=48,
+                     message=f"Vocals isolated ✓ (detected via '{p.stem}').")
+                return str(p)
+
+        # Tertiary: single file returned → probably the vocals stem (MDX models return 1 file)
+        if len(resolved) == 1 and resolved[0].exists():
             _set(job_id, progress=48,
-                 message="Separation abgeschlossen (Vocals-Stem nicht erkannt, "
-                         "verwende ersten Output).")
-            return output_files[0]
+                 message=f"Separation complete (using '{resolved[0].stem}').")
+            return str(resolved[0])
+
+        # Last resort: first resolvable output
+        if resolved and resolved[0].exists():
+            _set(job_id, progress=48,
+                 message="Separation complete (vocals stem not detected, "
+                         "using first output).")
+            return str(resolved[0])
+
+        # Nothing usable — log what we got for debugging.
+        _set(job_id, message=f"⚠️  No output files found. "
+                              f"Separator return: {output_files!r}. "
+                              f"Continuing with original audio.")
 
     except ImportError:
-        _set(job_id, message="⚠️  audio-separator nicht installiert – "
-                              "überspringe Vocal Isolation. "
-                              "Führe 'pip install audio-separator[cpu]' aus.")
+        _set(job_id, message="⚠️  audio-separator not installed – "
+                              "skipping vocal isolation. "
+                              "Run 'pip install audio-separator[cpu]'.")
     except Exception as exc:
-        _set(job_id, message=f"⚠️  Vocal Isolation fehlgeschlagen ({exc}) – "
-                              f"fahre mit Original-Audio fort.")
+        _set(job_id, message=f"⚠️  Vocal isolation failed ({exc!r}) – "
+                              f"continuing with original audio.")
 
     # Safe fallback: original audio
     return audio_path
