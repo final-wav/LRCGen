@@ -159,9 +159,10 @@ function handleFile(file) {
 }
 
 function updateTapSyncBtn() {
-  if (el.tapSyncBtn) {
-    el.tapSyncBtn.disabled = !(S._pendingFile && el.lyricsInput.value.trim().length > 0);
-  }
+  const ready = !!(S._pendingFile && el.lyricsInput.value.trim().length > 0);
+  if (el.tapSyncBtn) el.tapSyncBtn.disabled = !ready;
+  const tapVocalsModelWrap = $('tapVocalsModelWrap');
+  if (tapVocalsModelWrap) tapVocalsModelWrap.classList.toggle('active', ready);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
