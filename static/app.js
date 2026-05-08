@@ -281,8 +281,6 @@ async function pollJob(jobId, useUVR = false) {
   }
 }
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Undo / Redo
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1182,7 +1180,7 @@ window.addEventListener('resize', () => {
 // Tap Sync
 // ─────────────────────────────────────────────────────────────────────────────
 let tapAudio     = null;   // HTMLAudioElement for tap sync playback
-let uvrAvailable = false;  // set during init() via /api/uvr_available
+// uvrAvailable is declared as var in shared.js (loaded first)
 const TAP_PPS    = 80;     // pixels per second for the waveform strip
 
 const tapState = {

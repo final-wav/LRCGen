@@ -310,6 +310,10 @@ body {
   height: calc(var(--tl-ruler-h) + var(--tl-wave-h) + var(--tl-track-h));
   min-width: 100%;
 }
+/* Enhanced editor has 4 rows: ruler(28) + wave(80) + lines(48) + words(48) = 204px */
+#enhanced-root .tl-inner {
+  height: calc(var(--tl-ruler-h) + 80px + 48px + 48px);
+}
 
 /* Ruler */
 .tl-ruler-canvas {
@@ -840,3 +844,352 @@ body.editor-active #editorSection { padding: 14px 20px 14px; }
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: .65; transform: scale(.96); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   MODE TABS  (LRC / Enhanced)
+═══════════════════════════════════════════════════════════════ */
+.mode-tabs {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.mode-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 18px;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  background: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: .82rem; font-weight: 500;
+  transition: color .15s, background .15s;
+  position: relative; bottom: -1px;
+}
+.mode-tab:hover { color: var(--text); background: var(--surface2); }
+.mode-tab.active {
+  background: var(--bg);
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+  color: var(--accent-lite);
+  font-weight: 600;
+}
+.mode-tab-badge {
+  font-size: .65rem; font-weight: 600;
+  padding: 1px 6px; border-radius: 4px;
+  background: rgba(124,58,237,.18);
+  color: var(--accent-lite);
+  letter-spacing: .03em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENHANCED UPLOAD SCREEN
+═══════════════════════════════════════════════════════════════ */
+.en-subtabs {
+  display: flex; gap: 8px;
+  margin-bottom: 20px;
+}
+.en-subtab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+  font-family: var(--font); font-size: .83rem; font-weight: 500;
+  transition: all .15s;
+}
+.en-subtab:hover { border-color: var(--border2); color: var(--text); }
+.en-subtab.active {
+  border-color: var(--accent);
+  background: rgba(124,58,237,.12);
+  color: var(--accent-lite);
+  font-weight: 600;
+}
+
+.en-warn {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(245,158,11,.3);
+  background: rgba(245,158,11,.07);
+  color: var(--text);
+  font-size: .82rem;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.en-warn code {
+  background: var(--surface3); padding: 1px 5px;
+  border-radius: 3px; font-family: var(--mono); font-size: .78rem;
+}
+.en-info {
+  border-color: rgba(59,130,246,.3);
+  background: rgba(59,130,246,.07);
+}
+.en-engine-badge {
+  margin-top: 10px;
+  font-size: .72rem; color: var(--text-3);
+  font-family: var(--mono);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ENHANCED TIMELINE
+═══════════════════════════════════════════════════════════════ */
+.en-wave-row {
+  background: var(--tl-row-wave);
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.en-wave-row canvas { display: block; width: 100%; }
+
+/* Line track */
+.en-line-track {
+  height: 48px;
+  background: var(--tl-row-track);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+/* Word track */
+.en-word-track {
+  height: 48px;
+  background: var(--tl-row-track);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+/* Playhead for enhanced timeline */
+.en-playhead {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: #ff4c4c;
+  pointer-events: none;
+  z-index: 20;
+  will-change: transform;
+}
+.en-playhead::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -5px;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid #ff4c4c;
+}
+
+/* Line blocks in enhanced timeline */
+.en-line-block {
+  position: absolute;
+  top: 4px; height: 40px;
+  background: var(--seg-color);
+  border: 1px solid var(--seg-border);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  overflow: hidden;
+  display: flex; align-items: center;
+  transition: border-color .1s;
+  min-width: 4px;
+}
+.en-line-block:hover { border-color: #a78bfa; }
+.en-line-block.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 1px #fff;
+  z-index: 5;
+}
+.en-line-block-text {
+  font-size: .7rem; color: rgba(255,255,255,.85);
+  padding: 0 6px;
+  white-space: nowrap; overflow: hidden;
+  pointer-events: none;
+  flex: 1;
+}
+.en-line-edge {
+  position: absolute; top: 0; bottom: 0; width: 5px;
+  cursor: ew-resize; z-index: 2;
+  background: transparent;
+}
+.en-line-edge-l { left: 0; }
+.en-line-edge-r { right: 0; }
+
+/* Word chips in enhanced timeline */
+.en-word-chip {
+  position: absolute;
+  top: 5px; height: 38px;
+  background: rgba(16,185,129,.22);
+  border: 1px solid rgba(16,185,129,.55);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  display: flex; align-items: center;
+  overflow: hidden;
+  min-width: 4px;
+  transition: border-color .1s;
+}
+.en-word-chip:hover { border-color: #34d399; background: rgba(16,185,129,.35); }
+.en-word-chip.selected-word { border-color: #fff; box-shadow: 0 0 0 1px #6ee7b7; z-index: 5; }
+.en-word-chip-text {
+  font-size: .65rem; color: rgba(255,255,255,.9);
+  padding: 0 5px;
+  white-space: nowrap; overflow: hidden;
+  pointer-events: none; flex: 1;
+}
+.en-word-edge {
+  position: absolute; top: 0; bottom: 0; width: 4px;
+  cursor: ew-resize; z-index: 2;
+}
+.en-word-edge-l { left: 0; }
+.en-word-edge-r { right: 0; }
+
+/* Syllable chips: different colour */
+.en-word-chip.syllable {
+  background: rgba(59,130,246,.22);
+  border-color: rgba(59,130,246,.55);
+}
+.en-word-chip.syllable:hover { border-color: #93c5fd; background: rgba(59,130,246,.35); }
+
+/* Enhanced segment list */
+.en-segments-list { overflow-y: auto; flex: 1; }
+.en-seg-row {
+  border-bottom: 1px solid var(--border);
+  padding: 6px 14px;
+}
+.en-seg-row-header {
+  display: flex; align-items: center; gap: 10px;
+  font-size: .78rem; color: var(--text-2);
+  cursor: pointer;
+  padding: 3px 0;
+}
+.en-seg-row-header:hover { color: var(--text); }
+.en-seg-time-badge {
+  font-family: var(--mono); font-size: .72rem;
+  background: var(--surface3); padding: 2px 6px;
+  border-radius: 3px; color: var(--accent-lite);
+  flex-shrink: 0;
+}
+.en-seg-text { flex: 1; }
+.en-seg-words {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding: 5px 0 2px;
+}
+.en-word-badge {
+  display: flex; align-items: center; gap: 3px;
+  background: rgba(16,185,129,.1);
+  border: 1px solid rgba(16,185,129,.25);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: .68rem;
+}
+.en-word-badge-word { color: var(--text); }
+.en-word-badge-ts {
+  font-family: var(--mono); color: var(--success); font-size: .63rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   WORD TAP OVERLAY (Phase B elements)
+═══════════════════════════════════════════════════════════════ */
+.en-phase-label {
+  font-family: var(--mono); font-size: .75rem;
+  color: var(--accent-lite); letter-spacing: .04em;
+}
+/* #wtPhaseA wraps the word tap overlay content — must be a flex column so its
+   children's flex:1 declarations actually distribute the available space */
+#wtPhaseA {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0; overflow: hidden;
+}
+.wt-line-display {
+  flex: 2;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 24px;
+  padding: 24px; min-height: 0;
+}
+.wt-line-label {
+  font-size: .78rem; color: var(--text-3);
+  font-family: var(--mono);
+}
+.wt-words-wrap {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  justify-content: center; max-width: 680px;
+}
+.wt-word {
+  font-size: 1.6rem; font-weight: 600;
+  color: rgba(255,255,255,.3);
+  transition: color .1s, transform .1s;
+  cursor: default;
+}
+.wt-word.wt-done { color: rgba(16,185,129,.6); font-weight: 400; font-size: 1.2rem; }
+.wt-word.wt-current {
+  color: #fff;
+  transform: scale(1.12);
+  text-shadow: 0 0 20px rgba(124,58,237,.7);
+  animation: tapLinePulse 1.4s ease-in-out infinite;
+}
+.wt-word.wt-upcoming { color: rgba(255,255,255,.25); }
+
+.wt-seg-progress-wrap {
+  padding: 0 32px 16px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.wt-seg-bar-bg {
+  height: 6px; background: var(--surface3);
+  border-radius: 3px; position: relative; overflow: visible;
+}
+.wt-seg-bar-fill {
+  position: absolute; top: 0; left: 0; height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width .15s;
+}
+.wt-seg-bar-play {
+  position: absolute; top: -4px;
+  width: 3px; height: 14px;
+  background: #ff4c4c;
+  border-radius: 2px;
+  transition: left .1s linear;
+}
+.wt-seg-times {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: .7rem; color: var(--text-3);
+}
+.wt-phase-b-hint {
+  text-align: center;
+  font-size: .78rem; color: var(--text-3);
+  padding-bottom: 8px;
+}
+.wt-phase-b-hint kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--border2);
+  border-radius: 3px; font-size: .7rem;
+}
+
+/* ── LRC file drop target on lyrics textarea ─────────────────────────── */
+.lrc-drop-wrap {
+  position: relative;
+}
+.lrc-drop-wrap.drag-lrc .textarea {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.lrc-drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: 2px dashed var(--accent);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent);
+  pointer-events: none;
+  z-index: 5;
+}
+.lrc-drop-overlay.hidden { display: none; }
