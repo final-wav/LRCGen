@@ -351,7 +351,7 @@ async def export_enhanced(request: Request):
         line_ts = f"[{fmt(seg['start'])}]"
         words   = seg.get("words", [])
         if words:
-            word_parts = "".join(f"<{fmt(w['start'])}>{w['word']}" for w in words)
+            word_parts = "".join(f"<{fmt(w['start'])}>{w['word']}<{fmt(w['end'])}>" for w in words)
             lines.append(f"{line_ts}{word_parts}")
         else:
             lines.append(f"{line_ts}{seg['text'].strip()}")

@@ -729,7 +729,7 @@ function ehGenerateLrcText() {
     const lineTs = `[${ehFmt(seg.start)}]`;
     const words  = seg.words || [];
     if (words.length) {
-      lines.push(lineTs + words.map(w => `<${ehFmt(w.start)}>${w.word}`).join(''));
+      lines.push(lineTs + words.map(w => `<${ehFmt(w.start)}>${w.word}<${ehFmt(w.end)}>`).join(''));
     } else {
       lines.push(lineTs + (seg.text || '').trim());
     }
