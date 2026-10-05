@@ -1613,7 +1613,7 @@ function initEnhanced() {
     const btn = ehEl('ehPreviewToggleBtn');
     if (!pre || !btn) return;
     const hidden = pre.classList.toggle('hidden');
-    btn.textContent = hidden ? '👁 Preview' : '✕ Preview';
+    btn.textContent = hidden ? 'Preview' : '✕ Preview';
     if (!hidden) pre.textContent = ehGenerateLrcText();
   });
   ehEl('ehTitleInput')?.addEventListener('input', ehUpdatePreview);

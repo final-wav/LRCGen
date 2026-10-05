@@ -848,7 +848,7 @@ function init() {
   });
   el.previewToggleBtn.addEventListener('click', () => {
     const hidden = el.lrcPreview.classList.toggle('hidden');
-    el.previewToggleBtn.textContent = hidden ? '👁 Preview' : '✕ Preview';
+    el.previewToggleBtn.textContent = hidden ? 'Preview' : '✕ Preview';
     if (!hidden) el.lrcPreview.textContent = generateLRC();
   });
   el.titleInput.addEventListener('input',  updateLrcPreview);

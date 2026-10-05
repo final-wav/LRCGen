@@ -43,3 +43,7 @@ desktop.ini
 
 # Logs
 *.log
+
+# Archives & Temporary Audio
+*.zip
+*.wav

@@ -4,21 +4,48 @@ Whisper transcription + optional UVR5 vocal isolation via audio-separator.
 """
 
 import os
+import sys
+import io
 import uuid
 import re
+import logging
 import threading
 from pathlib import Path
 from typing import Optional
 from difflib import SequenceMatcher
+
+if sys.platform == "win32":
+    import subprocess
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
+# Configure live console logging to sys.stdout
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+for log_name in ["separator", "uvicorn", "uvicorn.access"]:
+    l = logging.getLogger(log_name)
+    l.setLevel(logging.INFO)
+    if not any(isinstance(h, logging.StreamHandler) for h in l.handlers):
+        l.addHandler(logging.StreamHandler(sys.stdout))
 
 from fastapi import FastAPI, UploadFile, File, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 
+from lyrics_parser import UniversalLyricsParser
+from ttml_engine import TTMLEngine
+from syllable_aligner import SyllableAligner
+
 # ─── Setup ────────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="LRC Generator")
+app = FastAPI(title="TTML Lyrics Studio")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,15 +54,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for d in ["uploads", "outputs", "static"]:
+for d in ["uploads", "outputs", "static", "projects"]:
     Path(d).mkdir(exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# In-memory job store
+# In-memory stores
 jobs: dict = {}
+projects: dict = {}
 
 ALLOWED_EXTS = {".mp3", ".flac", ".wav", ".m4a", ".ogg", ".opus", ".aac"}
+LYRICS_EXTS = {".lrc", ".ttml", ".xml", ".lyricsplus", ".json", ".vtt", ".srt", ".qrc", ".krc", ".txt", ".lyrics"}
 MIME_MAP = {
     ".mp3": "audio/mpeg", ".flac": "audio/flac", ".wav": "audio/wav",
     ".m4a": "audio/mp4",  ".ogg": "audio/ogg",  ".opus": "audio/opus",
@@ -109,10 +138,10 @@ async def upload_audio(file: UploadFile = File(...)):
 
 @app.get("/api/audio/{file_id}")
 async def serve_audio(file_id: str):
-    if not re.fullmatch(r"[0-9a-f\-]{36}", file_id):
-        return JSONResponse({"error": "Invalid ID"}, status_code=400)
+    # Allow UUIDs and generated vocals stems like {uuid}_(Vocals)_UVR-MDX-NET-Inst_HQ_3
+    clean_id = Path(file_id).stem
     for ext in ALLOWED_EXTS:
-        path = Path(f"uploads/{file_id}{ext}")
+        path = Path(f"uploads/{clean_id}{ext}")
         if path.exists():
             return FileResponse(str(path), media_type=MIME_MAP.get(ext, "audio/mpeg"))
     return JSONResponse({"error": "File not found"}, status_code=404)
@@ -226,7 +255,7 @@ def _run_isolation_job(job_id: str, audio_path: str, uvr_model_id: str):
         vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
         if Path(vocals_path).resolve() != Path(audio_path).resolve():
             _set(job_id, status="done", progress=100,
-                 message="Vocals isolated ✓", vocals_path=vocals_path)
+                 message="Vocals isolated [OK]", vocals_path=vocals_path)
         else:
             _set(job_id, status="error", progress=100,
                  error="Vocal isolation failed (falling back to original)",
@@ -264,7 +293,535 @@ async def export_lrc(request: Request):
     )
 
 
-# ─── Enhanced mode endpoints ──────────────────────────────────────────────────
+def _extract_audio_metadata(file_path: str) -> dict:
+    meta = {"title": "", "artist": "", "album": "", "track": 1, "duration": 0.0}
+    try:
+        import mutagen
+        audio = mutagen.File(file_path, easy=True)
+        if audio:
+            if hasattr(audio, "info") and hasattr(audio.info, "length"):
+                meta["duration"] = round(audio.info.length, 3)
+            meta["title"] = (audio.get("title") or [""])[0]
+            meta["artist"] = (audio.get("artist") or [""])[0]
+            meta["album"] = (audio.get("album") or [""])[0]
+            tr = (audio.get("tracknumber") or ["1"])[0]
+            try:
+                meta["track"] = int(str(tr).split("/")[0])
+            except Exception:
+                meta["track"] = 1
+    except Exception:
+        pass
+    return meta
+
+
+# ─── Album & Project Management Endpoints ─────────────────────────────────────
+
+@app.post("/api/project/upload_audio")
+async def upload_audio_files(files: list[UploadFile] = File(...)):
+    """Uploads only audio files to create an album project with tracks."""
+    project_id = str(uuid.uuid4())
+    saved_audios: list[dict] = []
+
+    for f in files:
+        fname = f.filename or ""
+        ext = Path(fname).suffix.lower()
+        if ext not in ALLOWED_EXTS:
+            continue
+        content = await f.read()
+        file_id = str(uuid.uuid4())
+        save_path = Path(f"uploads/{file_id}{ext}")
+        save_path.write_bytes(content)
+        stem = Path(fname).stem
+        saved_audios.append({
+            "file_id": file_id,
+            "filename": fname,
+            "stem": stem,
+            "path": str(save_path),
+            "ext": ext,
+        })
+
+    if not saved_audios:
+        return JSONResponse({"error": "No supported audio files uploaded (MP3, FLAC, WAV, M4A, OGG, OPUS, AAC)."}, status_code=400)
+
+    tracks: list[dict] = []
+    album_title = ""
+    album_artist = ""
+
+    for idx, a_info in enumerate(saved_audios):
+        track_file_id = a_info["file_id"]
+        track_fname   = a_info["filename"]
+        track_path    = a_info["path"]
+        stem          = a_info["stem"]
+
+        tag_meta = _extract_audio_metadata(track_path)
+        title = tag_meta["title"] or re.sub(r"^\d+[\s._-]+", "", stem).strip() or stem
+        artist = tag_meta["artist"] or ""
+        album = tag_meta["album"] or ""
+        track_nr = tag_meta["track"] or (idx + 1)
+        duration = tag_meta["duration"]
+
+        if album and not album_title:
+            album_title = album
+        if artist and not album_artist:
+            album_artist = artist
+
+        # Check embedded audio tags (USLT / SYLT / Vorbis)
+        canonical_lyrics: dict[str, Any] = {"meta": {}, "lines": []}
+        input_fmt = "none"
+        status = "empty"
+
+        embedded = UniversalLyricsParser.parse_embedded_audio_tags(track_path)
+        if embedded and embedded.get("lines"):
+            canonical_lyrics = embedded
+            input_fmt = "embedded"
+            has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in canonical_lyrics.get("lines", []))
+            status = "syllable_synced" if has_syls else "line_synced"
+
+        tracks.append({
+            "id": f"track-{idx+1}",
+            "trackNumber": track_nr,
+            "filename": track_fname,
+            "fileId": track_file_id,
+            "title": title,
+            "artist": artist,
+            "duration": duration,
+            "audioUrl": f"/api/audio/{track_file_id}",
+            "inputFormat": input_fmt,
+            "status": status,
+            "lyrics": canonical_lyrics,
+        })
+
+    # Sort tracks by track number
+    tracks.sort(key=lambda t: t["trackNumber"])
+
+    project_data = {
+        "id": project_id,
+        "title": album_title or "My Album",
+        "artist": album_artist or "Various Artists",
+        "tracks": tracks,
+    }
+    projects[project_id] = project_data
+    return {"project_id": project_id, "project": project_data}
+
+
+@app.post("/api/project/{project_id}/upload_lyrics")
+async def upload_project_lyrics(project_id: str, files: list[UploadFile] = File(...)):
+    """Uploads lyrics files and matches them to tracks in an existing project."""
+    if project_id not in projects:
+        return JSONResponse({"error": "Project not found"}, status_code=404)
+
+    project = projects[project_id]
+    matched_count = 0
+    match_details = []
+
+    for f in files:
+        fname = f.filename or ""
+        content = await f.read()
+        stem = Path(fname).stem.lower()
+        norm_stem = re.sub(r"^\d+[\s._-]+", "", stem).strip()
+        track_nr_match = re.match(r"^(\d+)", stem)
+        target_nr = int(track_nr_match.group(1)) if track_nr_match else None
+
+        parsed_lyrics = UniversalLyricsParser.parse(content, filename=fname)
+        has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in parsed_lyrics.get("lines", []))
+        status = "syllable_synced" if has_syls else ("line_synced" if parsed_lyrics.get("lines") else "raw_lyrics")
+        input_fmt = parsed_lyrics.get("meta", {}).get("source", "lrc")
+
+        # Find best matching track in project
+        matched_track = None
+
+        # 1. Match by exact track number if available
+        if target_nr is not None:
+            matched_track = next((t for t in project["tracks"] if t.get("trackNumber") == target_nr), None)
+
+        # 2. Match by stem or normalized stem
+        if not matched_track:
+            for t in project["tracks"]:
+                t_stem = Path(t.get("filename", "")).stem.lower()
+                t_norm = re.sub(r"^\d+[\s._-]+", "", t_stem).strip()
+                t_title = (t.get("title") or "").lower().strip()
+
+                if stem == t_stem or norm_stem == t_norm or (t_title and t_title in stem) or (norm_stem and norm_stem in t_title):
+                    matched_track = t
+                    break
+
+        if matched_track:
+            matched_track["lyrics"] = parsed_lyrics
+            matched_track["inputFormat"] = input_fmt
+            matched_track["status"] = status
+            matched_count += 1
+            match_details.append({"file": fname, "matched_track": matched_track["title"], "track_id": matched_track["id"]})
+
+    return {
+        "status": "ok",
+        "matched_count": matched_count,
+        "details": match_details,
+        "project": project,
+    }
+
+
+@app.post("/api/project/{project_id}/track/{track_id}/set_lyrics")
+async def set_track_lyrics_direct(project_id: str, track_id: str, request: Request):
+    """Directly sets lyrics text or parsed JSON for a specific track."""
+    if project_id not in projects:
+        return JSONResponse({"error": "Project not found"}, status_code=404)
+
+    project = projects[project_id]
+    target_track = next((t for t in project["tracks"] if t["id"] == track_id), None)
+    if not target_track:
+        return JSONResponse({"error": "Track not found"}, status_code=404)
+
+    data = await request.json()
+    raw_text = data.get("text")
+    filename = data.get("filename")
+
+    if raw_text is not None:
+        parsed = UniversalLyricsParser.parse(raw_text, filename=filename)
+        target_track["lyrics"] = parsed
+        has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in parsed.get("lines", []))
+        target_track["status"] = "syllable_synced" if has_syls else ("line_synced" if parsed.get("lines") else "raw_lyrics")
+        target_track["inputFormat"] = parsed.get("meta", {}).get("source", "custom")
+    elif "lyrics" in data:
+        target_track["lyrics"] = data["lyrics"]
+        has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in target_track["lyrics"].get("lines", []))
+        target_track["status"] = "syllable_synced" if has_syls else "line_synced"
+
+    return {"status": "ok", "track": target_track}
+
+
+@app.post("/api/project/upload_album")
+async def upload_album(files: list[UploadFile] = File(...)):
+    """
+    Accepts whole album folders / multi-file drops (Audio + LRC/TTML/TXT),
+    auto-pairs matching tracks, extracts metadata & embedded tags, and returns Project.
+    """
+    project_id = str(uuid.uuid4())
+    saved_audios: list[dict] = []
+    saved_lyrics: dict[str, dict] = {}   # stem_lower -> {filename, content}
+
+    for f in files:
+        fname = f.filename or ""
+        ext = Path(fname).suffix.lower()
+        content = await f.read()
+
+        if ext in ALLOWED_EXTS:
+            file_id = str(uuid.uuid4())
+            save_path = Path(f"uploads/{file_id}{ext}")
+            save_path.write_bytes(content)
+            stem = Path(fname).stem
+            saved_audios.append({
+                "file_id": file_id,
+                "filename": fname,
+                "stem": stem,
+                "path": str(save_path),
+                "ext": ext,
+            })
+        elif ext in LYRICS_EXTS:
+            stem = Path(fname).stem.lower()
+            norm_stem = re.sub(r"^\d+[\s._-]+", "", stem).strip()
+            saved_lyrics[stem] = {"filename": fname, "content": content}
+            saved_lyrics[norm_stem] = {"filename": fname, "content": content}
+
+    if not saved_audios:
+        return JSONResponse({"error": "No supported audio files uploaded."}, status_code=400)
+
+    tracks: list[dict] = []
+    album_title = ""
+    album_artist = ""
+
+    for idx, a_info in enumerate(saved_audios):
+        track_file_id = a_info["file_id"]
+        track_fname   = a_info["filename"]
+        track_path    = a_info["path"]
+        stem          = a_info["stem"]
+        stem_lower    = stem.lower()
+        norm_stem     = re.sub(r"^\d+[\s._-]+", "", stem_lower).strip()
+
+        tag_meta = _extract_audio_metadata(track_path)
+        title = tag_meta["title"] or re.sub(r"^\d+[\s._-]+", "", stem).strip() or stem
+        artist = tag_meta["artist"] or ""
+        album = tag_meta["album"] or ""
+        track_nr = tag_meta["track"] or (idx + 1)
+        duration = tag_meta["duration"]
+
+        if album and not album_title:
+            album_title = album
+        if artist and not album_artist:
+            album_artist = artist
+
+        matched_lrc = saved_lyrics.get(stem_lower) or saved_lyrics.get(norm_stem)
+        canonical_lyrics: dict[str, Any] = {"meta": {}, "lines": []}
+        input_fmt = "none"
+        status = "empty"
+
+        if matched_lrc:
+            canonical_lyrics = UniversalLyricsParser.parse(
+                matched_lrc["content"], filename=matched_lrc["filename"])
+            input_fmt = canonical_lyrics.get("meta", {}).get("source", "lrc")
+            has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in canonical_lyrics.get("lines", []))
+            status = "syllable_synced" if has_syls else ("line_synced" if canonical_lyrics.get("lines") else "raw_lyrics")
+        else:
+            embedded = UniversalLyricsParser.parse_embedded_audio_tags(track_path)
+            if embedded and embedded.get("lines"):
+                canonical_lyrics = embedded
+                input_fmt = "embedded"
+                has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in canonical_lyrics.get("lines", []))
+                status = "syllable_synced" if has_syls else "line_synced"
+
+        tracks.append({
+            "id": f"track-{idx+1}",
+            "trackNumber": track_nr,
+            "filename": track_fname,
+            "fileId": track_file_id,
+            "title": title,
+            "artist": artist,
+            "duration": duration,
+            "audioUrl": f"/api/audio/{track_file_id}",
+            "inputFormat": input_fmt,
+            "status": status,
+            "lyrics": canonical_lyrics,
+        })
+
+    tracks.sort(key=lambda t: t["trackNumber"])
+
+    project_data = {
+        "id": project_id,
+        "title": album_title or "My Album",
+        "artist": album_artist or "Various Artists",
+        "tracks": tracks,
+    }
+    projects[project_id] = project_data
+
+    return {"project_id": project_id, "project": project_data}
+
+
+@app.get("/api/project/{project_id}")
+async def get_project(project_id: str):
+    if project_id in projects:
+        return projects[project_id]
+    
+    # Try loading from disk
+    proj_file = Path(f"projects/{project_id}.json")
+    if proj_file.exists():
+        try:
+            import json
+            data = json.loads(proj_file.read_text(encoding="utf-8"))
+            projects[project_id] = data
+            return data
+        except Exception:
+            pass
+
+    return JSONResponse({"error": "Project not found"}, status_code=404)
+
+
+@app.get("/api/project_latest")
+async def get_latest_project():
+    """Returns the most recently modified project JSON from the projects folder."""
+    import json
+    p_dir = Path("projects")
+    if not p_dir.exists():
+        return JSONResponse({"error": "No projects found"}, status_code=404)
+    files = list(p_dir.glob("*.json"))
+    if not files:
+        return JSONResponse({"error": "No projects found"}, status_code=404)
+    latest_file = max(files, key=lambda f: f.stat().st_mtime)
+    try:
+        data = json.loads(latest_file.read_text(encoding="utf-8"))
+        projects[data.get("id")] = data
+        return data
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+
+
+
+@app.post("/api/project/save_project")
+async def save_project_to_disk(request: Request):
+    """Persists a complete project JSON to disk."""
+    import json
+    data = await request.json()
+    project_id = data.get("id") or str(uuid.uuid4())
+    data["id"] = project_id
+    projects[project_id] = data
+    
+    proj_file = Path(f"projects/{project_id}.json")
+    proj_file.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    return {"status": "ok", "project_id": project_id, "project": data}
+
+
+@app.post("/api/project/restore_project")
+async def restore_project_file(files: list[UploadFile] = File(...)):
+    """Restores a project from an uploaded .lrcproj or .json file."""
+    import json
+    if not files:
+        return JSONResponse({"error": "No file uploaded"}, status_code=400)
+    
+    file = files[0]
+    content = await file.read()
+    try:
+        project_data = json.loads(content.decode("utf-8"))
+    except Exception as e:
+        return JSONResponse({"error": f"Invalid project file: {e}"}, status_code=400)
+    
+    project_id = project_data.get("id") or str(uuid.uuid4())
+    project_data["id"] = project_id
+    projects[project_id] = project_data
+    
+    proj_file = Path(f"projects/{project_id}.json")
+    proj_file.write_text(json.dumps(project_data, indent=2, ensure_ascii=False), encoding="utf-8")
+    
+    return {"status": "ok", "project_id": project_id, "project": project_data}
+
+
+@app.post("/api/project/{project_id}/update_track")
+async def update_project_track(project_id: str, request: Request):
+    if project_id not in projects:
+        return JSONResponse({"error": "Project not found"}, status_code=404)
+
+    data = await request.json()
+    track_id = data.get("track_id")
+    project = projects[project_id]
+
+    for tr in project["tracks"]:
+        if tr["id"] == track_id:
+            if "lyrics" in data:
+                tr["lyrics"] = data["lyrics"]
+                has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in tr["lyrics"].get("lines", []))
+                tr["status"] = "syllable_synced" if has_syls else ("line_synced" if tr["lyrics"].get("lines") else "empty")
+            if "title" in data:
+                tr["title"] = data["title"].strip()
+            if "artist" in data:
+                tr["artist"] = data["artist"].strip()
+            if "status" in data:
+                tr["status"] = data["status"]
+            return {"status": "ok", "track": tr}
+
+    return JSONResponse({"error": "Track not found"}, status_code=404)
+
+
+@app.post("/api/project/{project_id}/align_track")
+async def align_project_track(project_id: str, request: Request):
+    if project_id not in projects:
+        return JSONResponse({"error": "Project not found"}, status_code=404)
+
+    data = await request.json()
+    track_id = data.get("track_id")
+    language = data.get("language", "en")
+    mode = data.get("mode", "studio_ai") # "studio_ai" | "fast"
+    use_whisper = (mode == "studio_ai") and data.get("use_whisper", True)
+    whisper_model = data.get("whisper_model", "base")
+    uvr_model_id = data.get("uvr_model_id", "UVR-MDX-NET-Inst_HQ_3")
+
+    project = projects[project_id]
+    target_track = next((t for t in project["tracks"] if t["id"] == track_id), None)
+    if not target_track:
+        return JSONResponse({"error": "Track not found"}, status_code=404)
+
+    file_id = target_track["fileId"]
+    audio_path = None
+    for ext in ALLOWED_EXTS:
+        p = Path(f"uploads/{file_id}{ext}")
+        if p.exists():
+            audio_path = str(p)
+            break
+
+    if not audio_path:
+        return JSONResponse({"error": "Audio file not found"}, status_code=404)
+
+    print(f"\n==================================================================", flush=True)
+    print(f"[AI Studio] Aligning Track: '{target_track.get('title')}'", flush=True)
+    print(f"[AI Studio] Mode: {mode.upper()} | Language: {language} | Whisper: {use_whisper}", flush=True)
+
+    align_audio_path = audio_path
+
+    # If Studio AI mode, isolate vocals with Demucs / UVR5 first
+    if mode == "studio_ai":
+        try:
+            cached_vocals = target_track.get("vocalsPath")
+            if cached_vocals and Path(cached_vocals).exists():
+                print(f"[AI Studio] Using cached isolated vocals: {cached_vocals}", flush=True)
+                align_audio_path = cached_vocals
+            else:
+                print(f"[AI Studio] Step 1/2: Isolating vocals with UVR-MDX-NET model...", flush=True)
+                job_id = str(uuid.uuid4())
+                jobs[job_id] = {"status": "running", "progress": 10, "message": "Isolating vocals..."}
+                vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
+                if vocals_path and Path(vocals_path).exists() and vocals_path != audio_path:
+                    target_track["vocalsPath"] = vocals_path
+                    target_track["vocalsUrl"] = f"/api/audio/{Path(vocals_path).stem}"
+                    align_audio_path = vocals_path
+                    print(f"[AI Studio] Step 1/2 Complete: Vocals saved -> {vocals_path}", flush=True)
+        except Exception as e:
+            print(f"[AI Studio] Acapella separation error: {e}", flush=True)
+
+    print(f"[AI Studio] Step 2/2: Running Phoneme & Syllable Alignment on: {align_audio_path}...", flush=True)
+    aligned_lyrics = SyllableAligner.align_canonical_lyrics(
+        align_audio_path,
+        target_track["lyrics"],
+        language=language,
+        use_whisper=use_whisper,
+        whisper_model=whisper_model,
+    )
+    target_track["lyrics"] = aligned_lyrics
+    target_track["status"] = "syllable_synced"
+
+    syllable_count = sum(len(l.get("rawSyllabi", [])) for l in aligned_lyrics.get("lines", []))
+    print(f"[AI Studio] Alignment Complete! Generated {syllable_count} syllable timestamps.", flush=True)
+    print(f"==================================================================\n", flush=True)
+
+    return {
+        "status": "ok",
+        "track": target_track,
+        "vocalsUrl": target_track.get("vocalsUrl"),
+    }
+
+
+@app.post("/api/parse_lyrics")
+async def parse_lyrics_endpoint(request: Request):
+    data = await request.json()
+    text = data.get("text", "")
+    filename = data.get("filename")
+    parsed = UniversalLyricsParser.parse(text, filename=filename)
+    return parsed
+
+
+@app.post("/api/export_ttml")
+async def export_ttml_endpoint(request: Request):
+    data = await request.json()
+    lyrics = data.get("lyrics", {"meta": {}, "lines": []})
+    title = data.get("title", "")
+    artist = data.get("artist", "")
+    album = data.get("album", "")
+
+    ttml_xml = TTMLEngine.generate_ttml(lyrics, title=title, artist=artist, album=album)
+    safe_name = re.sub(r'[<>:"/\\|?*]', "_", f"{artist} - {title}.ttml" if (artist and title) else "lyrics.ttml")
+    return Response(
+        content=ttml_xml,
+        media_type="application/xml; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
+    )
+
+
+@app.post("/api/export_album_zip")
+async def export_album_zip_endpoint(request: Request):
+    data = await request.json()
+    project_id = data.get("project_id")
+
+    if project_id and project_id in projects:
+        project = projects[project_id]
+        tracks = project["tracks"]
+        album_name = project["title"]
+    else:
+        tracks = data.get("tracks", [])
+        album_name = data.get("album_name", "Album_TTML")
+
+    zip_bytes = TTMLEngine.create_album_zip(tracks, album_name=album_name)
+    safe_zip_name = re.sub(r'[<>:"/\\|?*]', "_", f"{album_name}_TTML.zip")
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{safe_zip_name}"'},
+    )
+
 
 @app.get("/api/whisperx_available")
 async def whisperx_available():
@@ -784,10 +1341,10 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
     model_info = UVR_MODELS[uvr_model_id]
     model_file = model_info["filename"]
     stem_key   = model_info["vocals_stem"]   # e.g. "Vocals" or "vocals"
+    abs_audio_path = str(Path(audio_path).resolve())
 
     _set(job_id, status="separating_model", progress=10,
-         message=f"Loading vocal separation model '{uvr_model_id}'… "
-                 f"(first run: approx. 100–300 MB download)")
+         message=f"Loading vocal separation model '{uvr_model_id}'...")
 
     out_dir_path = Path("uploads").resolve()
     out_dir      = str(out_dir_path)
@@ -816,6 +1373,7 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
     try:
         from audio_separator.separator import Separator  # type: ignore
 
+        print(f"\n[UVR5 / MDX-Net] Lade Modell: {model_file}...", flush=True)
         sep = Separator(
             output_dir=out_dir,
             output_format="WAV",
@@ -826,10 +1384,10 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
         sep.load_model(model_filename=model_file)
 
         _set(job_id, status="separating", progress=25,
-             message=f"Isolating vocals with '{uvr_model_id}'… "
-                     f"This can take 1–3 minutes (depending on CPU/GPU and song length).")
+             message=f"Isolating vocals with '{uvr_model_id}'...")
 
-        output_files = sep.separate(audio_path) or []
+        print(f"[UVR5 / MDX-Net] Starte Gesangsisolation auf: {abs_audio_path}...", flush=True)
+        output_files = sep.separate(abs_audio_path) or []
 
         # Resolve every returned path into something that actually exists on disk.
         resolved = [r for r in (_resolve(f) for f in output_files) if r is not None]
@@ -852,20 +1410,23 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
 
         if vocals_path and vocals_path.exists():
             _set(job_id, progress=48,
-                 message="Vocals isolated ✓  Starting Whisper transcription…")
+                 message="Vocals isolated [OK]  Starting Whisper transcription...")
+            print(f"[UVR5 / MDX-Net] [OK] Gesangsisolation erfolgreich: {vocals_path}", flush=True)
             return str(vocals_path)
 
         # Secondary: any file with "vocal" in name (some models use "Vocal", "vocals", etc.)
         for p in resolved:
             if "vocal" in p.stem.lower():
                 _set(job_id, progress=48,
-                     message=f"Vocals isolated ✓ (detected via '{p.stem}').")
+                     message=f"Vocals isolated [OK] (detected via '{p.stem}').")
+                print(f"[UVR5 / MDX-Net] [OK] Gesangsisolation erfolgreich: {p}", flush=True)
                 return str(p)
 
         # Tertiary: single file returned → probably the vocals stem (MDX models return 1 file)
         if len(resolved) == 1 and resolved[0].exists():
             _set(job_id, progress=48,
-                 message=f"Separation complete (using '{resolved[0].stem}').")
+                 message=f"Separation complete [OK] (using '{resolved[0].stem}').")
+            print(f"[UVR5 / MDX-Net] [OK] Gesangsisolation erfolgreich: {resolved[0]}", flush=True)
             return str(resolved[0])
 
         # Last resort: first resolvable output
@@ -873,18 +1434,22 @@ def _run_vocal_separation(job_id: str, audio_path: str, uvr_model_id: str) -> st
             _set(job_id, progress=48,
                  message="Separation complete (vocals stem not detected, "
                          "using first output).")
+            print(f"[UVR5 / MDX-Net] [OK] Gesangsisolation (Output 1): {resolved[0]}", flush=True)
             return str(resolved[0])
 
         # Nothing usable — log what we got for debugging.
+        print(f"[UVR5 / MDX-Net WARNUNG] Keine Ausgabedateien gefunden. Separator: {output_files!r}", flush=True)
         _set(job_id, message=f"⚠️  No output files found. "
                               f"Separator return: {output_files!r}. "
                               f"Continuing with original audio.")
 
     except ImportError:
+        print("[UVR5 FEHLER] audio-separator ist nicht installiert.", flush=True)
         _set(job_id, message="⚠️  audio-separator not installed – "
                               "skipping vocal isolation. "
                               "Run 'pip install audio-separator[cpu]'.")
     except Exception as exc:
+        print(f"[UVR5 FEHLER] Gesangsisolation fehlgeschlagen: {exc!r}", flush=True)
         _set(job_id, message=f"⚠️  Vocal isolation failed ({exc!r}) – "
                               f"continuing with original audio.")
 
