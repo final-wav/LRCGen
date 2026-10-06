@@ -56,10 +56,30 @@ function initStudioEditor() {
   document.getElementById('copySylBtn')?.addEventListener('click', copySelectedSyllables);
   document.getElementById('pasteSylBtn')?.addEventListener('click', pasteSyllables);
   document.getElementById('dupSylBtn')?.addEventListener('click', duplicateSelectedSyllables);
+  document.getElementById('splitSylBtn')?.addEventListener('click', openSplitSyllableModal);
+  document.getElementById('mergeSylBtn')?.addEventListener('click', mergeSelectedSyllables);
   document.getElementById('delSylBtn')?.addEventListener('click', deleteSelectedSyllables);
   document.getElementById('undoBtn')?.addEventListener('click', undo);
   document.getElementById('redoBtn')?.addEventListener('click', redo);
   document.getElementById('addLineBtn')?.addEventListener('click', addNewLineAtPlayhead);
+
+  // Syllable Split Modal Controls
+  document.getElementById('closeSplitSylModalBtn')?.addEventListener('click', closeSplitSyllableModal);
+  document.getElementById('cancelSplitSylBtn')?.addEventListener('click', closeSplitSyllableModal);
+  document.getElementById('confirmSplitSylBtn')?.addEventListener('click', commitSplitSyllable);
+  document.getElementById('splitPatternInput')?.addEventListener('input', updateSplitPreview);
+  document.getElementById('splitPatternInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      commitSplitSyllable();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeSplitSyllableModal();
+    }
+  });
+  document.querySelectorAll('input[name="splitTimeMode"]').forEach(r => {
+    r.addEventListener('change', updateSplitPreview);
+  });
   document.getElementById('snapToggleBtn')?.addEventListener('click', toggleSnapping);
   document.getElementById('sortLinesBtn')?.addEventListener('click', sortLinesByTimestamp);
   document.getElementById('alignTrackBtn')?.addEventListener('click', runTrackAlignment);
@@ -1516,6 +1536,354 @@ function deleteSelectedSyllables() {
   deleteSelectedItems();
 }
 
+// ─── Syllable Splitting & Merging ───────────────────────────────────────────
+function getTargetSyllableForSplit() {
+  const lyrics = getActiveLyrics();
+  // 1. If Studio.selectedSyllables has an entry
+  if (Studio.selectedSyllables && Studio.selectedSyllables.size === 1) {
+    const sel = Array.from(Studio.selectedSyllables.values())[0];
+    const line = (lyrics.lines || []).find(l => l.id === sel.lineId);
+    if (line) {
+      const list = sel.isAdlib ? line.adlibSyllabi : line.rawSyllabi;
+      if (list && list[sel.sIdx]) {
+        return { line, list, sIdx: sel.sIdx, syl: list[sel.sIdx], isAdlib: sel.isAdlib };
+      }
+    }
+  }
+
+  // 2. If Studio.selectedLineId & Studio.selectedSylIdx
+  if (Studio.selectedLineId && Studio.selectedSylIdx !== null) {
+    const line = (lyrics.lines || []).find(l => l.id === Studio.selectedLineId);
+    if (line) {
+      const list = Studio.selectedIsAdlib ? line.adlibSyllabi : line.rawSyllabi;
+      if (list && list[Studio.selectedSylIdx]) {
+        return { line, list, sIdx: Studio.selectedSylIdx, syl: list[Studio.selectedSylIdx], isAdlib: Studio.selectedIsAdlib };
+      }
+    }
+  }
+
+  // 3. Fallback: check if playhead is currently over any syllable
+  const tMs = Math.round((Studio.currentTime || 0) * 1000);
+  const targetLines = Studio.selectedLineId
+    ? (lyrics.lines || []).filter(l => l.id === Studio.selectedLineId)
+    : (lyrics.lines || []);
+
+  for (const line of targetLines) {
+    for (let sIdx = 0; sIdx < (line.rawSyllabi || []).length; sIdx++) {
+      const s = line.rawSyllabi[sIdx];
+      if (tMs >= s.time && tMs <= s.time + s.duration) {
+        return { line, list: line.rawSyllabi, sIdx, syl: s, isAdlib: false };
+      }
+    }
+    for (let sIdx = 0; sIdx < (line.adlibSyllabi || []).length; sIdx++) {
+      const s = line.adlibSyllabi[sIdx];
+      if (tMs >= s.time && tMs <= s.time + s.duration) {
+        return { line, list: line.adlibSyllabi, sIdx, syl: s, isAdlib: true };
+      }
+    }
+  }
+
+  return null;
+}
+
+function parseSplitPattern(inputVal, origText) {
+  if (!inputVal) return [];
+  let rawParts = inputVal.trim().split(/[-/|·]+|\s+/).filter(Boolean);
+  if (rawParts.length <= 1) {
+    return rawParts.length === 1 ? [rawParts[0]] : [];
+  }
+
+  // Preserve trailing punctuation / space from original text onto the last part
+  const trailingMatch = (origText || '').match(/[\s,\.!?]+$/);
+  if (trailingMatch) {
+    const trailing = trailingMatch[0];
+    const lastIdx = rawParts.length - 1;
+    if (!rawParts[lastIdx].endsWith(trailing)) {
+      rawParts[lastIdx] = rawParts[lastIdx] + trailing;
+    }
+  }
+  return rawParts;
+}
+
+function calculateSplitSyllables(target, parts, timeMode, playheadMs) {
+  if (!target || !parts || parts.length === 0) return [];
+  const { syl } = target;
+  if (parts.length === 1) {
+    return [{
+      time: syl.time,
+      duration: syl.duration,
+      text: parts[0],
+      lane: syl.lane !== undefined ? syl.lane : 0,
+      isSubSyllable: !!syl.isSubSyllable,
+    }];
+  }
+
+  const result = [];
+  const totalDur = syl.duration;
+
+  if (timeMode === 'playhead' && playheadMs > syl.time && playheadMs < (syl.time + totalDur)) {
+    const dur1 = Math.max(40, playheadMs - syl.time);
+    const durRest = Math.max(40, (syl.time + totalDur) - playheadMs);
+
+    if (parts.length === 2) {
+      result.push({
+        time: syl.time,
+        duration: dur1,
+        text: parts[0],
+        lane: syl.lane !== undefined ? syl.lane : 0,
+        isSubSyllable: !!syl.isSubSyllable,
+      });
+      result.push({
+        time: playheadMs,
+        duration: durRest,
+        text: parts[1],
+        lane: syl.lane !== undefined ? syl.lane : 0,
+        isSubSyllable: true,
+      });
+    } else {
+      result.push({
+        time: syl.time,
+        duration: dur1,
+        text: parts[0],
+        lane: syl.lane !== undefined ? syl.lane : 0,
+        isSubSyllable: !!syl.isSubSyllable,
+      });
+
+      const restParts = parts.slice(1);
+      const totalWeight = restParts.reduce((acc, p) => acc + Math.max(1, p.trim().length), 0);
+      let currTime = playheadMs;
+      restParts.forEach((p, idx) => {
+        const isLast = idx === restParts.length - 1;
+        const dur = isLast
+          ? Math.max(40, (syl.time + totalDur) - currTime)
+          : Math.max(40, Math.round((Math.max(1, p.trim().length) / totalWeight) * durRest));
+        result.push({
+          time: currTime,
+          duration: dur,
+          text: p,
+          lane: syl.lane !== undefined ? syl.lane : 0,
+          isSubSyllable: true,
+        });
+        currTime += dur;
+      });
+    }
+  } else {
+    const weights = parts.map(p => Math.max(1, p.trim().length));
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    let currTime = syl.time;
+
+    parts.forEach((p, idx) => {
+      const isLast = idx === parts.length - 1;
+      const dur = isLast
+        ? Math.max(40, (syl.time + totalDur) - currTime)
+        : Math.max(40, Math.round((weights[idx] / totalWeight) * totalDur));
+      result.push({
+        time: currTime,
+        duration: dur,
+        text: p,
+        lane: syl.lane !== undefined ? syl.lane : 0,
+        isSubSyllable: idx === 0 ? (!!syl.isSubSyllable) : true,
+      });
+      currTime += dur;
+    });
+  }
+
+  return result;
+}
+
+function openSplitSyllableModal() {
+  const target = getTargetSyllableForSplit();
+  if (!target) {
+    toast('Wähle zuerst eine Silbe auf der Timeline aus (oder setze den Playhead darauf).', 'error');
+    return;
+  }
+
+  Studio.splitTarget = target;
+  const { syl } = target;
+
+  const modal = document.getElementById('splitSyllableModal');
+  if (!modal) return;
+
+  const origDisplay = document.getElementById('splitOrigTextDisplay');
+  const patternInput = document.getElementById('splitPatternInput');
+  const playheadLabel = document.getElementById('splitAtPlayheadLabel');
+  const playheadRadio = document.querySelector('input[name="splitTimeMode"][value="playhead"]');
+  const propRadio = document.querySelector('input[name="splitTimeMode"][value="proportional"]');
+  const playheadTimeVal = document.getElementById('splitPlayheadTimeVal');
+
+  const origText = syl.text || '';
+  if (origDisplay) {
+    origDisplay.textContent = `"${origText}" (${syl.duration}ms @ ${fmt(syl.time / 1000)})`;
+  }
+
+  const cleanText = origText.trim().replace(/[,\.!?]+$/, '');
+  if (patternInput) {
+    if (cleanText.length >= 4 && !cleanText.includes('-')) {
+      const mid = Math.floor(cleanText.length / 2);
+      patternInput.value = `${cleanText.slice(0, mid)}-${cleanText.slice(mid)}`;
+    } else {
+      patternInput.value = cleanText;
+    }
+  }
+
+  const playheadMs = Math.round((Studio.currentTime || 0) * 1000);
+  const isInside = playheadMs > syl.time && playheadMs < (syl.time + syl.duration);
+  if (playheadRadio && propRadio) {
+    if (isInside) {
+      playheadRadio.disabled = false;
+      playheadRadio.checked = true;
+      if (playheadLabel) {
+        playheadLabel.style.opacity = '1';
+        playheadLabel.style.pointerEvents = 'auto';
+      }
+      if (playheadTimeVal) playheadTimeVal.textContent = fmt(playheadMs / 1000);
+    } else {
+      playheadRadio.disabled = true;
+      propRadio.checked = true;
+      if (playheadLabel) {
+        playheadLabel.style.opacity = '0.4';
+        playheadLabel.style.pointerEvents = 'none';
+      }
+      if (playheadTimeVal) playheadTimeVal.textContent = 'außerhalb';
+    }
+  }
+
+  updateSplitPreview();
+  modal.classList.remove('hidden');
+  patternInput?.focus();
+  patternInput?.select();
+}
+
+function closeSplitSyllableModal() {
+  const modal = document.getElementById('splitSyllableModal');
+  if (modal) modal.classList.add('hidden');
+  Studio.splitTarget = null;
+}
+
+function updateSplitPreview() {
+  const target = Studio.splitTarget;
+  if (!target) return;
+
+  const patternInput = document.getElementById('splitPatternInput');
+  const previewContainer = document.getElementById('splitPreviewChips');
+  if (!patternInput || !previewContainer) return;
+
+  const rawPattern = patternInput.value;
+  const parts = parseSplitPattern(rawPattern, target.syl.text);
+
+  const timeMode = document.querySelector('input[name="splitTimeMode"]:checked')?.value || 'proportional';
+  const playheadMs = Math.round((Studio.currentTime || 0) * 1000);
+
+  const calculated = calculateSplitSyllables(target, parts, timeMode, playheadMs);
+
+  previewContainer.innerHTML = '';
+  if (calculated.length <= 1) {
+    previewContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">Tippe einen Bindestrich (-) ein, um zu trennen (z. B. bo-dy).</span>';
+    return;
+  }
+
+  calculated.forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'split-preview-chip';
+    chip.innerHTML = `
+      <span class="split-preview-chip-text">${escHTML(s.text)}</span>
+      <span class="split-preview-chip-meta">${fmt(s.time / 1000)} · ${s.duration}ms</span>
+    `;
+    previewContainer.appendChild(chip);
+  });
+}
+
+function commitSplitSyllable() {
+  const target = Studio.splitTarget;
+  if (!target) return;
+
+  const patternInput = document.getElementById('splitPatternInput');
+  const rawPattern = patternInput?.value || '';
+  const parts = parseSplitPattern(rawPattern, target.syl.text);
+
+  if (parts.length <= 1) {
+    toast('Bitte gib mindestens eine Trennstelle mit Bindestrich (-) oder Leerzeichen an (z. B. bo-dy).', 'error');
+    return;
+  }
+
+  const timeMode = document.querySelector('input[name="splitTimeMode"]:checked')?.value || 'proportional';
+  const playheadMs = Math.round((Studio.currentTime || 0) * 1000);
+  const newSyllables = calculateSplitSyllables(target, parts, timeMode, playheadMs);
+
+  if (newSyllables.length <= 1) return;
+
+  pushHistory();
+
+  const { line, list, sIdx } = target;
+  list.splice(sIdx, 1, ...newSyllables);
+
+  closeSplitSyllableModal();
+  clearSyllableSelection();
+
+  selectSingleSyllable(line.id, sIdx, target.isAdlib);
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast(`"${target.syl.text.trim()}" in ${newSyllables.length} Silben getrennt: [${parts.map(p => p.trim()).join('] [')}]`, 'success');
+}
+
+function mergeSelectedSyllables() {
+  const lyrics = getActiveLyrics();
+  if (Studio.selectedSyllables.size < 2) {
+    toast('Wähle mindestens 2 benachbarte Silben mit Shift+Klick aus, um sie zu vereinen.', 'error');
+    return;
+  }
+
+  const selList = Array.from(Studio.selectedSyllables.values());
+  const first = selList[0];
+  const sameLine = selList.every(s => s.lineId === first.lineId && s.isAdlib === first.isAdlib);
+  if (!sameLine) {
+    toast('Nur Silben derselben Zeile können vereint werden.', 'error');
+    return;
+  }
+
+  const line = (lyrics.lines || []).find(l => l.id === first.lineId);
+  if (!line) return;
+  const list = first.isAdlib ? line.adlibSyllabi : line.rawSyllabi;
+  if (!list || list.length < 2) return;
+
+  selList.sort((a, b) => a.sIdx - b.sIdx);
+
+  for (let i = 1; i < selList.length; i++) {
+    if (selList[i].sIdx !== selList[i - 1].sIdx + 1) {
+      toast('Die ausgewählten Silben müssen direkt nebeneinander liegen.', 'error');
+      return;
+    }
+  }
+
+  pushHistory();
+
+  const startIdx = selList[0].sIdx;
+  const count = selList.length;
+  const firstSyl = selList[0].syl;
+  const lastSyl = selList[selList.length - 1].syl;
+
+  const combinedText = selList.map(s => s.syl.text).join('');
+  const combinedDuration = (lastSyl.time + lastSyl.duration) - firstSyl.time;
+
+  const mergedSyl = {
+    time: firstSyl.time,
+    duration: Math.max(50, combinedDuration),
+    text: combinedText,
+    lane: firstSyl.lane !== undefined ? firstSyl.lane : 0,
+    isSubSyllable: !!firstSyl.isSubSyllable,
+  };
+
+  list.splice(startIdx, count, mergedSyl);
+
+  clearSyllableSelection();
+  selectSingleSyllable(line.id, startIdx, first.isAdlib);
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast(`Silben zu "${combinedText.trim()}" vereint (J).`, 'success');
+}
+
 function addNewLineAtPlayhead() {
   const lyrics = getActiveLyrics();
   pushHistory();
@@ -1949,6 +2317,12 @@ function handleEditorKeyDown(e) {
   } else if (e.code === 'KeyD' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     duplicateSelectedSyllables();
+  } else if ((e.code === 'KeyX' || e.code === 'KeyK') && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    openSplitSyllableModal();
+  } else if (e.code === 'KeyJ' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    mergeSelectedSyllables();
   } else if (e.code === 'KeyA' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     selectAllSyllables();

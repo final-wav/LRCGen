@@ -750,3 +750,41 @@ kbd {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .hidden { display: none !important; }
+
+/* ── Modal Dialogs ─────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000;
+}
+.modal-box {
+  background: #141824;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  width: 90%; max-width: 460px; overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.modal-title {
+  margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; gap: 8px;
+}
+.modal-close-btn {
+  background: transparent; border: none; color: var(--text-muted);
+  font-size: 1.25rem; cursor: pointer; padding: 2px 6px; line-height: 1; border-radius: 4px;
+}
+.modal-close-btn:hover { color: #fff; background: var(--surface3); }
+.modal-body { padding: 16px 20px; }
+
+.split-preview-chip {
+  display: inline-flex; flex-direction: column; padding: 4px 10px;
+  background: #1e2638; border: 1px solid #3b82f6; border-radius: 4px; font-family: var(--mono);
+}
+.split-preview-chip-text { font-size: 14px; font-weight: 700; color: #60a5fa; }
+.split-preview-chip-meta { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+

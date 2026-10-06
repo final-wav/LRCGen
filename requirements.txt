@@ -1,16 +1,11 @@
 fastapi>=0.104.0
-pyphen>=0.14.0
-langdetect>=1.0.9
-# Enhanced mode (word/syllable-level timestamps) — optional but recommended:
-# pip install whisperx
-# WhisperX also needs: pip install pyannote.audio (for diarization, optional)
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
 openai-whisper>=20231117
-# Vocal isolation via UVR5 models (MDX-Net, VR Architecture, Demucs):
 audio-separator[cpu]>=0.24.0
-# For NVIDIA GPU acceleration install instead:
-#   pip install "audio-separator[gpu]>=0.24.0"
-# torch is a dependency of whisper — install separately for your platform:
-# CPU:   pip install torch torchvision torchaudio
-# CUDA:  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+pyphen>=0.14.0
+langdetect>=1.0.9
+httpx>=0.25.0
+mutagen>=1.47.0
+numpy>=1.24.0
+

@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "savedAt": "2026-10-04T18:18:13.725Z",
+  "savedAt": "2026-10-05T22:19:05.076Z",
   "id": "8bf72914-9c43-4f95-a206-dfa8ddd6bec8",
   "title": "COME CLOSER",
   "artist": "TOMORA, AURORA & Tom Rowlands",
@@ -4699,14 +4699,14 @@
               {
                 "text": "cir",
                 "time": 135693,
-                "duration": 583,
+                "duration": 520,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
                 "text": "cles ",
-                "time": 136276,
-                "duration": 233,
+                "time": 136213,
+                "duration": 296,
                 "isSubSyllable": false,
                 "lane": 0
               },
@@ -4872,65 +4872,65 @@
             "laneIndex": 0
           },
           {
-            "id": "27",
-            "start": 144.842,
-            "end": 148.331,
+            "id": "L-1791220598059-0-xuvy",
+            "start": 144.856,
+            "end": 148.238,
             "text": "Only me and my baby knows",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 144842,
-                "duration": 388,
                 "text": "On",
+                "time": 144856,
+                "duration": 330,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 145230,
-                "duration": 388,
                 "text": "ly ",
+                "time": 145186,
+                "duration": 286,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 145618,
-                "duration": 388,
                 "text": "me ",
+                "time": 145472,
+                "duration": 409,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 146006,
-                "duration": 485,
                 "text": "and ",
+                "time": 145881,
+                "duration": 317,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 146491,
-                "duration": 388,
                 "text": "my ",
+                "time": 146198,
+                "duration": 280,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 146879,
-                "duration": 388,
                 "text": "ba",
+                "time": 146478,
+                "duration": 394,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 147267,
-                "duration": 388,
                 "text": "by ",
+                "time": 146872,
+                "duration": 674,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 147655,
-                "duration": 676,
                 "text": "knows",
+                "time": 147546,
+                "duration": 692,
                 "isSubSyllable": false,
                 "lane": 0
               }
@@ -4942,65 +4942,65 @@
             "laneIndex": 0
           },
           {
-            "id": "28",
-            "start": 148.331,
-            "end": 151.806,
+            "id": "L-1791220688272-0-8puc",
+            "start": 148.308,
+            "end": 151.594,
             "text": "Round and round in circles we go",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 148331,
-                "duration": 680,
                 "text": "Round ",
+                "time": 148308,
+                "duration": 468,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 149011,
-                "duration": 378,
                 "text": "and ",
+                "time": 148776,
+                "duration": 357,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 149389,
-                "duration": 680,
                 "text": "round ",
+                "time": 149133,
+                "duration": 363,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 150069,
-                "duration": 302,
                 "text": "in ",
+                "time": 149496,
+                "duration": 312,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 150371,
-                "duration": 378,
                 "text": "cir",
+                "time": 149808,
+                "duration": 549,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 150749,
-                "duration": 453,
                 "text": "cles ",
+                "time": 150357,
+                "duration": 198,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 151202,
-                "duration": 302,
                 "text": "we ",
+                "time": 150555,
+                "duration": 369,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 151504,
-                "duration": 302,
                 "text": "go",
+                "time": 150924,
+                "duration": 670,
                 "isSubSyllable": false,
                 "lane": 0
               }
@@ -5012,65 +5012,65 @@
             "laneIndex": 0
           },
           {
-            "id": "29",
-            "start": 151.806,
-            "end": 155.358,
+            "id": "L-1791220865319-0-5mr2",
+            "start": 151.869,
+            "end": 155.251,
             "text": "Only me and my baby knows",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 151806,
-                "duration": 395,
                 "text": "On",
+                "time": 151869,
+                "duration": 330,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 152201,
-                "duration": 395,
                 "text": "ly ",
+                "time": 152199,
+                "duration": 326,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 152596,
-                "duration": 395,
                 "text": "me ",
+                "time": 152525,
+                "duration": 369,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 152991,
-                "duration": 493,
                 "text": "and ",
+                "time": 152894,
+                "duration": 317,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 153484,
-                "duration": 395,
                 "text": "my ",
+                "time": 153211,
+                "duration": 280,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 153879,
-                "duration": 395,
                 "text": "ba",
+                "time": 153491,
+                "duration": 394,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 154274,
-                "duration": 395,
                 "text": "by ",
+                "time": 153885,
+                "duration": 674,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 154669,
-                "duration": 689,
                 "text": "knows",
+                "time": 154559,
+                "duration": 692,
                 "isSubSyllable": false,
                 "lane": 0
               }
@@ -5082,65 +5082,65 @@
             "laneIndex": 0
           },
           {
-            "id": "30",
-            "start": 155.358,
-            "end": 158.806,
+            "id": "L-1791220865319-1-p7q7",
+            "start": 155.352,
+            "end": 158.709,
             "text": "Round and round in circles we go",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 155358,
-                "duration": 675,
                 "text": "Round ",
+                "time": 155352,
+                "duration": 539,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 156033,
-                "duration": 375,
                 "text": "and ",
+                "time": 155891,
+                "duration": 357,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 156408,
-                "duration": 675,
                 "text": "round ",
+                "time": 156248,
+                "duration": 363,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 157083,
-                "duration": 300,
                 "text": "in ",
+                "time": 156611,
+                "duration": 243,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 157383,
-                "duration": 375,
                 "text": "cir",
+                "time": 156854,
+                "duration": 481,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 157758,
-                "duration": 450,
                 "text": "cles ",
+                "time": 157335,
+                "duration": 335,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 158208,
-                "duration": 300,
                 "text": "we ",
+                "time": 157670,
+                "duration": 369,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 158508,
-                "duration": 298,
                 "text": "go",
+                "time": 158039,
+                "duration": 670,
                 "isSubSyllable": false,
                 "lane": 0
               }
@@ -5152,65 +5152,65 @@
             "laneIndex": 0
           },
           {
-            "id": "31",
-            "start": 158.806,
-            "end": 162.457,
+            "id": "L-1791220865319-2-fhk0",
+            "start": 158.926,
+            "end": 162.308,
             "text": "Only me and my baby knows",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 158806,
-                "duration": 406,
                 "text": "On",
+                "time": 158926,
+                "duration": 330,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 159212,
-                "duration": 406,
                 "text": "ly ",
+                "time": 159256,
+                "duration": 286,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 159618,
-                "duration": 406,
                 "text": "me ",
+                "time": 159542,
+                "duration": 409,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 160024,
-                "duration": 507,
                 "text": "and ",
+                "time": 159951,
+                "duration": 317,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 160531,
-                "duration": 406,
                 "text": "my ",
+                "time": 160268,
+                "duration": 280,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 160937,
-                "duration": 406,
                 "text": "ba",
+                "time": 160548,
+                "duration": 394,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 161343,
-                "duration": 406,
                 "text": "by ",
+                "time": 160942,
+                "duration": 674,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 161749,
-                "duration": 708,
                 "text": "knows",
+                "time": 161616,
+                "duration": 692,
                 "isSubSyllable": false,
                 "lane": 0
               }
@@ -5223,49 +5223,49 @@
           },
           {
             "id": "32",
-            "start": 177.537,
-            "end": 183.07,
+            "start": 177.497,
+            "end": 182.496,
             "text": "I feel it, I feel it",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 177537,
-                "duration": 5533,
+                "time": 177497,
+                "duration": 153,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 177537,
-                "duration": 5533,
+                "time": 177650,
+                "duration": 1151,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 177537,
-                "duration": 5533,
+                "time": 178801,
+                "duration": 619,
                 "text": "it, ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 177537,
-                "duration": 5533,
+                "time": 181014,
+                "duration": 199,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 177537,
-                "duration": 5533,
+                "time": 181213,
+                "duration": 1097,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 177537,
-                "duration": 5533,
+                "time": 182310,
+                "duration": 186,
                 "text": "it",
                 "isSubSyllable": false,
                 "lane": 0
@@ -5293,28 +5293,28 @@
               },
               {
                 "time": 184934,
-                "duration": 1363,
+                "duration": 868,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 186297,
+                "time": 185802,
                 "duration": 852,
                 "text": "it, ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 187149,
-                "duration": 511,
+                "time": 188049,
+                "duration": 422,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 187660,
-                "duration": 1363,
+                "time": 188471,
+                "duration": 552,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
@@ -5335,56 +5335,56 @@
           },
           {
             "id": "34",
-            "start": 194.484,
-            "end": 197.072,
+            "start": 194.472,
+            "end": 196.841,
             "text": "My baby just cares for me",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 194484,
+                "time": 194472,
                 "duration": 288,
                 "text": "My ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 194772,
+                "time": 194760,
                 "duration": 288,
                 "text": "ba",
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 195060,
+                "time": 195048,
                 "duration": 288,
                 "text": "by ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 195348,
+                "time": 195336,
                 "duration": 431,
                 "text": "just ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 195779,
-                "duration": 647,
+                "time": 195767,
+                "duration": 284,
                 "text": "cares ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 196426,
-                "duration": 359,
+                "time": 196051,
+                "duration": 329,
                 "text": "for ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 196785,
-                "duration": 287,
+                "time": 196380,
+                "duration": 461,
                 "text": "me",
                 "isSubSyllable": false,
                 "lane": 0
@@ -5397,58 +5397,58 @@
             "laneIndex": 0
           },
           {
-            "id": "35",
-            "start": 201.556,
-            "end": 204.385,
+            "id": "L-1791221666282-0-y3a4",
+            "start": 201.529,
+            "end": 203.898,
             "text": "My baby just cares for me",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 201592,
-                "duration": 160,
                 "text": "My ",
+                "time": 201529,
+                "duration": 288,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 201832,
-                "duration": 200,
                 "text": "ba",
+                "time": 201817,
+                "duration": 186,
                 "isSubSyllable": true,
                 "lane": 0
               },
               {
-                "time": 202032,
-                "duration": 200,
                 "text": "by ",
+                "time": 202003,
+                "duration": 201,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 202293,
-                "duration": 280,
                 "text": "just ",
+                "time": 202204,
+                "duration": 431,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 202673,
-                "duration": 380,
                 "text": "cares ",
+                "time": 202635,
+                "duration": 421,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 201556,
-                "duration": 2829,
                 "text": "for ",
+                "time": 203056,
+                "duration": 486,
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 201556,
-                "duration": 2829,
                 "text": "me",
+                "time": 203542,
+                "duration": 356,
                 "isSubSyllable": false,
                 "lane": 0
               }
@@ -5468,35 +5468,35 @@
             "rawSyllabi": [
               {
                 "time": 205517,
-                "duration": 542,
+                "duration": 405,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 206059,
-                "duration": 1445,
+                "time": 205922,
+                "duration": 761,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 207504,
+                "time": 206683,
                 "duration": 903,
                 "text": "it, ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 208407,
-                "duration": 542,
+                "time": 209070,
+                "duration": 264,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 208949,
-                "duration": 1445,
+                "time": 209334,
+                "duration": 1060,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
@@ -5517,42 +5517,42 @@
           },
           {
             "id": "37",
-            "start": 212.611,
+            "start": 212.55,
             "end": 218.003,
             "text": "I feel it, I feel it",
             "adlib": null,
             "rawSyllabi": [
               {
-                "time": 212611,
-                "duration": 522,
+                "time": 212550,
+                "duration": 339,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 213133,
-                "duration": 1391,
+                "time": 212889,
+                "duration": 833,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 214524,
-                "duration": 870,
+                "time": 213722,
+                "duration": 1672,
                 "text": "it, ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 215394,
-                "duration": 522,
+                "time": 216068,
+                "duration": 295,
                 "text": "I ",
                 "isSubSyllable": false,
                 "lane": 0
               },
               {
-                "time": 215916,
-                "duration": 1391,
+                "time": 216367,
+                "duration": 940,
                 "text": "feel ",
                 "isSubSyllable": false,
                 "lane": 0
@@ -5585,7 +5585,7 @@
       "duration": 261.327,
       "audioUrl": "/api/audio/e5ffac2c-2a01-4151-88de-c1c44c09b934",
       "inputFormat": "ttml",
-      "status": "line_synced",
+      "status": "syllable_synced",
       "lyrics": {
         "meta": {
           "source": "ttml",
@@ -5597,11 +5597,40 @@
         "lines": [
           {
             "id": "0",
-            "start": 0.12,
-            "end": 3.013,
+            "start": 0.312,
+            "end": 2.223,
             "text": "Open up your mind",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 312,
+                "duration": 424,
+                "text": "Open ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 736,
+                "duration": 516,
+                "text": "up ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 1252,
+                "duration": 510,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 1762,
+                "duration": 461,
+                "text": "mind",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5610,11 +5639,47 @@
           },
           {
             "id": "1",
-            "start": 3.413,
-            "end": 7.099,
+            "start": 3.467,
+            "end": 6.383,
             "text": "Let your body see",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 3467,
+                "duration": 512,
+                "text": "Let ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 3979,
+                "duration": 320,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 4299,
+                "duration": 871,
+                "text": "bo",
+                "lane": 0,
+                "isSubSyllable": false
+              },
+              {
+                "time": 5170,
+                "duration": 485,
+                "text": "dy ",
+                "lane": 0,
+                "isSubSyllable": true
+              },
+              {
+                "time": 5655,
+                "duration": 728,
+                "text": "see",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5623,11 +5688,68 @@
           },
           {
             "id": "2",
-            "start": 7.537,
-            "end": 17.938,
+            "start": 7.585,
+            "end": 18.047,
             "text": "There's no one in the world but me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 7585,
+                "duration": 365,
+                "text": "There's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 7950,
+                "duration": 317,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 8267,
+                "duration": 253,
+                "text": "one ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 8520,
+                "duration": 289,
+                "text": "in ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 8809,
+                "duration": 239,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 9048,
+                "duration": 742,
+                "text": "world ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 10902,
+                "duration": 3126,
+                "text": "but ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 14028,
+                "duration": 4019,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5636,11 +5758,47 @@
           },
           {
             "id": "3",
-            "start": 57.66,
-            "end": 60.441,
+            "start": 57.72,
+            "end": 60.481,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 57720,
+                "duration": 320,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 58080,
+                "duration": 220,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 58380,
+                "duration": 340,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 58760,
+                "duration": 261,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 59101,
+                "duration": 1380,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5649,11 +5807,54 @@
           },
           {
             "id": "4",
-            "start": 63.122,
-            "end": 67.358,
+            "start": 63.162,
+            "end": 67.062,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 63162,
+                "duration": 320,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 63522,
+                "duration": 220,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 63842,
+                "duration": 300,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 64182,
+                "duration": 280,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 64562,
+                "duration": 920,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 65982,
+                "duration": 1080,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5662,11 +5863,47 @@
           },
           {
             "id": "5",
-            "start": 68.574,
-            "end": 71.369,
+            "start": 68.623,
+            "end": 71.003,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 68623,
+                "duration": 340,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 69003,
+                "duration": 200,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 69283,
+                "duration": 340,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 69663,
+                "duration": 260,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 70023,
+                "duration": 980,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5675,11 +5912,54 @@
           },
           {
             "id": "6",
-            "start": 74.027,
-            "end": 78.262,
+            "start": 74.064,
+            "end": 77.445,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 74064,
+                "duration": 320,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 74424,
+                "duration": 240,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 74744,
+                "duration": 320,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 75104,
+                "duration": 280,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 75464,
+                "duration": 981,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 76885,
+                "duration": 560,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5688,11 +5968,40 @@
           },
           {
             "id": "7",
-            "start": 80.362,
-            "end": 84.748,
+            "start": 80.411,
+            "end": 84.436,
             "text": "Let your mind see",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 80411,
+                "duration": 1593,
+                "text": "Let ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 82004,
+                "duration": 454,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 82458,
+                "duration": 1287,
+                "text": "mind ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 83745,
+                "duration": 691,
+                "text": "see",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5701,11 +6010,68 @@
           },
           {
             "id": "8",
-            "start": 84.748,
-            "end": 90.165,
+            "start": 84.82,
+            "end": 90.004,
             "text": "There's no one in the world but me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 84820,
+                "duration": 302,
+                "text": "There's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 85122,
+                "duration": 330,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 85452,
+                "duration": 300,
+                "text": "one ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 85752,
+                "duration": 217,
+                "text": "in ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 85969,
+                "duration": 345,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 86314,
+                "duration": 1308,
+                "text": "world ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 87622,
+                "duration": 481,
+                "text": "but ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 88103,
+                "duration": 1901,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5714,24 +6080,103 @@
           },
           {
             "id": "9",
-            "start": 90.674,
+            "start": 90.748,
             "end": 95.307,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 90748,
+                "duration": 197,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 90985,
+                "duration": 260,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 91345,
+                "duration": 650,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 91995,
+                "duration": 621,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 92616,
+                "duration": 2691,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "10",
-            "start": 95.754,
+            "start": 95.929,
             "end": 101.105,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 95929,
+                "duration": 321,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 96250,
+                "duration": 240,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 96490,
+                "duration": 359,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 96849,
+                "duration": 440,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 97289,
+                "duration": 654,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 99663,
+                "duration": 1442,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5740,11 +6185,47 @@
           },
           {
             "id": "11",
-            "start": 101.328,
-            "end": 104.155,
+            "start": 101.394,
+            "end": 103.924,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 101394,
+                "duration": 259,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 101653,
+                "duration": 227,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 101880,
+                "duration": 389,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 102269,
+                "duration": 453,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 102722,
+                "duration": 1202,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5753,11 +6234,54 @@
           },
           {
             "id": "12",
-            "start": 106.744,
+            "start": 106.836,
             "end": 110.582,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 106836,
+                "duration": 289,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 107125,
+                "duration": 235,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 107360,
+                "duration": 431,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 107791,
+                "duration": 429,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 108220,
+                "duration": 761,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 109252,
+                "duration": 1330,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5766,11 +6290,40 @@
           },
           {
             "id": "13",
-            "start": 113.163,
-            "end": 117.475,
+            "start": 114.509,
+            "end": 116.909,
             "text": "Let your mind see",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 114509,
+                "duration": 314,
+                "text": "Let ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 114823,
+                "duration": 323,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 115146,
+                "duration": 1082,
+                "text": "mind ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 116228,
+                "duration": 681,
+                "text": "see",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5779,11 +6332,68 @@
           },
           {
             "id": "14",
-            "start": 117.525,
-            "end": 122.747,
+            "start": 117.558,
+            "end": 122.364,
             "text": "There's no one in the world but me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 117558,
+                "duration": 381,
+                "text": "There's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 117939,
+                "duration": 220,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 118159,
+                "duration": 286,
+                "text": "one ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 118445,
+                "duration": 395,
+                "text": "in ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 118840,
+                "duration": 367,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 119207,
+                "duration": 1335,
+                "text": "world ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 120542,
+                "duration": 487,
+                "text": "but ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 121029,
+                "duration": 1335,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5792,11 +6402,47 @@
           },
           {
             "id": "15",
-            "start": 123.388,
+            "start": 123.326,
             "end": 128.121,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 123326,
+                "duration": 360,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 123726,
+                "duration": 220,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 123950,
+                "duration": 1007,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 124957,
+                "duration": 341,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 125348,
+                "duration": 2773,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5805,11 +6451,47 @@
           },
           {
             "id": "16",
-            "start": 156.071,
-            "end": 159.684,
+            "start": 156.085,
+            "end": 158.864,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 156085,
+                "duration": 252,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 156337,
+                "duration": 274,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 156611,
+                "duration": 992,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 157603,
+                "duration": 335,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 157938,
+                "duration": 926,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5818,11 +6500,54 @@
           },
           {
             "id": "17",
-            "start": 161.405,
-            "end": 166.698,
+            "start": 161.433,
+            "end": 166.236,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 161433,
+                "duration": 309,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 161742,
+                "duration": 230,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 162072,
+                "duration": 551,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 162623,
+                "duration": 189,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 162853,
+                "duration": 980,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 165230,
+                "duration": 1006,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5831,11 +6556,54 @@
           },
           {
             "id": "18",
-            "start": 167.054,
-            "end": 172.891,
+            "start": 167.076,
+            "end": 172.929,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 167076,
+                "duration": 197,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 167299,
+                "duration": 140,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 167463,
+                "duration": 320,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 167937,
+                "duration": 160,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 168218,
+                "duration": 741,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 170680,
+                "duration": 2249,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5844,11 +6612,54 @@
           },
           {
             "id": "19",
-            "start": 172.891,
-            "end": 177.754,
+            "start": 172.929,
+            "end": 177.278,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 172929,
+                "duration": 184,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 173126,
+                "duration": 177,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 173332,
+                "duration": 314,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 173667,
+                "duration": 274,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 173941,
+                "duration": 760,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 175951,
+                "duration": 1327,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5858,10 +6669,39 @@
           {
             "id": "20",
             "start": 178.992,
-            "end": 183.16,
+            "end": 182.767,
             "text": "Let your mind see",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 178992,
+                "duration": 1212,
+                "text": "Let ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 180204,
+                "duration": 641,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 180945,
+                "duration": 1000,
+                "text": "mind ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 181945,
+                "duration": 822,
+                "text": "see",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5870,11 +6710,68 @@
           },
           {
             "id": "21",
-            "start": 183.412,
-            "end": 188.591,
+            "start": 183.487,
+            "end": 188.091,
             "text": "There's no one in the world but me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 183487,
+                "duration": 300,
+                "text": "There's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 183868,
+                "duration": 240,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 184148,
+                "duration": 182,
+                "text": "one ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 184356,
+                "duration": 132,
+                "text": "in ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 184549,
+                "duration": 119,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 184768,
+                "duration": 1101,
+                "text": "world ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 185969,
+                "duration": 381,
+                "text": "but ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 186550,
+                "duration": 1541,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5883,11 +6780,47 @@
           },
           {
             "id": "22",
-            "start": 188.799,
-            "end": 191.877,
+            "start": 188.872,
+            "end": 191.495,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 188872,
+                "duration": 220,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 189132,
+                "duration": 141,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 189309,
+                "duration": 704,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 190190,
+                "duration": 244,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 190494,
+                "duration": 1001,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5896,11 +6829,54 @@
           },
           {
             "id": "23",
-            "start": 194.157,
-            "end": 199.368,
+            "start": 194.257,
+            "end": 198.961,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 194257,
+                "duration": 240,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 194557,
+                "duration": 140,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 194798,
+                "duration": 600,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 195438,
+                "duration": 120,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 195598,
+                "duration": 981,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 197963,
+                "duration": 998,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5910,10 +6886,53 @@
           {
             "id": "24",
             "start": 199.741,
-            "end": 205.547,
+            "end": 205.556,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 199741,
+                "duration": 252,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 200023,
+                "duration": 160,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 200204,
+                "duration": 383,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 200615,
+                "duration": 229,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 200943,
+                "duration": 1045,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 203370,
+                "duration": 2186,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5922,24 +6941,96 @@
           },
           {
             "id": "25",
-            "start": 205.547,
-            "end": 210.507,
+            "start": 205.634,
+            "end": 210.033,
             "text": "Have you seen me dance alone?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 205634,
+                "duration": 225,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 205880,
+                "duration": 183,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 206089,
+                "duration": 312,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 206411,
+                "duration": 143,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 206679,
+                "duration": 961,
+                "text": "dance ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 208691,
+                "duration": 1342,
+                "text": "alone?",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "26",
-            "start": 211.732,
-            "end": 215.863,
+            "start": 211.687,
+            "end": 215.443,
             "text": "Let your mind see",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 211687,
+                "duration": 1215,
+                "text": "Let ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 212942,
+                "duration": 640,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 213642,
+                "duration": 1060,
+                "text": "mind ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 214822,
+                "duration": 621,
+                "text": "see",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5948,11 +7039,68 @@
           },
           {
             "id": "27",
-            "start": 216.217,
-            "end": 221.257,
+            "start": 216.223,
+            "end": 220.845,
             "text": "There's no one in the world but me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 216223,
+                "duration": 280,
+                "text": "There's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 216603,
+                "duration": 212,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 216852,
+                "duration": 179,
+                "text": "one ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 217055,
+                "duration": 156,
+                "text": "in ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 217274,
+                "duration": 169,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 217483,
+                "duration": 1141,
+                "text": "world ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 218684,
+                "duration": 400,
+                "text": "but ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 219209,
+                "duration": 1636,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5961,11 +7109,47 @@
           },
           {
             "id": "28",
-            "start": 221.55,
-            "end": 224.595,
+            "start": 221.582,
+            "end": 223.786,
             "text": "Have you seen me dance?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 221582,
+                "duration": 223,
+                "text": "Have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 221845,
+                "duration": 180,
+                "text": "you ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 222064,
+                "duration": 721,
+                "text": "seen ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 222965,
+                "duration": 200,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 223225,
+                "duration": 561,
+                "text": "dance?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -5973,7 +7157,8 @@
             "laneIndex": 0
           }
         ]
-      }
+      },
+      "vocalsUrl": "/api/audio/e5ffac2c-2a01-4151-88de-c1c44c09b934_(Vocals)_UVR-MDX-NET-Inst_HQ_3"
     },
     {
       "id": "track-7",
@@ -8984,7 +10169,7 @@
       "duration": 327.353,
       "audioUrl": "/api/audio/2999bbe8-dc36-4743-8dad-081b8732d74f",
       "inputFormat": "ttml",
-      "status": "line_synced",
+      "status": "syllable_synced",
       "lyrics": {
         "meta": {
           "source": "ttml",
@@ -8996,11 +10181,54 @@
         "lines": [
           {
             "id": "0",
-            "start": 1.04,
-            "end": 6.449,
+            "start": 1.134,
+            "end": 5.958,
             "text": "Once I was a river",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 1134,
+                "duration": 632,
+                "text": "Once ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 1766,
+                "duration": 220,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 2295,
+                "duration": 1277,
+                "text": "was ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 3572,
+                "duration": 276,
+                "text": "a ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 3848,
+                "duration": 588,
+                "text": "riv",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 4436,
+                "duration": 1522,
+                "text": "er",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9009,11 +10237,61 @@
           },
           {
             "id": "1",
-            "start": 6.827,
-            "end": 11.64,
+            "start": 6.919,
+            "end": 11.202,
             "text": "With the wisdom of a child",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 6919,
+                "duration": 300,
+                "text": "With ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 7239,
+                "duration": 180,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 7459,
+                "duration": 440,
+                "text": "wis",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 7899,
+                "duration": 477,
+                "text": "dom ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 8376,
+                "duration": 1265,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 9641,
+                "duration": 315,
+                "text": "a ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 9956,
+                "duration": 1246,
+                "text": "child",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9022,11 +10300,54 @@
           },
           {
             "id": "2",
-            "start": 12.895,
-            "end": 18.785,
+            "start": 13.044,
+            "end": 18.188,
             "text": "Like an avalanche of raindrops",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 13044,
+                "duration": 260,
+                "text": "Like ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 13484,
+                "duration": 120,
+                "text": "an ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 13824,
+                "duration": 1800,
+                "text": "avalanche ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 15624,
+                "duration": 342,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 15966,
+                "duration": 903,
+                "text": "rain",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 16869,
+                "duration": 1319,
+                "text": "drops",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9035,11 +10356,61 @@
           },
           {
             "id": "3",
-            "start": 18.925,
-            "end": 23.216,
+            "start": 18.989,
+            "end": 22.752,
             "text": "From the mountain to your eye",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 18989,
+                "duration": 320,
+                "text": "From ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 19329,
+                "duration": 180,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 19549,
+                "duration": 860,
+                "text": "moun",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 20409,
+                "duration": 861,
+                "text": "tain ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 21270,
+                "duration": 310,
+                "text": "to ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 21580,
+                "duration": 480,
+                "text": "your ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 22060,
+                "duration": 692,
+                "text": "eye",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9048,11 +10419,68 @@
           },
           {
             "id": "4",
-            "start": 25.021,
-            "end": 30.925,
+            "start": 25.113,
+            "end": 30.531,
             "text": "And I don't know how I got here",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 25113,
+                "duration": 248,
+                "text": "And ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 25361,
+                "duration": 310,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 25671,
+                "duration": 319,
+                "text": "don't ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 25990,
+                "duration": 420,
+                "text": "know ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 26410,
+                "duration": 1370,
+                "text": "how ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 27780,
+                "duration": 382,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 28162,
+                "duration": 437,
+                "text": "got ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 28599,
+                "duration": 1932,
+                "text": "here",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9061,24 +10489,96 @@
           },
           {
             "id": "5",
-            "start": 31.12,
-            "end": 36.787,
+            "start": 31.245,
+            "end": 35.987,
             "text": "No forward, no behind",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 31245,
+                "duration": 288,
+                "text": "No ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 31533,
+                "duration": 947,
+                "text": "for",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 32480,
+                "duration": 297,
+                "text": "ward, ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 32777,
+                "duration": 1189,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 34006,
+                "duration": 362,
+                "text": "be",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 34368,
+                "duration": 1619,
+                "text": "hind",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "6",
-            "start": 37.619,
-            "end": 42.359,
+            "start": 37.768,
+            "end": 41.67,
             "text": "Just still standing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 37768,
+                "duration": 1041,
+                "text": "Just ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 39189,
+                "duration": 940,
+                "text": "still ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 40290,
+                "duration": 805,
+                "text": "stand",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 41095,
+                "duration": 575,
+                "text": "ing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9087,11 +10587,61 @@
           },
           {
             "id": "7",
-            "start": 43.217,
+            "start": 43.34,
             "end": 49.104,
             "text": "On the wavelengths of my mind",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 43340,
+                "duration": 311,
+                "text": "On ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 43651,
+                "duration": 200,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 43911,
+                "duration": 452,
+                "text": "wave",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 44363,
+                "duration": 509,
+                "text": "lengths ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 45092,
+                "duration": 1543,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 46635,
+                "duration": 1234,
+                "text": "my ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 47869,
+                "duration": 1235,
+                "text": "mind",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9104,7 +10654,43 @@
             "end": 67.464,
             "text": "So far I've fallen",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 64117,
+                "duration": 324,
+                "text": "So ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 64441,
+                "duration": 615,
+                "text": "far ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 65056,
+                "duration": 551,
+                "text": "I've ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 65607,
+                "duration": 739,
+                "text": "fall",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 66346,
+                "duration": 1118,
+                "text": "en",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9113,11 +10699,61 @@
           },
           {
             "id": "9",
-            "start": 67.464,
-            "end": 71.045,
+            "start": 67.542,
+            "end": 70.324,
             "text": "And the only way is down",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 67542,
+                "duration": 120,
+                "text": "And ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 67702,
+                "duration": 140,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 67842,
+                "duration": 440,
+                "text": "on",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 68282,
+                "duration": 181,
+                "text": "ly ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 68543,
+                "duration": 809,
+                "text": "way ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 69352,
+                "duration": 372,
+                "text": "is ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 69804,
+                "duration": 520,
+                "text": "down",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9126,11 +10762,68 @@
           },
           {
             "id": "10",
-            "start": 71.317,
-            "end": 75.435,
+            "start": 71.465,
+            "end": 74.848,
             "text": "But the mother always saves me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 71465,
+                "duration": 160,
+                "text": "But ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 71645,
+                "duration": 120,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 71805,
+                "duration": 253,
+                "text": "moth",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 72058,
+                "duration": 168,
+                "text": "er ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 72226,
+                "duration": 987,
+                "text": "al",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 73213,
+                "duration": 334,
+                "text": "ways ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 73607,
+                "duration": 400,
+                "text": "saves ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 74127,
+                "duration": 721,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9139,11 +10832,54 @@
           },
           {
             "id": "11",
-            "start": 75.435,
-            "end": 78.286,
+            "start": 75.448,
+            "end": 77.85,
             "text": "Before she lets me drown",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 75448,
+                "duration": 340,
+                "text": "Be",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 75788,
+                "duration": 681,
+                "text": "fore ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 76509,
+                "duration": 180,
+                "text": "she ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 76769,
+                "duration": 301,
+                "text": "lets ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 77150,
+                "duration": 180,
+                "text": "me ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 77330,
+                "duration": 520,
+                "text": "drown",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9152,11 +10888,61 @@
           },
           {
             "id": "12",
-            "start": 79.932,
-            "end": 83.152,
-            "text": "And the world may forget me",
+            "start": 79.992,
+            "end": 82.594,
+            "text": "And the world might forget me",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 79992,
+                "duration": 100,
+                "text": "And ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 80112,
+                "duration": 80,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 80252,
+                "duration": 661,
+                "text": "world ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 80913,
+                "duration": 286,
+                "text": "might",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 81199,
+                "duration": 314,
+                "text": "for",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 81513,
+                "duration": 220,
+                "text": "get ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 81853,
+                "duration": 741,
+                "text": "me",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9165,11 +10951,47 @@
           },
           {
             "id": "13",
-            "start": 83.552,
-            "end": 86.473,
+            "start": 83.655,
+            "end": 85.977,
             "text": "But I won't regret",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 83655,
+                "duration": 213,
+                "text": "But ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 83868,
+                "duration": 443,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 84311,
+                "duration": 825,
+                "text": "won't ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 85196,
+                "duration": 312,
+                "text": "re",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 85508,
+                "duration": 469,
+                "text": "gret",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9178,11 +11000,47 @@
           },
           {
             "id": "14",
-            "start": 87.569,
-            "end": 91.143,
+            "start": 87.658,
+            "end": 90.836,
             "text": "Leaving no traces",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 87658,
+                "duration": 714,
+                "text": "Leav",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 88372,
+                "duration": 447,
+                "text": "ing ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 88899,
+                "duration": 340,
+                "text": "no ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 89319,
+                "duration": 490,
+                "text": "tra",
+                "lane": 0,
+                "isSubSyllable": false
+              },
+              {
+                "time": 89809,
+                "duration": 1027,
+                "text": "ces",
+                "lane": 0,
+                "isSubSyllable": true
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9195,7 +11053,50 @@
             "end": 94.892,
             "text": "On the hearts that I've met",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 91343,
+                "duration": 374,
+                "text": "On ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 91717,
+                "duration": 225,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 91942,
+                "duration": 1297,
+                "text": "hearts ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 93239,
+                "duration": 198,
+                "text": "that ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 93437,
+                "duration": 519,
+                "text": "I've ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 93956,
+                "duration": 936,
+                "text": "met",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9204,11 +11105,54 @@
           },
           {
             "id": "16",
-            "start": 98.976,
-            "end": 102.241,
+            "start": 99.092,
+            "end": 101.994,
             "text": "On the hearts that I've met",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 99092,
+                "duration": 120,
+                "text": "On ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 99272,
+                "duration": 100,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 99452,
+                "duration": 941,
+                "text": "hearts ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 100793,
+                "duration": 140,
+                "text": "that ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 101073,
+                "duration": 200,
+                "text": "I've ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 101413,
+                "duration": 581,
+                "text": "met",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9217,11 +11161,54 @@
           },
           {
             "id": "17",
-            "start": 106.773,
-            "end": 110.071,
+            "start": 106.896,
+            "end": 109.818,
             "text": "On the hearts that I've met",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 106896,
+                "duration": 140,
+                "text": "On ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 107096,
+                "duration": 100,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 107276,
+                "duration": 941,
+                "text": "hearts ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 108617,
+                "duration": 140,
+                "text": "that ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 108897,
+                "duration": 220,
+                "text": "I've ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 109238,
+                "duration": 580,
+                "text": "met",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9230,11 +11217,40 @@
           },
           {
             "id": "18",
-            "start": 111.647,
+            "start": 111.684,
             "end": 115.797,
             "text": "Oh, white sailor",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 111684,
+                "duration": 898,
+                "text": "Oh, ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 112582,
+                "duration": 430,
+                "text": "white ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 113012,
+                "duration": 1051,
+                "text": "sai",
+                "lane": 0,
+                "isSubSyllable": false
+              },
+              {
+                "time": 114063,
+                "duration": 1734,
+                "text": "lor",
+                "lane": 0,
+                "isSubSyllable": true
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9243,11 +11259,33 @@
           },
           {
             "id": "19",
-            "start": 115.927,
-            "end": 119.325,
+            "start": 115.997,
+            "end": 118.603,
             "text": "Is there time",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 115997,
+                "duration": 1056,
+                "text": "Is ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 117053,
+                "duration": 675,
+                "text": "there ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 117728,
+                "duration": 875,
+                "text": "time",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9256,37 +11294,159 @@
           },
           {
             "id": "20",
-            "start": 119.673,
-            "end": 122.148,
+            "start": 119.803,
+            "end": 123.025,
             "text": "To sail beyond",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 119803,
+                "duration": 225,
+                "text": "To ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 120028,
+                "duration": 989,
+                "text": "sail ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 121017,
+                "duration": 342,
+                "text": "be",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 121359,
+                "duration": 1666,
+                "text": "yond",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "21",
-            "start": 122.843,
+            "start": 123.065,
             "end": 127.193,
             "text": "The wavelengths of my mind?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 123065,
+                "duration": 100,
+                "text": "The ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 123225,
+                "duration": 339,
+                "text": "wave",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 123564,
+                "duration": 381,
+                "text": "lengths ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 124066,
+                "duration": 180,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 124314,
+                "duration": 649,
+                "text": "my ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 126126,
+                "duration": 1067,
+                "text": "mind?",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "22",
             "start": 127.567,
-            "end": 132.455,
+            "end": 132.416,
             "text": "Oh, the wavelengths of my mind",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 127567,
+                "duration": 1102,
+                "text": "Oh, ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 128669,
+                "duration": 160,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 128829,
+                "duration": 447,
+                "text": "wave",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 129276,
+                "duration": 394,
+                "text": "lengths ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 129670,
+                "duration": 880,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 130559,
+                "duration": 253,
+                "text": "my ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 130812,
+                "duration": 1604,
+                "text": "mind",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9295,11 +11455,54 @@
           },
           {
             "id": "23",
-            "start": 132.455,
-            "end": 135.486,
+            "start": 132.416,
+            "end": 135.133,
             "text": "The wavelengths of my mind",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 132416,
+                "duration": 266,
+                "text": "The ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 132682,
+                "duration": 580,
+                "text": "wave",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 133262,
+                "duration": 398,
+                "text": "lengths ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 133660,
+                "duration": 188,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 133848,
+                "duration": 287,
+                "text": "my ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 134102,
+                "duration": 1031,
+                "text": "mind",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9308,16 +11511,66 @@
           },
           {
             "id": "24",
-            "start": 135.741,
-            "end": 140.161,
+            "start": 135.796,
+            "end": 139.933,
             "text": "Mm, the wavelengths of my mind",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 135796,
+                "duration": 331,
+                "text": "Mm, ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 136127,
+                "duration": 400,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 136527,
+                "duration": 329,
+                "text": "wave",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 136856,
+                "duration": 459,
+                "text": "lengths ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 137315,
+                "duration": 398,
+                "text": "of ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 137713,
+                "duration": 562,
+                "text": "my ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 138275,
+                "duration": 1658,
+                "text": "mind",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "25",
@@ -9325,7 +11578,15 @@
             "end": 143.033,
             "text": "Mmm",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 140261,
+                "duration": 2772,
+                "text": "Mmm",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9338,7 +11599,29 @@
             "end": 146.271,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 143033,
+                "duration": 871,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 143904,
+                "duration": 218,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 144122,
+                "duration": 2149,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9348,10 +11631,32 @@
           {
             "id": "27",
             "start": 146.806,
-            "end": 150.118,
+            "end": 149.832,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 146806,
+                "duration": 788,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 147594,
+                "duration": 369,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 147963,
+                "duration": 1869,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9361,10 +11666,32 @@
           {
             "id": "28",
             "start": 150.746,
-            "end": 153.995,
+            "end": 153.712,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 150746,
+                "duration": 927,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 151673,
+                "duration": 195,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 151868,
+                "duration": 1844,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9374,10 +11701,32 @@
           {
             "id": "29",
             "start": 154.624,
-            "end": 157.806,
+            "end": 157.609,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 154624,
+                "duration": 862,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 155486,
+                "duration": 369,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 155855,
+                "duration": 1754,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9390,7 +11739,22 @@
             "end": 158.475,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 156775,
+                "duration": 756,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 157531,
+                "duration": 944,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9399,11 +11763,33 @@
           },
           {
             "id": "31",
-            "start": 158.475,
-            "end": 161.714,
+            "start": 158.541,
+            "end": 161.348,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 158541,
+                "duration": 673,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 159214,
+                "duration": 320,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 159534,
+                "duration": 1814,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9412,11 +11798,26 @@
           },
           {
             "id": "32",
-            "start": 160.643,
-            "end": 162.294,
+            "start": 160.555,
+            "end": 162.364,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 160555,
+                "duration": 680,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 161235,
+                "duration": 1129,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9425,11 +11826,33 @@
           },
           {
             "id": "33",
-            "start": 162.294,
-            "end": 165.51,
+            "start": 162.364,
+            "end": 164.743,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 162364,
+                "duration": 846,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 163210,
+                "duration": 271,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 163481,
+                "duration": 1262,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9438,11 +11861,26 @@
           },
           {
             "id": "34",
-            "start": 164.494,
+            "start": 164.619,
             "end": 166.219,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 164619,
+                "duration": 651,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 165270,
+                "duration": 949,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9451,11 +11889,33 @@
           },
           {
             "id": "35",
-            "start": 166.219,
-            "end": 169.376,
+            "start": 166.267,
+            "end": 168.261,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 166267,
+                "duration": 660,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 167047,
+                "duration": 120,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 167328,
+                "duration": 933,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9464,37 +11924,89 @@
           },
           {
             "id": "36",
-            "start": 168.261,
-            "end": 169.999,
+            "start": 168.392,
+            "end": 169.799,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 168392,
+                "duration": 644,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 169036,
+                "duration": 763,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
-            "isSimultaneous": true,
+            "isSimultaneous": false,
             "laneIndex": 1
           },
           {
             "id": "37",
             "start": 169.999,
-            "end": 173.243,
+            "end": 173.121,
             "text": "Who am I?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 169999,
+                "duration": 714,
+                "text": "Who ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 170713,
+                "duration": 524,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 171237,
+                "duration": 1884,
+                "text": "I?",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "38",
             "start": 189.991,
-            "end": 195.377,
+            "end": 195.669,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 189991,
+                "duration": 1733,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 191724,
+                "duration": 3945,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9507,7 +12019,22 @@
             "end": 202.836,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 197509,
+                "duration": 1710,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 199219,
+                "duration": 3617,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9516,11 +12043,26 @@
           },
           {
             "id": "40",
-            "start": 205.109,
-            "end": 210.64,
+            "start": 205.138,
+            "end": 208.322,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 205138,
+                "duration": 1608,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 206746,
+                "duration": 1576,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9529,11 +12071,26 @@
           },
           {
             "id": "41",
-            "start": 212.572,
+            "start": 212.505,
             "end": 218.289,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 212505,
+                "duration": 1792,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 214297,
+                "duration": 3992,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9542,11 +12099,26 @@
           },
           {
             "id": "42",
-            "start": 220.149,
+            "start": 220.164,
             "end": 225.717,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 220164,
+                "duration": 1847,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 222011,
+                "duration": 3706,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9559,7 +12131,22 @@
             "end": 233.214,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 227739,
+                "duration": 1696,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 229435,
+                "duration": 3779,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9572,7 +12159,22 @@
             "end": 240.532,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 235269,
+                "duration": 1730,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 236999,
+                "duration": 3533,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9585,7 +12187,22 @@
             "end": 248.32,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 242825,
+                "duration": 1682,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 244507,
+                "duration": 3813,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9598,7 +12215,22 @@
             "end": 253.538,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 250317,
+                "duration": 1980,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 252297,
+                "duration": 1241,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9611,7 +12243,22 @@
             "end": 261.004,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 257875,
+                "duration": 1907,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 259782,
+                "duration": 1222,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9624,7 +12271,22 @@
             "end": 268.45,
             "text": "Sail away",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 265447,
+                "duration": 1572,
+                "text": "Sail ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 267019,
+                "duration": 1431,
+                "text": "away",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9632,7 +12294,8 @@
             "laneIndex": 0
           }
         ]
-      }
+      },
+      "vocalsUrl": "/api/audio/2999bbe8-dc36-4743-8dad-081b8732d74f_(Vocals)_UVR-MDX-NET-Inst_HQ_3"
     },
     {
       "id": "track-10",
@@ -9966,7 +12629,7 @@
       "duration": 338.127,
       "audioUrl": "/api/audio/d829a8e6-c190-4d39-9a7f-0a0ebb5e443f",
       "inputFormat": "ttml",
-      "status": "line_synced",
+      "status": "syllable_synced",
       "lyrics": {
         "meta": {
           "source": "ttml",
@@ -9982,7 +12645,15 @@
             "end": 17.725,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 12696,
+                "duration": 5029,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -9995,7 +12666,15 @@
             "end": 24.016,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 18936,
+                "duration": 5080,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10008,7 +12687,36 @@
             "end": 28.776,
             "text": "What are feelings?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 25872,
+                "duration": 334,
+                "text": "What ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 26206,
+                "duration": 434,
+                "text": "are ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 26640,
+                "duration": 781,
+                "text": "feel",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 27421,
+                "duration": 1355,
+                "text": "ings?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10021,12 +12729,48 @@
             "end": 31.395,
             "text": "Are they real things?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 29033,
+                "duration": 286,
+                "text": "Are ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 29361,
+                "duration": 320,
+                "text": "they ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 29861,
+                "duration": 310,
+                "text": "re",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 30171,
+                "duration": 311,
+                "text": "al ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 30674,
+                "duration": 721,
+                "text": "things?",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "4",
@@ -10034,7 +12778,15 @@
             "end": 37.76,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 31395,
+                "duration": 6365,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10043,11 +12795,40 @@
           },
           {
             "id": "5",
-            "start": 38.376,
-            "end": 41.203,
+            "start": 38.402,
+            "end": 40.828,
             "text": "I am hollow",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 38402,
+                "duration": 139,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 38541,
+                "duration": 294,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 39187,
+                "duration": 820,
+                "text": "hol",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 40007,
+                "duration": 821,
+                "text": "low",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10056,11 +12837,40 @@
           },
           {
             "id": "6",
-            "start": 41.459,
+            "start": 41.528,
             "end": 43.808,
             "text": "I am sorrow",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 41528,
+                "duration": 100,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 41628,
+                "duration": 221,
+                "text": "am ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 42154,
+                "duration": 958,
+                "text": "sor",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 43112,
+                "duration": 696,
+                "text": "row",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10073,7 +12883,15 @@
             "end": 49.113,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 43808,
+                "duration": 5305,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10082,11 +12900,68 @@
           },
           {
             "id": "8",
-            "start": 49.959,
-            "end": 55.42,
+            "start": 49.944,
+            "end": 55.129,
             "text": "I've built myself, I wouldn't stop",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 49944,
+                "duration": 449,
+                "text": "I've ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 50533,
+                "duration": 821,
+                "text": "built ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 51454,
+                "duration": 407,
+                "text": "my",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 51861,
+                "duration": 713,
+                "text": "self, ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 53080,
+                "duration": 80,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 53160,
+                "duration": 299,
+                "text": "would",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 53459,
+                "duration": 227,
+                "text": "n't ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 53722,
+                "duration": 1407,
+                "text": "stop",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10096,10 +12971,67 @@
           {
             "id": "9",
             "start": 56.103,
-            "end": 61.967,
+            "end": 61.487,
             "text": "I’ll build my body from the bone",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 56103,
+                "duration": 610,
+                "text": "I’ll ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 56713,
+                "duration": 923,
+                "text": "build ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 57636,
+                "duration": 408,
+                "text": "my ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 58044,
+                "duration": 1133,
+                "text": "bo",
+                "lane": 0,
+                "isSubSyllable": false
+              },
+              {
+                "time": 59177,
+                "duration": 328,
+                "text": "dy ",
+                "lane": 0,
+                "isSubSyllable": true
+              },
+              {
+                "time": 59505,
+                "duration": 444,
+                "text": "from ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 59949,
+                "duration": 317,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 60266,
+                "duration": 1221,
+                "text": "bone",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10112,7 +13044,15 @@
             "end": 67.424,
             "text": "Mmm",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 61967,
+                "duration": 5457,
+                "text": "Mmm",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10125,7 +13065,15 @@
             "end": 73.818,
             "text": "Mmm",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 68224,
+                "duration": 5594,
+                "text": "Mmm",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10138,7 +13086,15 @@
             "end": 104.936,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 99988,
+                "duration": 4948,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10151,7 +13107,15 @@
             "end": 111.184,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 106229,
+                "duration": 4955,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10161,10 +13125,39 @@
           {
             "id": "14",
             "start": 113.195,
-            "end": 115.872,
+            "end": 115.522,
             "text": "What does love mean?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 113195,
+                "duration": 246,
+                "text": "What ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 113441,
+                "duration": 585,
+                "text": "does ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 114026,
+                "duration": 599,
+                "text": "love ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 114741,
+                "duration": 781,
+                "text": "mean?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10173,11 +13166,40 @@
           },
           {
             "id": "15",
-            "start": 116.278,
-            "end": 118.693,
+            "start": 116.302,
+            "end": 118.642,
             "text": "Why do grass lean?",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 116302,
+                "duration": 340,
+                "text": "Why ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 116682,
+                "duration": 280,
+                "text": "do ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 117062,
+                "duration": 620,
+                "text": "grass ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 117922,
+                "duration": 720,
+                "text": "lean?",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10190,7 +13212,15 @@
             "end": 124.421,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 118693,
+                "duration": 5728,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10199,11 +13229,40 @@
           },
           {
             "id": "17",
-            "start": 125.627,
+            "start": 125.684,
             "end": 128.571,
             "text": "I have loved kings",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 125684,
+                "duration": 205,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 125889,
+                "duration": 395,
+                "text": "have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 126284,
+                "duration": 871,
+                "text": "loved ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 127155,
+                "duration": 1416,
+                "text": "kings",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10212,37 +13271,138 @@
           },
           {
             "id": "18",
-            "start": 128.745,
-            "end": 131.167,
+            "start": 128.824,
+            "end": 130.755,
             "text": "I have forged rings",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 128824,
+                "duration": 146,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 128970,
+                "duration": 420,
+                "text": "have ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 129390,
+                "duration": 921,
+                "text": "forged ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 130311,
+                "duration": 444,
+                "text": "rings",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "19",
-            "start": 131.167,
-            "end": 136.719,
+            "start": 131.079,
+            "end": 136.497,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 131079,
+                "duration": 5418,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "20",
-            "start": 136.819,
-            "end": 142.909,
+            "start": 136.885,
+            "end": 142.553,
             "text": "I have walked inside a hospital",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 136885,
+                "duration": 93,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 136978,
+                "duration": 609,
+                "text": "have ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 137587,
+                "duration": 1113,
+                "text": "walked ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 138700,
+                "duration": 223,
+                "text": "in",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 138923,
+                "duration": 940,
+                "text": "side ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 140318,
+                "duration": 183,
+                "text": "a ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 140501,
+                "duration": 432,
+                "text": "hos",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 140933,
+                "duration": 152,
+                "text": "pi",
+                "isSubSyllable": true,
+                "lane": 0
+              },
+              {
+                "time": 141085,
+                "duration": 1468,
+                "text": "tal",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10251,16 +13411,80 @@
           },
           {
             "id": "21",
-            "start": 143.13,
-            "end": 149.071,
+            "start": 143.209,
+            "end": 148.804,
             "text": "But that I don't feel unwell at all",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 143209,
+                "duration": 311,
+                "text": "But ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 143520,
+                "duration": 331,
+                "text": "that ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 143851,
+                "duration": 936,
+                "text": "I ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 144787,
+                "duration": 433,
+                "text": "don't ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 145220,
+                "duration": 818,
+                "text": "feel ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 146545,
+                "duration": 292,
+                "text": "un",
+                "isSubSyllable": true,
+                "lane": 1
+              },
+              {
+                "time": 146837,
+                "duration": 325,
+                "text": "well ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 147162,
+                "duration": 164,
+                "text": "at ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 147656,
+                "duration": 1148,
+                "text": "all",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
             "isSimultaneous": false,
-            "laneIndex": 0
+            "laneIndex": 1
           },
           {
             "id": "22",
@@ -10268,7 +13492,15 @@
             "end": 154.956,
             "text": "Mmm",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 149195,
+                "duration": 5761,
+                "text": "Mmm",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10281,7 +13513,15 @@
             "end": 161.207,
             "text": "Mmm",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 155447,
+                "duration": 5760,
+                "text": "Mmm",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10294,7 +13534,15 @@
             "end": 279.79,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 274538,
+                "duration": 5252,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10307,7 +13555,15 @@
             "end": 285.758,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 280739,
+                "duration": 5019,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10320,7 +13576,15 @@
             "end": 291.957,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 286941,
+                "duration": 5016,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10333,7 +13597,15 @@
             "end": 298.174,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 293234,
+                "duration": 4940,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10346,7 +13618,29 @@
             "end": 300.112,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 298926,
+                "duration": 395,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 299321,
+                "duration": 329,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 299650,
+                "duration": 462,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10359,7 +13653,15 @@
             "end": 304.648,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 299541,
+                "duration": 5107,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10372,7 +13674,29 @@
             "end": 301.82,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 300883,
+                "duration": 312,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 301195,
+                "duration": 260,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 301455,
+                "duration": 365,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10381,11 +13705,33 @@
           },
           {
             "id": "31",
-            "start": 302.548,
+            "start": 302.783,
             "end": 303.871,
             "text": "It must be",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 302783,
+                "duration": 289,
+                "text": "It ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 303072,
+                "duration": 266,
+                "text": "must ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 303338,
+                "duration": 533,
+                "text": "be",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10398,7 +13744,29 @@
             "end": 305.674,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 304769,
+                "duration": 302,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 305071,
+                "duration": 251,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 305322,
+                "duration": 352,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10411,7 +13779,15 @@
             "end": 310.799,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 305674,
+                "duration": 5125,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10421,10 +13797,39 @@
           {
             "id": "34",
             "start": 307.279,
-            "end": 310.243,
+            "end": 310.912,
             "text": "It is the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 307279,
+                "duration": 260,
+                "text": "It ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 307539,
+                "duration": 239,
+                "text": "is ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 309568,
+                "duration": 307,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 309875,
+                "duration": 1037,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10433,11 +13838,33 @@
           },
           {
             "id": "35",
-            "start": 311.687,
-            "end": 312.799,
+            "start": 311.729,
+            "end": 312.714,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 311729,
+                "duration": 208,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 311937,
+                "duration": 100,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 312037,
+                "duration": 677,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10450,7 +13877,15 @@
             "end": 316.889,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 311937,
+                "duration": 4952,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10459,11 +13894,40 @@
           },
           {
             "id": "37",
-            "start": 314.298,
-            "end": 317.183,
+            "start": 314.264,
+            "end": 317.185,
             "text": "It is the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 314264,
+                "duration": 224,
+                "text": "It ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 314488,
+                "duration": 222,
+                "text": "is ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 316576,
+                "duration": 140,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 316716,
+                "duration": 469,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10476,7 +13940,15 @@
             "end": 323.267,
             "text": "Ohh",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 318146,
+                "duration": 5121,
+                "text": "Ohh",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10489,7 +13961,29 @@
             "end": 319.748,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 318844,
+                "duration": 140,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 319004,
+                "duration": 121,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 1
+              },
+              {
+                "time": 318705,
+                "duration": 1043,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 1
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10498,11 +13992,33 @@
           },
           {
             "id": "40",
-            "start": 323.468,
-            "end": 324.35,
+            "start": 323.507,
+            "end": 324.108,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 323507,
+                "duration": 161,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 323688,
+                "duration": 100,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 323828,
+                "duration": 280,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10511,11 +14027,33 @@
           },
           {
             "id": "41",
-            "start": 326.268,
-            "end": 327.133,
+            "start": 326.249,
+            "end": 326.91,
             "text": "It must be",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 326249,
+                "duration": 100,
+                "text": "It ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 326429,
+                "duration": 301,
+                "text": "must ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 326770,
+                "duration": 140,
+                "text": "be",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10528,7 +14066,29 @@
             "end": 330.649,
             "text": "It's the thing",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 329649,
+                "duration": 333,
+                "text": "It's ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 329982,
+                "duration": 278,
+                "text": "the ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 330260,
+                "duration": 389,
+                "text": "thing",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10537,11 +14097,33 @@
           },
           {
             "id": "43",
-            "start": 335.551,
-            "end": 336.552,
+            "start": 335.526,
+            "end": 336.498,
             "text": "It must be",
             "adlib": null,
-            "rawSyllabi": [],
+            "rawSyllabi": [
+              {
+                "time": 335526,
+                "duration": 273,
+                "text": "It ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 335799,
+                "duration": 272,
+                "text": "must ",
+                "isSubSyllable": false,
+                "lane": 0
+              },
+              {
+                "time": 336071,
+                "duration": 427,
+                "text": "be",
+                "isSubSyllable": false,
+                "lane": 0
+              }
+            ],
             "adlibSyllabi": [],
             "agent": "v1",
             "side": "right",
@@ -10549,7 +14131,8 @@
             "laneIndex": 0
           }
         ]
-      }
+      },
+      "vocalsUrl": "/api/audio/d829a8e6-c190-4d39-9a7f-0a0ebb5e443f_(Vocals)_UVR-MDX-NET-Inst_HQ_3"
     },
     {
       "id": "track-12",

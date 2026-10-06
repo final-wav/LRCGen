@@ -1,53 +1,73 @@
 @echo off
-echo ============================================
-echo  LRC Generator - Installation
-echo ============================================
+title TTML Lyrics Studio - Installer
+color 0A
+setlocal EnableDelayedExpansion
+
+echo ============================================================
+echo   TTML Lyrics Studio & LRCGen - Installation Setup
+echo ============================================================
 echo.
 
-:: Check Python
+cd /d "%~dp0"
+
+:: 1. Check Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [FEHLER] Python nicht gefunden. Bitte Python 3.9+ installieren.
+    echo [FEHLER] Python wurde nicht gefunden!
+    echo Bitte installiere Python 3.9, 3.10 oder 3.11 von https://www.python.org/
+    echo WICHTIG: Setze bei der Installation das Haekchen bei "Add Python to PATH"!
+    echo.
     pause
     exit /b 1
 )
 
-:: Create venv if missing
-if not exist venv (
-    echo Erstelle virtuelle Umgebung...
+for /f "tokens=*" %%v in ('python --version') do echo Gefunden: %%v
+
+:: 2. Create venv if missing
+if not exist "venv\Scripts\python.exe" (
+    echo.
+    echo Erstelle virtuelle Python-Umgebung in %~dp0venv ...
     python -m venv venv
+    if errorlevel 1 (
+        echo [FEHLER] Konnte venv nicht erstellen.
+        pause
+        exit /b 1
+    )
 )
 
-:: Activate
+echo Aktiviere virtuelle Umgebung...
 call venv\Scripts\activate.bat
 
-:: Upgrade pip
+:: 3. Upgrade pip
+echo.
+echo Aktualisiere pip...
 python -m pip install --upgrade pip --quiet
 
-:: Core packages
-echo Installiere Pakete (FastAPI, Uvicorn, Whisper)...
-pip install fastapi "uvicorn[standard]" python-multipart openai-whisper
+:: 4. Detect GPU and Install PyTorch
+echo.
+echo Pruefe Hardware-Beschleunigung (NVIDIA GPU)...
+nvidia-smi >nul 2>&1
+if not errorlevel 1 (
+    echo [INFO] NVIDIA GPU erkannt! Installiere PyTorch mit CUDA 12.1 fuer maximale Geschwindigkeit...
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+    pip install "audio-separator[gpu]>=0.24.0"
+) else (
+    echo [INFO] Keine NVIDIA GPU erkannt oder Treiber nicht im PATH. Installiere Standard CPU PyTorch...
+    pip install torch torchvision torchaudio
+)
 
-:: UVR5 vocal isolation
+:: 5. Install all dependencies from requirements.txt
 echo.
-echo Installiere audio-separator (UVR5 Vocal Isolation)...
-pip install "audio-separator[cpu]"
+echo Installiere alle Bibliotheken (FastAPI, Whisper, Pyphen, etc.)...
+pip install -r requirements.txt
 
+:: 6. Verify installation
 echo.
-echo ============================================
-echo  WICHTIG: PyTorch muss separat installiert
-echo  werden, falls noch nicht vorhanden.
+echo ============================================================
+echo   Installation erfolgreich abgeschlossen!
+echo ============================================================
 echo.
-echo  CPU (Standard):
-echo    pip install torch torchvision torchaudio
+echo Du kannst das Studio jetzt jederzeit mit start.bat starten.
+echo Der Server oeffnet sich automatisch auf http://127.0.0.1:8001
 echo.
-echo  CUDA 12.1 (NVIDIA GPU - viel schneller!):
-echo    pip install torch torchvision torchaudio ^
-echo      --index-url https://download.pytorch.org/whl/cu121
-echo.
-echo  GPU-Beschleunigung fuer audio-separator:
-echo    pip install "audio-separator[gpu]"
-echo ============================================
-echo.
-echo Installation abgeschlossen! Starte mit start.bat
 pause
