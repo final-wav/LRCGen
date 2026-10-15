@@ -82,6 +82,7 @@ function initStudioEditor() {
   });
   document.getElementById('snapToggleBtn')?.addEventListener('click', toggleSnapping);
   document.getElementById('sortLinesBtn')?.addEventListener('click', sortLinesByTimestamp);
+  document.getElementById('alignLinesBtn')?.addEventListener('click', () => runTrackLineAlignment());
   document.getElementById('alignTrackBtn')?.addEventListener('click', runTrackAlignment);
   document.getElementById('exportTrackTtmlBtn')?.addEventListener('click', exportSingleTrackTTML);
   document.getElementById('tapSyncModalBtn')?.addEventListener('click', () => {
@@ -2111,6 +2112,77 @@ function sortLinesByTimestamp() {
   toast('Sorted lines by timestamp.', 'success');
 }
 
+async function runTrackLineAlignment(explicitLines = null) {
+  const track = getActiveTrack();
+  if (!track || !Studio.project?.id) return;
+  const btn = document.getElementById('alignLinesBtn');
+  const btnQueue = document.getElementById('btnAiAlignQueue');
+  const btnParseAlign = document.getElementById('btnParseAndAlignLines');
+  const lang = document.getElementById('langSelect')?.value || 'en';
+  const whisperModel = document.getElementById('whisperModelSelect')?.value || 'base';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Whisper KI Zeilen-Scan…';
+  }
+  if (btnQueue) {
+    btnQueue.disabled = true;
+    btnQueue.textContent = 'KI Scanning…';
+  }
+  if (btnParseAlign) {
+    btnParseAlign.disabled = true;
+    btnParseAlign.textContent = 'KI Scanning…';
+  }
+
+  try {
+    const payload = {
+      track_id: track.id,
+      language: lang,
+      whisper_model: whisperModel,
+    };
+    if (explicitLines && explicitLines.length) {
+      payload.lines = explicitLines;
+    }
+
+    const resp = await fetch(`/api/project/${Studio.project.id}/align_lines`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.error || 'Zeilen-Alignment fehlgeschlagen');
+    }
+
+    const data = await resp.json();
+    track.lyrics = data.track.lyrics;
+    track.status = data.track.status;
+    track.unplacedLines = [];
+    Studio.pendingQueueId = null;
+
+    if (typeof renderAlbumSidebar === 'function') renderAlbumSidebar();
+    switchInspectorTab('inspector', true);
+    refreshEditorViews();
+    toast(`${data.line_count || 'Alle'} Zeilen erfolgreich an der Waveform ausgerichtet!`, 'success');
+  } catch (err) {
+    toast(`Line Alignment Fehler: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Align Lines';
+    }
+    if (btnQueue) {
+      btnQueue.disabled = false;
+      btnQueue.textContent = '⚡ KI Align Lines';
+    }
+    if (btnParseAlign) {
+      btnParseAlign.disabled = false;
+      btnParseAlign.textContent = '⚡ Text einfügen & KI Align Lines';
+    }
+  }
+}
+
 async function runTrackAlignment() {
   const track = getActiveTrack();
   if (!track || !Studio.project?.id) return;
@@ -2586,6 +2658,21 @@ function initInspectorTabs() {
   document.getElementById('clearQueueBtn')?.addEventListener('click', clearQueueLines);
   document.getElementById('placeAllQueueBtn')?.addEventListener('click', placeAllQueueLines);
   document.getElementById('addQueueLineAtPlayheadBtn')?.addEventListener('click', placeNextQueueLineAtPlayhead);
+
+  // Quick AI Align buttons
+  document.getElementById('btnAiAlignQueue')?.addEventListener('click', () => runTrackLineAlignment());
+  document.getElementById('btnParseAndAlignLines')?.addEventListener('click', () => {
+    const area = document.getElementById('rawLyricsPasteArea');
+    if (!area) return;
+    const rawText = area.value.trim();
+    if (!rawText) {
+      toast('Bitte füge zuerst einen Songtext ein!', 'error');
+      return;
+    }
+    const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !/^\[(Verse|Chorus|Bridge|Hook|Outro|Intro|Part)[^\]]*\]$/i.test(l));
+    area.value = '';
+    runTrackLineAlignment(lines);
+  });
 
   initTimelineDropZone();
 }

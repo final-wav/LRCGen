@@ -266,6 +266,13 @@
               Tap Sync
             </button>
 
+            <button id="alignLinesBtn" class="btn btn-secondary btn-sm" title="Songtext per Whisper KI akustisch an der Waveform ausrichten (Zeilen-Start & Ende)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>
+              </svg>
+              Align Lines
+            </button>
+
             <button id="alignTrackBtn" class="btn btn-secondary btn-sm" title="Silben für diesen Track automatisch ausrichten">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
@@ -479,6 +486,7 @@
                 <div class="queue-toolbar-btns">
                   <button id="clearQueueBtn" class="btn btn-ghost btn-xs" title="Alle unplatzierten Zeilen aus dem Pool entfernen">Pool leeren</button>
                   <button id="placeAllQueueBtn" class="btn btn-ghost btn-xs" title="Alle Zeilen nacheinander ab aktuellem Playhead platzieren">Alle platzieren</button>
+                  <button id="btnAiAlignQueue" class="btn btn-primary btn-xs" title="Unplatzierte Zeilen aus dem Pool per Whisper KI automatisch auf der Timeline ausrichten">⚡ KI Align Lines</button>
                 </div>
               </div>
               <div class="queue-list" id="queueLinesList">
@@ -496,8 +504,11 @@
                     <span>(Klammern) automatisch als Ad-lib / Background-Vocal erkennen</span>
                   </label>
                   <div class="raw-import-actions">
-                    <button id="btnParseToQueue" class="btn btn-primary btn-sm">
+                    <button id="btnParseToQueue" class="btn btn-secondary btn-sm">
                       In Zeilen-Pool laden &rarr;
+                    </button>
+                    <button id="btnParseAndAlignLines" class="btn btn-primary btn-sm" title="Songtext einfügen und sofort per Whisper KI an der Waveform ausrichten">
+                      ⚡ Text einfügen &amp; KI Align Lines
                     </button>
                   </div>
                 </div>

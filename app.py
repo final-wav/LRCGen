@@ -777,6 +777,149 @@ async def align_project_track(project_id: str, request: Request):
     }
 
 
+@app.post("/api/project/{project_id}/align_lines")
+async def align_project_track_lines(project_id: str, request: Request):
+    """
+    Line-Level Speech-to-Text Alignment:
+    Takes raw/unplaced lines, transcribes audio words via Whisper,
+    and accurately aligns the start and end timestamps of each line to the vocal waveform.
+    """
+    if project_id not in projects:
+        return JSONResponse({"error": "Project not found"}, status_code=404)
+
+    data = await request.json()
+    track_id = data.get("track_id")
+    language = data.get("language") or None
+    whisper_model = data.get("whisper_model", "base")
+    uvr_model_id = data.get("uvr_model_id", "UVR-MDX-NET-Inst_HQ_3")
+
+    project = projects[project_id]
+    target_track = next((t for t in project["tracks"] if t["id"] == track_id), None)
+    if not target_track:
+        return JSONResponse({"error": "Track not found"}, status_code=404)
+
+    file_id = target_track.get("fileId", "")
+    audio_path = None
+    for ext in ALLOWED_EXTS:
+        p = Path(f"uploads/{file_id}{ext}")
+        if p.exists():
+            audio_path = str(p)
+            break
+
+    if not audio_path and target_track.get("path"):
+        p2 = Path(target_track["path"])
+        if p2.exists():
+            audio_path = str(p2)
+
+    if not audio_path:
+        return JSONResponse({"error": "Audio file not found"}, status_code=404)
+
+    # Gather user lines from unplacedLines, or lines without timestamps, or provided in request
+    user_lines = []
+    if data.get("lines"):
+        user_lines = [l.strip() for l in data["lines"] if l.strip()]
+    elif target_track.get("unplacedLines"):
+        user_lines = [l["text"].strip() for l in target_track["unplacedLines"] if l.get("text", "").strip()]
+    elif target_track.get("lyrics", {}).get("lines"):
+        user_lines = [l["text"].strip() for l in target_track["lyrics"]["lines"] if l.get("text", "").strip()]
+
+    if not user_lines:
+        return JSONResponse({"error": "No lyrics lines available to align. Please paste lyrics into the pool first!"}, status_code=400)
+
+    print(f"\n==================================================================", flush=True)
+    print(f"[AI Studio] Aligning Lines for Track: '{target_track.get('title')}'", flush=True)
+    print(f"[AI Studio] {len(user_lines)} lines to align | Language: {language} | Whisper: {whisper_model}", flush=True)
+
+    align_audio_path = audio_path
+    cached_vocals = target_track.get("vocalsPath")
+    if cached_vocals and Path(cached_vocals).exists():
+        align_audio_path = cached_vocals
+
+    # 1. Transcribe with Whisper to get all_words
+    all_words = []
+    try:
+        import whisper
+        print(f"[Whisper] Loading model '{whisper_model}'...", flush=True)
+        model = whisper.load_model(whisper_model)
+        opts = {"word_timestamps": True, "verbose": False}
+        if language:
+            opts["language"] = language
+        print(f"[Whisper] Transcribing and extracting acoustic words from {align_audio_path}...", flush=True)
+        res = model.transcribe(align_audio_path, **opts)
+        for s in res.get("segments", []):
+            for w in s.get("words", []):
+                word = w.get("word", "").strip()
+                if word:
+                    all_words.append({
+                        "word": word,
+                        "start": round(w["start"], 3),
+                        "end": round(w["end"], 3),
+                    })
+        print(f"[Whisper] Transcribed {len(all_words)} acoustic words.", flush=True)
+    except Exception as e:
+        print(f"[Whisper Error] {e}", flush=True)
+        return JSONResponse({"error": f"Whisper transcription failed: {e}"}, status_code=500)
+
+    # 2. Match user lines against all_words
+    matched_segments = _align_lyrics(all_words, user_lines)
+
+    # 3. Create Canonical Lines
+    new_canonical_lines = []
+    for idx, seg in enumerate(matched_segments):
+        main_text = seg["text"]
+        adlib_text = None
+        if (main_text.startswith("(") and main_text.endswith(")")) or (main_text.startswith("[") and main_text.endswith("]")):
+            adlib_text = main_text[1:-1].strip()
+
+        new_canonical_lines.append({
+            "id": f"L-{idx+1}",
+            "start": seg["start"],
+            "end": seg["end"],
+            "text": main_text,
+            "adlib": adlib_text,
+            "rawSyllabi": [],
+            "adlibSyllabi": [],
+            "agent": "v1",
+            "side": "right",
+            "isSimultaneous": False,
+            "laneIndex": 0,
+        })
+
+    # Sort lines by start
+    new_canonical_lines.sort(key=lambda x: x["start"])
+
+    # Overlap detection for multi-lane
+    for i in range(1, len(new_canonical_lines)):
+        prev_line = new_canonical_lines[i-1]
+        curr_line = new_canonical_lines[i]
+        if curr_line["start"] < prev_line["end"] - 0.05:
+            curr_line["isSimultaneous"] = True
+            curr_line["laneIndex"] = 1
+
+    target_track["lyrics"] = {
+        "meta": {
+            "source": "whisper_align",
+            "schemaVersion": 2,
+            "timingType": "Line",
+            "title": target_track.get("title", ""),
+            "artist": target_track.get("artist", ""),
+        },
+        "lines": new_canonical_lines,
+    }
+    target_track["unplacedLines"] = []
+    target_track["status"] = "line_synced"
+    target_track["inputFormat"] = "lrc"
+
+    print(f"[AI Studio] Successfully aligned {len(new_canonical_lines)} lines!", flush=True)
+    print(f"==================================================================\n", flush=True)
+
+    return {
+        "status": "ok",
+        "track": target_track,
+        "line_count": len(new_canonical_lines),
+    }
+
+
 @app.post("/api/parse_lyrics")
 async def parse_lyrics_endpoint(request: Request):
     data = await request.json()
