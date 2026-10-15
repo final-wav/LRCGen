@@ -131,6 +131,9 @@ function initStudioEditor() {
   // Drag, Trim & Marquee listeners
   window.addEventListener('mousemove', handleDragMove);
   window.addEventListener('mouseup', handleDragEnd);
+
+  // Initialize Inspector Tabs & Zeilen-Pool Drag-Drop
+  initInspectorTabs();
 }
 
 // ─── Line Selection & Vocal Role Helpers ─────────────────────────────────────
@@ -169,19 +172,128 @@ function toggleSingerAgent(newAgent) {
   toast(`Stimme auf ${line.agent.toUpperCase()} (${line.side}) geändert.`, 'success');
 }
 
-function toggleAdlibRole() {
+function toggleLineLane(lineId) {
+  const targetId = lineId || Studio.selectedLineId;
+  if (!targetId) return;
   const lyrics = getActiveLyrics();
-  const line = (lyrics.lines || []).find(l => l.id === Studio.selectedLineId);
+  const line = (lyrics.lines || []).find(l => l.id === targetId);
   if (!line) return;
 
   pushHistory();
-  if (line.adlib) {
+  const oldLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
+  const newLane = oldLane === 1 ? 0 : 1;
+  line.laneIndex = newLane;
+
+  // Move line's syllables that were aligned with the old lane
+  (line.rawSyllabi || []).forEach(s => {
+    if (s.lane === oldLane || s.lane === undefined) {
+      s.lane = newLane;
+    }
+  });
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast(`Zeile auf Ebene ${newLane + 1} (LINES ${newLane + 1}) verschoben`, 'success');
+}
+
+function setLineLane(targetLane, lineId) {
+  const targetId = lineId || Studio.selectedLineId;
+  if (!targetId) return;
+  const lyrics = getActiveLyrics();
+  const line = (lyrics.lines || []).find(l => l.id === targetId);
+  if (!line) return;
+  const oldLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
+  if (oldLane === targetLane) return;
+
+  pushHistory();
+  line.laneIndex = targetLane;
+  (line.rawSyllabi || []).forEach(s => {
+    if (s.lane === oldLane || s.lane === undefined) {
+      s.lane = targetLane;
+    }
+  });
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast(`Zeile auf Ebene ${targetLane + 1} (LINES ${targetLane + 1}) verschoben`, 'success');
+}
+
+function toggleAdlibRole() {
+  const lyrics = getActiveLyrics();
+  const lines = lyrics.lines || [];
+
+  // 1. If individual syllables are selected: Toggle them between Main (Lane 0/1) and Ad-lib (Lane 3)
+  if (Studio.selectedSyllables && Studio.selectedSyllables.size > 0) {
+    pushHistory();
+    let toggledCount = 0;
+    let anyBecameAdlib = false;
+
+    // Group selected syllables by line
+    const selItems = Array.from(Studio.selectedSyllables.values());
+    selItems.forEach(item => {
+      const line = lines.find(l => l.id === item.lineId);
+      if (!line) return;
+
+      if (!line.rawSyllabi) line.rawSyllabi = [];
+      if (!line.adlibSyllabi) line.adlibSyllabi = [];
+
+      if (item.isAdlib) {
+        // Was Adlib -> Move back to Raw/Main Vocal (Lane 0 or 1)
+        const idx = line.adlibSyllabi.findIndex(s => s === item.syl || (s.time === item.syl.time && s.text === item.syl.text));
+        if (idx >= 0) {
+          const [syl] = line.adlibSyllabi.splice(idx, 1);
+          syl.lane = line.agent === 'v2' ? 1 : 0;
+          line.rawSyllabi.push(syl);
+          line.rawSyllabi.sort((a, b) => a.time - b.time);
+          toggledCount++;
+        }
+      } else {
+        // Was Raw -> Move to Adlib (Lane 3, Ebene 4)
+        const idx = line.rawSyllabi.findIndex(s => s === item.syl || (s.time === item.syl.time && s.text === item.syl.text));
+        if (idx >= 0) {
+          const [syl] = line.rawSyllabi.splice(idx, 1);
+          syl.lane = 3;
+          line.adlibSyllabi.push(syl);
+          line.adlibSyllabi.sort((a, b) => a.time - b.time);
+          anyBecameAdlib = true;
+          toggledCount++;
+        }
+      }
+
+      // Re-derive line.text and line.adlib from syllables if present
+      if (line.rawSyllabi.length > 0) {
+        line.text = line.rawSyllabi.map(s => s.text).join('').trim();
+      } else if (line.adlibSyllabi.length > 0) {
+        line.text = '';
+      }
+      if (line.adlibSyllabi.length > 0) {
+        line.adlib = line.adlibSyllabi.map(s => s.text).join('').trim();
+      } else {
+        line.adlib = null;
+      }
+    });
+
+    clearSyllableSelection();
+    saveActiveTrackToBackend();
+    refreshEditorViews();
+    toast(`${toggledCount} Silbe(n) als ${anyBecameAdlib ? 'Ad-lib (Ebene 4)' : 'Hauptgesang'} markiert [B].`, 'success');
+    return;
+  }
+
+  // 2. Fallback: If a whole line is selected
+  const line = lines.find(l => l.id === Studio.selectedLineId);
+  if (!line) return;
+
+  pushHistory();
+  if (line.adlib && (!line.text || line.rawSyllabi.length === 0)) {
+    // Revert whole line from Ad-lib to Lead
     line.text = line.adlib;
     line.adlib = null;
     line.rawSyllabi = (line.adlibSyllabi || []).map(s => ({ ...s, lane: line.agent === 'v2' ? 1 : 0 }));
     line.adlibSyllabi = [];
   } else {
-    line.adlib = line.text;
+    // Convert whole line to Ad-lib
+    line.adlib = line.text || line.adlib;
     line.text = '';
     line.adlibSyllabi = (line.rawSyllabi || []).map(s => ({ ...s, lane: 3 }));
     line.rawSyllabi = [];
@@ -189,7 +301,7 @@ function toggleAdlibRole() {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(line.adlib ? 'Zeile als Ad-lib (x-bg) markiert.' : 'Zeile als Hauptgesang markiert.', 'success');
+  toast(line.adlib ? 'Zeile als Ad-lib (x-bg) markiert [B].' : 'Zeile als Hauptgesang markiert [B].', 'success');
 }
 
 function toggleSnapping() {
@@ -535,6 +647,18 @@ function renderTimelineLines() {
     div.style.height = `${blockH}px`;
     div.dataset.lineId = line.id;
 
+    // Lane badge (E1 / E2) - Clickable to instantly toggle between Ebene 1 and Ebene 2
+    const badge = document.createElement('span');
+    badge.className = `tl-line-lane-badge ${trackLane === 1 ? 'badge-l2' : 'badge-l1'}`;
+    badge.textContent = `E${trackLane + 1}`;
+    badge.title = `Klicken: Wechseln zu Ebene ${trackLane === 1 ? 1 : 2}`;
+    badge.addEventListener('mousedown', e => e.stopPropagation());
+    badge.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleLineLane(line.id);
+    });
+    div.appendChild(badge);
+
     const span = document.createElement('span');
     span.className = 'tl-line-text';
     span.textContent = line.text || (line.adlib ? `(${line.adlib})` : '…');
@@ -703,11 +827,12 @@ function renderTimelineSyllables() {
   const labelsWrap = document.getElementById('tlLanesLabelsWrap');
   if (labelsWrap) {
     labelsWrap.innerHTML = '';
+    const laneNames = ['Ebene 1 (Frei)', 'Ebene 2 (Frei)', 'Ebene 3 (Sänger 2)', 'Ebene 4 (Ad-lib)'];
     for (let i = 0; i < Studio.numLanes; i++) {
       const lbl = document.createElement('div');
       lbl.className = `tl-lane-label-item lane-${i}`;
       lbl.style.height = `${laneH}px`;
-      lbl.textContent = `Ebene ${i + 1}`;
+      lbl.textContent = laneNames[i] || `Ebene ${i + 1}`;
       labelsWrap.appendChild(lbl);
     }
   }
@@ -867,9 +992,10 @@ function startDrag(e, type, lineId, sylIdx, handle, isAdlib = false) {
   pushHistory();
 
   if (type === 'line') {
+    const origLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
     Studio.drag = {
-      type: 'line', lineId, handle, startX: e.clientX,
-      origStart: line.start, origEnd: line.end,
+      type: 'line', lineId, handle, startX: e.clientX, startY: e.clientY,
+      origStart: line.start, origEnd: line.end, origLane: origLane,
       origRawSylls: JSON.parse(JSON.stringify(line.rawSyllabi || [])),
       origAdlibSylls: JSON.parse(JSON.stringify(line.adlibSyllabi || [])),
     };
@@ -1180,6 +1306,24 @@ function handleDragMove(e) {
       // Shift syllables
       line.rawSyllabi = dg.origRawSylls.map(s => ({ ...s, time: Math.max(0, s.time + deltaMs) }));
       line.adlibSyllabi = dg.origAdlibSylls.map(s => ({ ...s, time: Math.max(0, s.time + deltaMs) }));
+
+      // Vertical lane movement for lines (Lines 1 vs Lines 2)
+      const linesTrack = document.getElementById('tlLinesTrack');
+      if (linesTrack) {
+        const trackRect = linesTrack.getBoundingClientRect();
+        const relY = e.clientY - trackRect.top;
+        const targetLineLane = relY < 40 ? 0 : 1;
+        if (line.laneIndex !== targetLineLane) {
+          const oldLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
+          line.laneIndex = targetLineLane;
+          // Sync raw syllables that were aligned to the old lane
+          (line.rawSyllabi || []).forEach(s => {
+            if (s.lane === oldLane || s.lane === undefined) {
+              s.lane = targetLineLane;
+            }
+          });
+        }
+      }
     } else if (dg.handle === 'left') {
       line.start = Math.round(Math.max(0, Math.min(dg.origEnd - 0.1, dg.origStart + deltaSec)) * 1000) / 1000;
     } else {
@@ -1237,8 +1381,58 @@ function handleDragEnd(e) {
   }
 
   if (Studio.drag) {
+    const draggedItems = Studio.drag.items || [];
+    const dragType = Studio.drag.type;
     Studio.drag = null;
+
     const lyrics = getActiveLyrics();
+    const lines = lyrics.lines || [];
+
+    // If syllables were dragged, sync between rawSyllabi (Lanes 0, 1, 2) and adlibSyllabi (Lane 3)
+    if (dragType === 'syl_multi' && draggedItems.length > 0) {
+      draggedItems.forEach(item => {
+        const line = lines.find(l => l.id === item.lineId);
+        if (!line) return;
+        if (!line.rawSyllabi) line.rawSyllabi = [];
+        if (!line.adlibSyllabi) line.adlibSyllabi = [];
+
+        const targetLane = item.syl.lane !== undefined ? item.syl.lane : 0;
+        if (targetLane === 3) {
+          // Belongs to Ad-libs
+          const rawIdx = line.rawSyllabi.findIndex(s => s === item.syl);
+          if (rawIdx >= 0) {
+            line.rawSyllabi.splice(rawIdx, 1);
+            if (!line.adlibSyllabi.includes(item.syl)) {
+              line.adlibSyllabi.push(item.syl);
+            }
+          }
+        } else {
+          // Belongs to Main vocals (Lanes 0, 1, 2)
+          const adIdx = line.adlibSyllabi.findIndex(s => s === item.syl);
+          if (adIdx >= 0) {
+            line.adlibSyllabi.splice(adIdx, 1);
+            if (!line.rawSyllabi.includes(item.syl)) {
+              line.rawSyllabi.push(item.syl);
+            }
+          }
+        }
+
+        line.rawSyllabi.sort((a, b) => a.time - b.time);
+        line.adlibSyllabi.sort((a, b) => a.time - b.time);
+
+        if (line.rawSyllabi.length > 0) {
+          line.text = line.rawSyllabi.map(s => s.text).join('').trim();
+        } else if (line.adlibSyllabi.length > 0) {
+          line.text = '';
+        }
+        if (line.adlibSyllabi.length > 0) {
+          line.adlib = line.adlibSyllabi.map(s => s.text).join('').trim();
+        } else {
+          line.adlib = null;
+        }
+      });
+    }
+
     if (lyrics && lyrics.lines) {
       deriveLineBoundsFromSyllables(lyrics);
       lyrics.lines.sort((a, b) => a.start - b.start);
@@ -2116,6 +2310,7 @@ function renderInspectorLines() {
         </div>
       </div>
       <div class="insp-role-col">
+        <button class="btn-insp-lane ${line.laneIndex === 1 ? 'lane-2' : 'lane-1'}" title="Zeilenebene wechseln (Ebene 1 / Ebene 2)">E${(line.laneIndex || 0) + 1}</button>
         <button class="btn-insp-role ${line.agent === 'v2' ? 'duet' : ''}" title="Toggle Singer Agent (v1 / v2)">${line.agent || 'v1'}</button>
         <button class="btn-insp-bg ${line.adlib ? 'active' : ''}" title="Toggle Ad-lib (x-bg)">BG</button>
         <button class="btn-insp-del" title="Zeile löschen" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:0 4px;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
@@ -2233,6 +2428,11 @@ function renderInspectorLines() {
       });
     });
 
+    row.querySelector('.btn-insp-lane')?.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleLineLane(line.id);
+    });
+
     row.querySelector('.btn-insp-role').addEventListener('click', e => {
       e.stopPropagation();
       toggleSingerAgent(line.agent === 'v2' ? 'v1' : 'v2');
@@ -2339,6 +2539,15 @@ function handleEditorKeyDown(e) {
   } else if (e.code === 'KeyB') {
     e.preventDefault();
     toggleAdlibRole();
+  } else if (e.code === 'KeyL' && !e.ctrlKey && !e.metaKey) {
+    e.preventDefault();
+    toggleLineLane();
+  } else if (e.code === 'ArrowUp' && e.altKey) {
+    e.preventDefault();
+    setLineLane(0);
+  } else if (e.code === 'ArrowDown' && e.altKey) {
+    e.preventDefault();
+    setLineLane(1);
   } else if (e.code === 'Digit1') {
     e.preventDefault();
     toggleSingerAgent('v1');
@@ -2347,7 +2556,11 @@ function handleEditorKeyDown(e) {
     toggleSingerAgent('v2');
   } else if (e.code === 'Enter') {
     e.preventDefault();
-    addNewLineAtPlayhead();
+    if (typeof hasUnplacedQueueLines === 'function' && hasUnplacedQueueLines()) {
+      placeNextQueueLineAtPlayhead();
+    } else {
+      addNewLineAtPlayhead();
+    }
   } else if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     if (e.shiftKey) redo(); else undo();
@@ -2362,3 +2575,380 @@ function handleEditorKeyDown(e) {
     seekAudio(e.shiftKey ? 10 : 2);
   }
 }
+
+// ─── 3-Tab Inspector & Zeilen-Pool (Queue) ──────────────────────────────────
+function initInspectorTabs() {
+  document.getElementById('inspTabInspectorBtn')?.addEventListener('click', () => switchInspectorTab('inspector', true));
+  document.getElementById('inspTabQueueBtn')?.addEventListener('click', () => switchInspectorTab('queue', true));
+  document.getElementById('inspTabImportBtn')?.addEventListener('click', () => switchInspectorTab('import', true));
+
+  document.getElementById('btnParseToQueue')?.addEventListener('click', parseRawLyricsToQueue);
+  document.getElementById('clearQueueBtn')?.addEventListener('click', clearQueueLines);
+  document.getElementById('placeAllQueueBtn')?.addEventListener('click', placeAllQueueLines);
+  document.getElementById('addQueueLineAtPlayheadBtn')?.addEventListener('click', placeNextQueueLineAtPlayhead);
+
+  initTimelineDropZone();
+}
+
+function switchInspectorTab(tabName, isUserClick = false) {
+  Studio.activeInspTab = tabName;
+  if (isUserClick) {
+    Studio.userSelectedTab = true;
+  }
+
+  const btnInsp = document.getElementById('inspTabInspectorBtn');
+  const btnQueue = document.getElementById('inspTabQueueBtn');
+  const btnImport = document.getElementById('inspTabImportBtn');
+
+  const contentInsp = document.getElementById('inspContentInspector');
+  const contentQueue = document.getElementById('inspContentQueue');
+  const contentImport = document.getElementById('inspContentImport');
+
+  btnInsp?.classList.toggle('active', tabName === 'inspector');
+  btnQueue?.classList.toggle('active', tabName === 'queue');
+  btnImport?.classList.toggle('active', tabName === 'import');
+
+  contentInsp?.classList.toggle('active', tabName === 'inspector');
+  contentQueue?.classList.toggle('active', tabName === 'queue');
+  contentImport?.classList.toggle('active', tabName === 'import');
+
+  if (tabName === 'import') {
+    const area = document.getElementById('rawLyricsPasteArea');
+    if (area && !area.value.trim()) {
+      setTimeout(() => area.focus(), 50);
+    }
+  } else if (tabName === 'queue') {
+    renderQueueLines();
+  } else if (tabName === 'inspector') {
+    renderInspectorLines();
+  }
+}
+
+function updateInspectorCounters() {
+  const lyrics = getActiveLyrics();
+  const placedCount = (lyrics.lines || []).length;
+  const track = getActiveTrack();
+  const queueCount = (track?.unplacedLines || []).length;
+
+  const countPlacedEl = document.getElementById('inspLinesCountBadge');
+  const countQueueEl = document.getElementById('inspQueueCountBadge');
+
+  if (countPlacedEl) countPlacedEl.textContent = placedCount;
+  if (countQueueEl) countQueueEl.textContent = queueCount;
+
+  // Auto switch tab if 0 placed lines and user hasn't explicitly clicked a tab
+  if (placedCount === 0 && !Studio.userSelectedTab) {
+    if (queueCount > 0) {
+      switchInspectorTab('queue');
+    } else {
+      switchInspectorTab('import');
+    }
+  }
+}
+
+function parseRawLyricsToQueue() {
+  const area = document.getElementById('rawLyricsPasteArea');
+  if (!area) return;
+  const rawText = area.value.trim();
+  if (!rawText) {
+    toast('Bitte füge zuerst einen Songtext ein!', 'error');
+    return;
+  }
+
+  const detectAdlibs = document.getElementById('rawDetectAdlibsCheck')?.checked ?? true;
+  const track = getActiveTrack();
+  if (!track) {
+    toast('Kein aktiver Track ausgewählt.', 'error');
+    return;
+  }
+
+  track.unplacedLines = track.unplacedLines || [];
+  const rawLines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+  let addedCount = 0;
+  rawLines.forEach((l, idx) => {
+    // Skip section headers like [Verse 1], [Chorus]
+    if (/^\[(Verse|Chorus|Bridge|Hook|Outro|Intro|Part)[^\]]*\]$/i.test(l)) {
+      return;
+    }
+
+    let isAdlib = false;
+    let cleanText = l;
+    if (detectAdlibs && ((cleanText.startsWith('(') && cleanText.endsWith(')')) || (cleanText.startsWith('[') && cleanText.endsWith(']')))) {
+      isAdlib = true;
+      cleanText = cleanText.substring(1, cleanText.length - 1).trim();
+    }
+
+    track.unplacedLines.push({
+      id: `Q-${Date.now()}-${Math.random().toString(36).substr(2, 6)}-${idx}`,
+      text: cleanText,
+      adlib: isAdlib ? cleanText : null,
+      agent: 'v1',
+    });
+    addedCount++;
+  });
+
+  area.value = '';
+  Studio.userSelectedTab = true;
+  switchInspectorTab('queue');
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast(`${addedCount} Zeilen in den Zeilen-Pool geladen!`, 'success');
+}
+
+function renderQueueLines() {
+  const list = document.getElementById('queueLinesList');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const track = getActiveTrack();
+  const queue = track?.unplacedLines || [];
+
+  if (queue.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'queue-empty-box';
+    empty.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="opacity:0.4;">
+        <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/>
+      </svg>
+      <div style="font-size:0.80rem; font-weight:600; color:var(--text-2);">Der Zeilen-Pool ist leer</div>
+      <div style="font-size:0.72rem; color:var(--text-3); max-width:240px;">
+        Füge Songtext im Reiter <b>"Text einfügen"</b> ein, um unplatzierte Zeilen hier zu sammeln.
+      </div>
+      <button class="btn btn-secondary btn-xs" style="margin-top:6px;" onclick="switchInspectorTab('import', true)">Zum Text-Import</button>
+    `;
+    list.appendChild(empty);
+    return;
+  }
+
+  queue.forEach((item, qIdx) => {
+    const card = document.createElement('div');
+    card.className = 'queue-card' + (item.id === Studio.pendingQueueId ? ' pending' : '');
+    card.draggable = true;
+    card.dataset.queueId = item.id;
+
+    card.innerHTML = `
+      <div class="queue-card-left">
+        <span class="queue-grip-icon" title="Mit der Maus greifen und auf die Waveform ziehen">⋮⋮</span>
+        <span class="queue-idx-badge">${String(qIdx + 1).padStart(2, '0')}</span>
+        <span class="queue-card-text" title="${escHTML(item.text)}">${escHTML(item.text)}</span>
+        ${item.adlib ? '<span class="queue-adlib-pill">BG</span>' : ''}
+      </div>
+      <div class="queue-card-actions">
+        <button class="btn-queue-stamp" title="An aktuellem Playhead platzieren [Enter]">+ Playhead</button>
+        <button class="btn-queue-del" title="Zeile aus Pool entfernen">✕</button>
+      </div>
+    `;
+
+    // Click to select as pending line
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-queue-stamp') || e.target.closest('.btn-queue-del')) return;
+      Studio.pendingQueueId = (Studio.pendingQueueId === item.id) ? null : item.id;
+      renderQueueLines();
+    });
+
+    // Button: Place at playhead
+    card.querySelector('.btn-queue-stamp')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      placeQueueLineAtTime(item.id, Studio.currentTime || 0, 0);
+    });
+
+    // Button: Remove from queue
+    card.querySelector('.btn-queue-del')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = queue.findIndex(q => q.id === item.id);
+      if (idx >= 0) {
+        queue.splice(idx, 1);
+        if (Studio.pendingQueueId === item.id) Studio.pendingQueueId = null;
+        saveActiveTrackToBackend();
+        refreshEditorViews();
+      }
+    });
+
+    // HTML5 Drag & Drop
+    card.addEventListener('dragstart', (e) => {
+      card.classList.add('dragging');
+      Studio.pendingQueueId = item.id;
+      e.dataTransfer.setData('text/plain', item.id);
+      e.dataTransfer.effectAllowed = 'copyMove';
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
+
+    list.appendChild(card);
+  });
+}
+
+function clearQueueLines() {
+  const track = getActiveTrack();
+  if (!track || !track.unplacedLines || track.unplacedLines.length === 0) return;
+  if (!confirm('Möchtest du alle Zeilen aus dem unplatzierten Pool entfernen?')) return;
+  track.unplacedLines = [];
+  Studio.pendingQueueId = null;
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast('Zeilen-Pool geleert.', 'success');
+}
+
+function placeQueueLineAtTime(queueId, startSec, laneIndex = 0, explicitDur = null) {
+  const track = getActiveTrack();
+  if (!track || !track.unplacedLines) return;
+
+  const qIdx = track.unplacedLines.findIndex(q => q.id === queueId);
+  if (qIdx === -1) return;
+
+  const item = track.unplacedLines[qIdx];
+  track.unplacedLines.splice(qIdx, 1);
+
+  if (Studio.pendingQueueId === queueId) {
+    Studio.pendingQueueId = track.unplacedLines[0]?.id || null;
+  }
+
+  const lyrics = getActiveLyrics();
+  pushHistory();
+
+  // Natural duration based on word count
+  const words = (item.text || '').split(/\s+/).filter(Boolean);
+  const naturalDur = explicitDur || Math.max(1.8, Math.min(7.5, words.length * 0.45));
+
+  const startT = Math.max(0, Math.round(startSec * 1000) / 1000);
+  const endT = Math.round((startT + naturalDur) * 1000) / 1000;
+
+  const newLine = {
+    id: `L-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    start: startT,
+    end: endT,
+    text: item.text,
+    adlib: item.adlib,
+    rawSyllabi: [],
+    adlibSyllabi: [],
+    agent: item.agent || (laneIndex === 1 ? 'v2' : 'v1'),
+    side: laneIndex === 1 ? 'left' : 'right',
+    isSimultaneous: false,
+    laneIndex: laneIndex,
+  };
+
+  lyrics.lines.push(newLine);
+  lyrics.lines.sort((a, b) => a.start - b.start);
+  Studio.selectedLineId = newLine.id;
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast(`Platziert: "${item.text.substring(0, 30)}${item.text.length > 30 ? '…' : ''}"`, 'success');
+}
+
+function placeNextQueueLineAtPlayhead() {
+  const track = getActiveTrack();
+  if (!track || !track.unplacedLines || track.unplacedLines.length === 0) {
+    addNewLineAtPlayhead();
+    return;
+  }
+
+  const targetId = Studio.pendingQueueId || track.unplacedLines[0].id;
+  const t = Studio.currentTime || 0;
+  placeQueueLineAtTime(targetId, t, 0);
+}
+
+function hasUnplacedQueueLines() {
+  const track = getActiveTrack();
+  return Boolean(track?.unplacedLines && track.unplacedLines.length > 0);
+}
+
+function placeAllQueueLines() {
+  const track = getActiveTrack();
+  if (!track || !track.unplacedLines || track.unplacedLines.length === 0) {
+    toast('Keine Zeilen im Pool vorhanden.', 'error');
+    return;
+  }
+
+  const count = track.unplacedLines.length;
+  let curT = Studio.currentTime || 0;
+  const items = [...track.unplacedLines];
+
+  pushHistory();
+  const lyrics = getActiveLyrics();
+
+  items.forEach((item, idx) => {
+    const words = (item.text || '').split(/\s+/).filter(Boolean);
+    const dur = Math.max(1.8, Math.min(6.0, words.length * 0.42));
+    const startT = Math.round(curT * 1000) / 1000;
+    const endT = Math.round((startT + dur) * 1000) / 1000;
+
+    lyrics.lines.push({
+      id: `L-${Date.now()}-${Math.random().toString(36).substr(2, 5)}-${idx}`,
+      start: startT,
+      end: endT,
+      text: item.text,
+      adlib: item.adlib,
+      rawSyllabi: [],
+      adlibSyllabi: [],
+      agent: item.agent || 'v1',
+      side: 'right',
+      isSimultaneous: false,
+      laneIndex: 0,
+    });
+
+    curT = endT + 0.35;
+  });
+
+  track.unplacedLines = [];
+  Studio.pendingQueueId = null;
+  lyrics.lines.sort((a, b) => a.start - b.start);
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  switchInspectorTab('inspector', true);
+  toast(`${count} Zeilen sequenziell auf der Timeline platziert!`, 'success');
+}
+
+function initTimelineDropZone() {
+  const targets = [
+    document.getElementById('tlLinesTrack'),
+    document.getElementById('tlInner'),
+    document.getElementById('tlWaveTrack')
+  ].filter(Boolean);
+
+  const linesTrack = document.getElementById('tlLinesTrack');
+
+  targets.forEach(el => {
+    el.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      linesTrack?.classList.add('drag-target-active');
+    });
+
+    el.addEventListener('dragleave', (e) => {
+      if (!e.relatedTarget || !linesTrack?.contains(e.relatedTarget)) {
+        linesTrack?.classList.remove('drag-target-active');
+      }
+    });
+
+    el.addEventListener('drop', (e) => {
+      e.preventDefault();
+      linesTrack?.classList.remove('drag-target-active');
+
+      const queueId = e.dataTransfer.getData('text/plain');
+      if (!queueId) return;
+
+      const tlInner = document.getElementById('tlInner');
+      if (!tlInner) return;
+
+      const rect = tlInner.getBoundingClientRect();
+      const dropX = e.clientX - rect.left;
+      const dropSec = Math.max(0, dropX / Studio.pps);
+
+      let laneIdx = 0;
+      if (linesTrack) {
+        const ltRect = linesTrack.getBoundingClientRect();
+        if (e.clientY > ltRect.top + ltRect.height / 2) {
+          laneIdx = 1;
+        }
+      }
+
+      placeQueueLineAtTime(queueId, dropSec, laneIdx);
+    });
+  });
+}
+

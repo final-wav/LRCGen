@@ -358,8 +358,19 @@ body {
 .tl-line-block.lane-offset-2 { top: 43px; height: 34px; background: #32233f; border-color: #5c3577; z-index: 4; }
 .tl-line-block.selected { border-color: var(--accent-lite); box-shadow: 0 0 0 1px var(--accent-lite); z-index: 6; }
 .tl-line-text {
-  font-size: .75rem; color: var(--text); padding: 0 8px; white-space: nowrap; overflow: hidden; flex: 1;
+  font-size: .75rem; color: var(--text); padding: 0 4px; white-space: nowrap; overflow: hidden; flex: 1;
 }
+.tl-line-lane-badge {
+  font-size: .60rem; font-weight: 700; font-family: var(--mono);
+  padding: 1px 4px; border-radius: 2px; margin-left: 4px; margin-right: 4px; flex-shrink: 0;
+  cursor: pointer; user-select: none; transition: all .12s;
+  background: rgba(255, 255, 255, 0.08); color: var(--text-2); border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.tl-line-lane-badge:hover {
+  background: rgba(255, 255, 255, 0.22); color: #fff; border-color: var(--accent-lite);
+}
+.tl-line-lane-badge.badge-l1 { color: #4da3ff; border-color: rgba(77, 163, 255, 0.4); background: rgba(77, 163, 255, 0.12); }
+.tl-line-lane-badge.badge-l2 { color: #2bb673; border-color: rgba(43, 182, 115, 0.4); background: rgba(43, 182, 115, 0.12); }
 
 /* Syllables Multi-Lane Track */
 .tl-syllables-track {
@@ -599,7 +610,53 @@ kbd {
   animation-play-state: paused !important;
 }
 
-/* ── Inspector Table ────────────────────────────────────────── */
+/* ── Inspector 3-Tab Header & Container ───────────────────────── */
+.insp-tab-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 8px; background: var(--surface2); border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.insp-tabs {
+  display: flex; align-items: center; gap: 4px;
+}
+.insp-tab-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid transparent; border-radius: 4px;
+  color: var(--text-2); font-size: 0.74rem; font-weight: 600;
+  padding: 4px 8px; cursor: pointer; transition: all 0.15s ease;
+}
+.insp-tab-btn:hover {
+  background: var(--surface3); color: var(--text); border-color: var(--border2);
+}
+.insp-tab-btn.active {
+  background: var(--surface3); color: #fff; border-color: var(--accent);
+}
+.insp-tab-count {
+  font-size: 0.62rem; font-weight: 700; font-family: var(--mono);
+  padding: 1px 5px; border-radius: 10px;
+  background: rgba(255,255,255,0.08); color: var(--text-2);
+}
+.insp-tab-btn.active .insp-tab-count {
+  background: var(--accent); color: #fff;
+}
+.insp-tab-count.queue-count {
+  background: rgba(245, 158, 11, 0.15); color: #fbbf24;
+}
+.insp-tab-btn.active .insp-tab-count.queue-count {
+  background: #f59e0b; color: #000;
+}
+.insp-tab-actions {
+  display: flex; align-items: center; gap: 6px;
+}
+
+.insp-tab-content {
+  display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+}
+.insp-tab-content.active {
+  display: flex;
+}
+
+/* ── Tab 1: Inspector Table ─────────────────────────────────── */
 .inspector-table-header {
   display: grid; grid-template-columns: 85px 1fr 75px; gap: 8px;
   padding: 5px 10px; font-size: .68rem; font-weight: 700; color: var(--text-3); text-transform: uppercase;
@@ -632,6 +689,112 @@ kbd {
 .insp-syl-pill.adlib { background: rgba(212, 146, 40, 0.15); color: #d49228; border-color: rgba(212, 146, 40, 0.3); }
 .insp-syl-pill.adlib:hover { border-color: #d49228; color: #f59e0b; }
 
+/* ── Tab 2: Zeilen-Pool (Queue) ──────────────────────────────── */
+.queue-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.queue-hint {
+  font-size: 0.68rem; color: var(--text-3); font-style: italic;
+}
+.queue-toolbar-btns {
+  display: flex; align-items: center; gap: 6px;
+}
+.queue-list {
+  flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px;
+}
+.queue-card {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 4px;
+  padding: 6px 10px; gap: 10px; cursor: grab; user-select: none;
+  transition: all 0.12s ease;
+}
+.queue-card:hover {
+  background: var(--surface3); border-color: var(--accent); transform: translateX(2px);
+}
+.queue-card:active {
+  cursor: grabbing;
+}
+.queue-card.dragging {
+  opacity: 0.45; border-color: var(--accent); background: #1c2333;
+}
+.queue-card.pending {
+  border-color: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.08);
+}
+.queue-card-left {
+  display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1;
+}
+.queue-grip-icon {
+  color: var(--text-3); font-size: 0.8rem; letter-spacing: -2px; cursor: grab; flex-shrink: 0;
+}
+.queue-idx-badge {
+  font-size: 0.64rem; font-family: var(--mono); font-weight: 700;
+  padding: 2px 5px; border-radius: 3px; background: rgba(255,255,255,0.06); color: var(--text-2);
+  flex-shrink: 0;
+}
+.queue-card-text {
+  font-size: 0.78rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.queue-adlib-pill {
+  font-size: 0.62rem; font-weight: 700; padding: 1px 4px; border-radius: 2px;
+  background: rgba(212, 146, 40, 0.15); color: #d49228; border: 1px solid rgba(212, 146, 40, 0.3);
+  flex-shrink: 0;
+}
+.queue-card-actions {
+  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+}
+.btn-queue-stamp {
+  font-size: 0.68rem; padding: 2px 6px; border-radius: 3px;
+  background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);
+  cursor: pointer; transition: all 0.1s;
+}
+.btn-queue-stamp:hover {
+  background: var(--accent); color: #fff;
+}
+.btn-queue-del {
+  background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+  font-size: 13px; padding: 2px 4px; border-radius: 3px;
+}
+.btn-queue-del:hover {
+  color: #f87171; background: rgba(248, 113, 113, 0.1);
+}
+.queue-empty-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 30px 20px; color: var(--text-3); text-align: center; gap: 8px; flex: 1;
+}
+
+/* ── Tab 3: Text einfügen ────────────────────────────────────── */
+.raw-import-wrap {
+  display: flex; flex-direction: column; flex: 1; padding: 10px; gap: 8px; min-height: 0;
+}
+.raw-lyrics-textarea {
+  flex: 1; width: 100%; min-height: 120px;
+  background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+  color: #fff; font-family: var(--mono); font-size: 0.78rem; line-height: 1.5;
+  padding: 10px; resize: none; outline: none; transition: border-color 0.15s;
+}
+.raw-lyrics-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+}
+.raw-import-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 4px; gap: 8px;
+}
+.raw-import-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.72rem; color: var(--text-2); cursor: pointer; user-select: none;
+}
+.raw-import-actions {
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ── Drop Target Highlights on Timeline ──────────────────────── */
+.tl-lines-track.drag-target-active {
+  box-shadow: inset 0 0 0 2px #3b82f6, 0 0 12px rgba(59, 130, 246, 0.4) !important;
+  background-color: rgba(59, 130, 246, 0.08) !important;
+}
+
 .tl-inline-input {
   background: rgba(10, 14, 23, 0.95);
   color: #ffffff;
@@ -648,12 +811,14 @@ kbd {
 }
 
 .insp-role-col { display: flex; gap: 4px; align-items: center; }
-.btn-insp-role, .btn-insp-bg {
+.btn-insp-role, .btn-insp-bg, .btn-insp-lane {
   border: 1px solid var(--border2); background: var(--surface3); color: var(--text-2);
   font-size: .64rem; font-weight: 700; padding: 2px 5px; border-radius: 2px; cursor: pointer;
 }
 .btn-insp-role.duet { background: var(--accent); color: #fff; border-color: var(--accent); }
 .btn-insp-bg.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+.btn-insp-lane.lane-1 { color: #4da3ff; border-color: rgba(77, 163, 255, 0.4); background: rgba(77, 163, 255, 0.12); }
+.btn-insp-lane.lane-2 { color: #2bb673; border-color: rgba(43, 182, 115, 0.4); background: rgba(43, 182, 115, 0.12); }
 
 /* ── Buttons (Adobe / DAW Styling) ─────────────────────────── */
 .btn {

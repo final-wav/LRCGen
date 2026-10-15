@@ -6,7 +6,7 @@
   <title>TTML Lyrics Studio — Album & Syllable Time-Sync</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=20261008_2">
 </head>
 <body>
 
@@ -67,6 +67,14 @@
       </button>
 
       <div style="width:1px; height:20px; background:var(--border2); margin:0 2px;"></div>
+
+      <button id="newProjectBtn" class="btn btn-secondary btn-sm" title="Neues Projekt anlegen (Zurück zum Setup)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Neues Projekt
+      </button>
 
       <button id="saveProjectBtn" class="btn btn-secondary btn-sm" title="Projektdatei (.lrcproj) speichern [Ctrl+S]">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
@@ -398,6 +406,7 @@
             <kbd>Del</kbd> Löschen &nbsp;·&nbsp;
             <kbd>B</kbd> Ad-lib (x-bg) &nbsp;·&nbsp;
             <kbd>1</kbd>/<kbd>2</kbd> Stimme &nbsp;·&nbsp;
+            <kbd>L</kbd> / <kbd>Alt+↑↓</kbd> Zeilenebene &nbsp;·&nbsp;
             <kbd>Vertikal ziehen</kbd> Ebene wechseln
           </div>
         </div>
@@ -421,22 +430,80 @@
             </div>
           </div>
 
-          <!-- Syllable & Line Inspector Table -->
+          <!-- Syllable & Line Inspector Panel with 3 Tabs -->
           <div class="panel inspector-panel">
-            <div class="panel-header">
-              <span class="panel-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-                </svg>
-                Lyrics &amp; Syllables Inspector
-              </span>
+            <div class="panel-header insp-tab-header">
+              <div class="insp-tabs">
+                <button class="insp-tab-btn active" id="inspTabInspectorBtn" data-tab="inspector" title="Tabelle platzierter Zeilen und Silben">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+                  </svg>
+                  Inspector
+                  <span class="insp-tab-count" id="inspLinesCountBadge">0</span>
+                </button>
+                <button class="insp-tab-btn" id="inspTabQueueBtn" data-tab="queue" title="Warteschlange unplatzierter Zeilen (Drag & Drop in Timeline)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/>
+                  </svg>
+                  Zeilen-Pool
+                  <span class="insp-tab-count queue-count" id="inspQueueCountBadge">0</span>
+                </button>
+                <button class="insp-tab-btn" id="inspTabImportBtn" data-tab="import" title="Songtext einfügen und in Zeilen zerlegen">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  Text einfügen
+                </button>
+              </div>
+              <div class="insp-tab-actions">
+                <button id="addQueueLineAtPlayheadBtn" class="btn btn-primary btn-xs" title="Nächste Zeile aus dem Pool am Playhead platzieren [Enter]">
+                  + Nächste an Playhead [Enter]
+                </button>
+              </div>
             </div>
-            <div class="inspector-table-header">
-              <span>Time</span><span>Text &amp; Syllables</span><span>Role</span>
+
+            <!-- Tab 1: Inspector (Table of placed lines) -->
+            <div class="insp-tab-content active" id="inspContentInspector">
+              <div class="inspector-table-header">
+                <span>Time</span><span>Text &amp; Syllables</span><span>Role</span>
+              </div>
+              <div class="inspector-list" id="inspectorLinesList">
+                <!-- Rendered dynamically by ttml-editor.js -->
+              </div>
             </div>
-            <div class="inspector-list" id="inspectorLinesList">
-              <!-- Rendered dynamically by ttml-editor.js -->
+
+            <!-- Tab 2: Zeilen-Pool (Queue of unplaced lines) -->
+            <div class="insp-tab-content" id="inspContentQueue">
+              <div class="queue-toolbar">
+                <span class="queue-hint">Klicke eine Zeile an oder ziehe sie per Drag &amp; Drop auf die Timeline</span>
+                <div class="queue-toolbar-btns">
+                  <button id="clearQueueBtn" class="btn btn-ghost btn-xs" title="Alle unplatzierten Zeilen aus dem Pool entfernen">Pool leeren</button>
+                  <button id="placeAllQueueBtn" class="btn btn-ghost btn-xs" title="Alle Zeilen nacheinander ab aktuellem Playhead platzieren">Alle platzieren</button>
+                </div>
+              </div>
+              <div class="queue-list" id="queueLinesList">
+                <!-- Draggable line cards rendered dynamically -->
+              </div>
             </div>
+
+            <!-- Tab 3: Text einfügen (Raw text input) -->
+            <div class="insp-tab-content" id="inspContentImport">
+              <div class="raw-import-wrap">
+                <textarea id="rawLyricsPasteArea" class="raw-lyrics-textarea" placeholder="Songtext hier einfach einfügen (Strg+V)...&#10;&#10;Jede Zeile wird automatisch zu einer Karte im Zeilen-Pool.&#10;Von dort kannst du die Zeilen einfach auf die Waveform ziehen oder mit [Enter] am Playhead stempeln."></textarea>
+                <div class="raw-import-footer">
+                  <label class="raw-import-opt">
+                    <input type="checkbox" id="rawDetectAdlibsCheck" checked>
+                    <span>(Klammern) automatisch als Ad-lib / Background-Vocal erkennen</span>
+                  </label>
+                  <div class="raw-import-actions">
+                    <button id="btnParseToQueue" class="btn btn-primary btn-sm">
+                      In Zeilen-Pool laden &rarr;
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
         </div>
@@ -548,12 +615,12 @@
 </div>
 
 <!-- Scripts -->
-<script src="/static/shared.js"></script>
-<script src="/static/ttml-state.js"></script>
-<script src="/static/ttml-album.js"></script>
-<script src="/static/ttml-player.js"></script>
-<script src="/static/ttml-editor.js"></script>
-<script src="/static/ttml-tap.js"></script>
-<script src="/static/ttml-app.js"></script>
+<script src="/static/shared.js?v=20261015_2"></script>
+<script src="/static/ttml-state.js?v=20261015_2"></script>
+<script src="/static/ttml-album.js?v=20261015_2"></script>
+<script src="/static/ttml-player.js?v=20261015_2"></script>
+<script src="/static/ttml-editor.js?v=20261015_2"></script>
+<script src="/static/ttml-tap.js?v=20261015_2"></script>
+<script src="/static/ttml-app.js?v=20261015_2"></script>
 </body>
 </html>

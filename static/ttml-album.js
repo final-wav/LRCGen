@@ -61,6 +61,7 @@ function initAlbumExplorer() {
   }
 
   // Save / Load Project Files (.lrcproj)
+  document.getElementById('newProjectBtn')?.addEventListener('click', createNewProject);
   document.getElementById('saveProjectBtn')?.addEventListener('click', saveAlbumProjectFile);
   document.getElementById('projectFileInput')?.addEventListener('change', e => {
     if (e.target.files && e.target.files[0]) openAlbumProjectFile(e.target.files[0]);
@@ -76,6 +77,76 @@ function initAlbumExplorer() {
       enterStudioWorkspace();
     });
   }
+}
+
+function createNewProject() {
+  if (Studio.project && Studio.project.tracks && Studio.project.tracks.length > 0) {
+    const ok = confirm('Möchtest du ein neues Projekt starten?\n\nVergewissere dich, dass du dein aktuelles Projekt gespeichert hast ("Projekt speichern"), falls du deine Änderungen behalten möchtest.');
+    if (!ok) return;
+  }
+
+  // 1. Audio stoppen
+  if (Studio.audio) {
+    Studio.audio.pause();
+    Studio.audio.src = '';
+  }
+
+  // 2. Studio State leeren
+  Studio.project = null;
+  Studio.activeTrackId = null;
+  Studio.history = [];
+  Studio.historyIdx = -1;
+  Studio.selectedLineId = null;
+  Studio.selectedSylIdx = null;
+  Studio.selectedSyllables.clear();
+
+  // 3. Cache & Session leeren
+  localStorage.removeItem('lrcgen_active_project');
+  localStorage.removeItem('lrcgen_active_track_id');
+
+  // 4. Ingestion Cards & Badges zurücksetzen
+  const audioDropCard = document.getElementById('audioDropCard');
+  const lyricsDropCard = document.getElementById('lyricsDropCard');
+  if (audioDropCard) audioDropCard.classList.remove('uploaded');
+  if (lyricsDropCard) lyricsDropCard.classList.remove('uploaded');
+
+  const audioStatusBox = document.getElementById('audioStatusBox');
+  const lyricsStatusBox = document.getElementById('lyricsStatusBox');
+  if (audioStatusBox) audioStatusBox.classList.add('hidden');
+  if (lyricsStatusBox) lyricsStatusBox.classList.add('hidden');
+
+  const audioBadge = document.getElementById('audioBadge');
+  if (audioBadge) {
+    audioBadge.textContent = 'Schritt 1';
+    audioBadge.style.background = '';
+    audioBadge.style.color = '';
+  }
+  const lyricsBadge = document.getElementById('lyricsBadge');
+  if (lyricsBadge) {
+    lyricsBadge.textContent = 'Schritt 2';
+    lyricsBadge.style.background = '';
+    lyricsBadge.style.color = '';
+  }
+
+  const setupBottomBar = document.getElementById('setupBottomBar');
+  if (setupBottomBar) setupBottomBar.classList.add('hidden');
+
+  // Input-Felder leeren
+  ['audioFolderInput', 'audioFilesInput', 'sidebarAudioInput', 'lyricsFolderInput', 'lyricsFilesInput', 'sidebarLyricsInput', 'projectFileInput', 'welcomeProjectFileInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  // 5. Zurück zum Setup-Screen wechseln
+  const dropZone = document.getElementById('albumDropZone');
+  if (dropZone) dropZone.classList.remove('hidden');
+  const mainWorkspace = document.getElementById('mainWorkspace');
+  if (mainWorkspace) mainWorkspace.classList.add('hidden');
+
+  // 6. Sidebar zurücksetzen
+  renderAlbumSidebar();
+
+  toast('Neues Projekt bereit. Lade jetzt deine Audio-Dateien hoch.', 'info');
 }
 
 function enterStudioWorkspace() {
@@ -202,6 +273,16 @@ function renderAlbumSidebar() {
   const artistEl = document.getElementById('albumArtistDisplay');
   const countEl = document.getElementById('albumTrackCount');
 
+  if (!Studio.project) {
+    if (titleEl) titleEl.textContent = 'Kein Album geladen';
+    if (artistEl) artistEl.textContent = 'Ordner oder Dateien ablegen';
+    if (countEl) countEl.textContent = '0 Tracks';
+    if (sidebar) {
+      sidebar.innerHTML = '<div class="tracklist-empty-hint">Lade zuerst Audio-Dateien oder ein Album hoch.</div>';
+    }
+    return;
+  }
+
   if (titleEl) titleEl.textContent = Studio.project.title || 'Untitled Album';
   if (artistEl) artistEl.textContent = Studio.project.artist || 'Various Artists';
   if (countEl) countEl.textContent = `${Studio.project.tracks?.length || 0} tracks`;
@@ -269,9 +350,10 @@ async function selectTrack(trackId) {
   if (artistInp) artistInp.value = track.artist || Studio.project.artist || '';
   if (trackNrEl) trackNrEl.textContent = `Track ${track.trackNumber}`;
 
-  // Reset History
+  // Reset History & tab auto-selection
   Studio.history = [];
   Studio.historyIdx = -1;
+  Studio.userSelectedTab = false;
   pushHistory();
 
   // Reset & update track vocals state

@@ -687,6 +687,8 @@ async def update_project_track(project_id: str, request: Request):
                 tr["lyrics"] = data["lyrics"]
                 has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in tr["lyrics"].get("lines", []))
                 tr["status"] = "syllable_synced" if has_syls else ("line_synced" if tr["lyrics"].get("lines") else "empty")
+            if "unplacedLines" in data:
+                tr["unplacedLines"] = data["unplacedLines"]
             if "title" in data:
                 tr["title"] = data["title"].strip()
             if "artist" in data:

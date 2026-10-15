@@ -48,6 +48,10 @@ var Studio = {
   history: [],
   historyIdx: -1,
 
+  // Queue & Tabs
+  activeInspTab: 'inspector', // 'inspector' | 'queue' | 'import'
+  pendingQueueId: null,       // Currently selected line in queue
+
   // Animation frame
   rafId: null,
 };
@@ -135,30 +139,29 @@ function deriveLineBoundsFromSyllables(lyrics) {
       curr.isSimultaneous = false;
     }
 
-    // Lane allocation: find first lane where end <= curr.start
-    let assignedLane = 0;
-    let foundLane = false;
-    for (let lIdx = 0; lIdx < laneEnds.length; lIdx++) {
-      if (curr.start >= laneEnds[lIdx] - 0.05) {
-        laneEnds[lIdx] = curr.end;
-        assignedLane = lIdx;
-        foundLane = true;
-        break;
+    // Lane allocation: only auto-assign if laneIndex is not explicitly set
+    if (curr.laneIndex === undefined) {
+      let assignedLane = 0;
+      let foundLane = false;
+      for (let lIdx = 0; lIdx < laneEnds.length; lIdx++) {
+        if (curr.start >= laneEnds[lIdx] - 0.05) {
+          laneEnds[lIdx] = curr.end;
+          assignedLane = lIdx;
+          foundLane = true;
+          break;
+        }
       }
-    }
-    if (!foundLane) {
-      laneEnds.push(curr.end);
-      assignedLane = laneEnds.length - 1;
-    }
-
-    if (curr.laneIndex === undefined || curr.isSimultaneous) {
+      if (!foundLane) {
+        laneEnds.push(curr.end);
+        assignedLane = laneEnds.length - 1;
+      }
       curr.laneIndex = assignedLane;
     }
 
     // Keep syllables aligned to the line's lane if they don't have custom lane assignments
-    const targetLane = curr.laneIndex !== undefined ? curr.laneIndex : assignedLane;
+    const targetLane = curr.laneIndex !== undefined ? curr.laneIndex : 0;
     (curr.rawSyllabi || []).forEach(s => {
-      if (s.lane === undefined || (curr.isSimultaneous && s.lane === 0)) {
+      if (s.lane === undefined) {
         s.lane = targetLane;
       }
     });
@@ -171,6 +174,8 @@ function refreshEditorViews() {
   if (typeof renderTimelineLines === 'function') renderTimelineLines();
   if (typeof renderTimelineSyllables === 'function') renderTimelineSyllables();
   if (typeof renderInspectorLines === 'function') renderInspectorLines();
+  if (typeof renderQueueLines === 'function') renderQueueLines();
+  if (typeof updateInspectorCounters === 'function') updateInspectorCounters();
   if (typeof updateSweepPlayer === 'function') updateSweepPlayer(true);
   refreshUndoRedoBtns();
 }
@@ -197,6 +202,7 @@ async function saveActiveTrackToBackend() {
       body: JSON.stringify({
         track_id: tr.id,
         lyrics: tr.lyrics,
+        unplacedLines: tr.unplacedLines || [],
         title: tr.title,
         artist: tr.artist,
         status: tr.status,

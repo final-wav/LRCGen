@@ -93,26 +93,30 @@ function renderSweepPlayer() {
     lineDiv.dataset.start = line.start;
     lineDiv.dataset.end = line.end;
 
-    // Main vocal container
-    const mainP = document.createElement('p');
-    mainP.className = 'karaoke-main-vocal';
-
     const rawSylls = line.rawSyllabi || [];
-    if (rawSylls.length > 0) {
-      rawSylls.forEach((syl, sIdx) => {
-        const wrap = document.createElement('span');
-        wrap.className = 'syl-wrap';
-        const span = document.createElement('span');
-        span.className = 'syl-token' + (isPast ? ' finished' : '');
-        span.textContent = syl.text;
-        span.dataset.sIdx = sIdx;
-        wrap.appendChild(span);
-        mainP.appendChild(wrap);
-      });
-    } else {
-      mainP.textContent = line.text || '';
+    const hasMainVocal = rawSylls.length > 0 || (line.text && line.text.trim().length > 0);
+
+    // Main vocal container (only render if line actually has lead vocals)
+    if (hasMainVocal) {
+      const mainP = document.createElement('p');
+      mainP.className = 'karaoke-main-vocal';
+
+      if (rawSylls.length > 0) {
+        rawSylls.forEach((syl, sIdx) => {
+          const wrap = document.createElement('span');
+          wrap.className = 'syl-wrap';
+          const span = document.createElement('span');
+          span.className = 'syl-token' + (isPast ? ' finished' : '');
+          span.textContent = syl.text;
+          span.dataset.sIdx = sIdx;
+          wrap.appendChild(span);
+          mainP.appendChild(wrap);
+        });
+      } else {
+        mainP.textContent = line.text || '';
+      }
+      lineDiv.appendChild(mainP);
     }
-    lineDiv.appendChild(mainP);
 
     // Background vocal / ad-lib container (if present)
     const adlibSylls = line.adlibSyllabi || [];
@@ -133,7 +137,7 @@ function renderSweepPlayer() {
           bgP.appendChild(wrap);
         });
       } else {
-        bgP.textContent = `(${adlibText})`;
+        bgP.textContent = adlibText.startsWith('(') ? adlibText : `(${adlibText})`;
       }
       lineDiv.appendChild(bgP);
     }
