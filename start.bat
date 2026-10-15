@@ -43,5 +43,5 @@ echo.
 :: Open browser after 2 seconds
 start "" cmd /c "timeout /t 2 /nobreak >nul && start http://127.0.0.1:8001"
 
-"%PY_EXE%" -m uvicorn app:app --host 127.0.0.1 --port 8001 --log-level info --access-log
+"%PY_EXE%" -m uvicorn app:app --host 127.0.0.1 --port 8001 --reload --log-level info --access-log
 pause

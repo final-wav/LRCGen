@@ -314,6 +314,21 @@ def _extract_audio_metadata(file_path: str) -> dict:
     return meta
 
 
+def _get_project_data(project_id: str) -> Optional[dict]:
+    if project_id in projects:
+        return projects[project_id]
+    proj_file = Path(f"projects/{project_id}.json")
+    if proj_file.exists():
+        try:
+            import json
+            data = json.loads(proj_file.read_text(encoding="utf-8"))
+            projects[project_id] = data
+            return data
+        except Exception:
+            pass
+    return None
+
+
 # ─── Album & Project Management Endpoints ─────────────────────────────────────
 
 @app.post("/api/project/upload_audio")
@@ -407,10 +422,10 @@ async def upload_audio_files(files: list[UploadFile] = File(...)):
 @app.post("/api/project/{project_id}/upload_lyrics")
 async def upload_project_lyrics(project_id: str, files: list[UploadFile] = File(...)):
     """Uploads lyrics files and matches them to tracks in an existing project."""
-    if project_id not in projects:
+    project = _get_project_data(project_id)
+    if not project:
         return JSONResponse({"error": "Project not found"}, status_code=404)
 
-    project = projects[project_id]
     matched_count = 0
     match_details = []
 
@@ -463,10 +478,10 @@ async def upload_project_lyrics(project_id: str, files: list[UploadFile] = File(
 @app.post("/api/project/{project_id}/track/{track_id}/set_lyrics")
 async def set_track_lyrics_direct(project_id: str, track_id: str, request: Request):
     """Directly sets lyrics text or parsed JSON for a specific track."""
-    if project_id not in projects:
+    project = _get_project_data(project_id)
+    if not project:
         return JSONResponse({"error": "Project not found"}, status_code=404)
 
-    project = projects[project_id]
     target_track = next((t for t in project["tracks"] if t["id"] == track_id), None)
     if not target_track:
         return JSONResponse({"error": "Track not found"}, status_code=404)
@@ -597,20 +612,9 @@ async def upload_album(files: list[UploadFile] = File(...)):
 
 @app.get("/api/project/{project_id}")
 async def get_project(project_id: str):
-    if project_id in projects:
-        return projects[project_id]
-    
-    # Try loading from disk
-    proj_file = Path(f"projects/{project_id}.json")
-    if proj_file.exists():
-        try:
-            import json
-            data = json.loads(proj_file.read_text(encoding="utf-8"))
-            projects[project_id] = data
-            return data
-        except Exception:
-            pass
-
+    project = _get_project_data(project_id)
+    if project:
+        return project
     return JSONResponse({"error": "Project not found"}, status_code=404)
 
 
@@ -674,7 +678,8 @@ async def restore_project_file(files: list[UploadFile] = File(...)):
 
 @app.post("/api/project/{project_id}/update_track")
 async def update_project_track(project_id: str, request: Request):
-    if project_id not in projects:
+    project = _get_project_data(project_id)
+    if not project:
         return JSONResponse({"error": "Project not found"}, status_code=404)
 
     data = await request.json()
@@ -702,7 +707,8 @@ async def update_project_track(project_id: str, request: Request):
 
 @app.post("/api/project/{project_id}/align_track")
 async def align_project_track(project_id: str, request: Request):
-    if project_id not in projects:
+    project = _get_project_data(project_id)
+    if not project:
         return JSONResponse({"error": "Project not found"}, status_code=404)
 
     data = await request.json()
@@ -713,7 +719,6 @@ async def align_project_track(project_id: str, request: Request):
     whisper_model = data.get("whisper_model", "base")
     uvr_model_id = data.get("uvr_model_id", "UVR-MDX-NET-Inst_HQ_3")
 
-    project = projects[project_id]
     target_track = next((t for t in project["tracks"] if t["id"] == track_id), None)
     if not target_track:
         return JSONResponse({"error": "Track not found"}, status_code=404)
@@ -784,7 +789,8 @@ async def align_project_track_lines(project_id: str, request: Request):
     Takes raw/unplaced lines, transcribes audio words via Whisper,
     and accurately aligns the start and end timestamps of each line to the vocal waveform.
     """
-    if project_id not in projects:
+    project = _get_project_data(project_id)
+    if not project:
         return JSONResponse({"error": "Project not found"}, status_code=404)
 
     data = await request.json()
@@ -793,7 +799,6 @@ async def align_project_track_lines(project_id: str, request: Request):
     whisper_model = data.get("whisper_model", "base")
     uvr_model_id = data.get("uvr_model_id", "UVR-MDX-NET-Inst_HQ_3")
 
-    project = projects[project_id]
     target_track = next((t for t in project["tracks"] if t["id"] == track_id), None)
     if not target_track:
         return JSONResponse({"error": "Track not found"}, status_code=404)
