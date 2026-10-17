@@ -225,17 +225,17 @@ function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
       span.style.setProperty('--syl-dur', `${durMs}ms`);
       span.style.setProperty('--syl-del', `${delayMs}ms`);
 
-      // Velocity Lift: short/fast syllables (<250ms) stay flat; longer held vowels (>500ms) lift up to 1.055
+      // Subtle velocity lift calibrated for 1.30rem preview size:
+      // Syllables < 380ms stay flat (1.0); sustained vowels (> 750ms) swell gently up to 1.018
       let lift = 1.0;
       let glowAlpha = 0;
-      if (durMs >= 500) {
-        lift = 1.055;
-        glowAlpha = 0.50;
-      } else if (durMs > 250) {
-        // Smoothly interpolate between 250ms and 500ms
-        const t = (durMs - 250) / 250;
-        lift = 1.0 + 0.055 * t;
-        glowAlpha = 0.50 * t;
+      if (durMs >= 750) {
+        lift = 1.018;
+        glowAlpha = 0.25;
+      } else if (durMs > 380) {
+        const t = (durMs - 380) / 370;
+        lift = 1.0 + 0.018 * t;
+        glowAlpha = 0.25 * t;
       }
       span.style.setProperty('--syl-lift', lift.toFixed(4));
       span.style.setProperty('--syl-glow', glowAlpha.toFixed(2));

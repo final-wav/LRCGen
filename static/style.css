@@ -669,6 +669,9 @@ kbd {
   line-height: 1.4;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
 }
 .karaoke-adlib-vocal {
   font-size: 1.05rem;
@@ -677,6 +680,9 @@ kbd {
   line-height: 1.3;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: geometricPrecision;
 }
 
 .syl-wrap {
@@ -734,7 +740,6 @@ kbd {
   white-space: pre-wrap;
   pointer-events: none;
   transform-origin: bottom center;
-  will-change: transform, -webkit-mask-size, mask-size;
   -webkit-mask-image: linear-gradient(to right, #ffffff 0%, #ffffff 70%, transparent 100%);
   mask-image:         linear-gradient(to right, #ffffff 0%, #ffffff 70%, transparent 100%);
   -webkit-mask-repeat: no-repeat;
@@ -754,14 +759,17 @@ kbd {
     -webkit-mask-size: 0% 100%;
     mask-size: 0% 100%;
     transform: scaleY(1.0);
+    text-shadow: 0 0 0px rgba(255, 255, 255, 0);
   }
   45% {
-    transform: scaleY(var(--syl-lift, 1.055));
+    transform: scaleY(var(--syl-lift, 1.018));
+    text-shadow: 0 -0.5px 3px rgba(255, 255, 255, var(--syl-glow, 0.25));
   }
   100% {
     -webkit-mask-size: 145% 100%;
     mask-size: 145% 100%;
     transform: scaleY(1.0);
+    text-shadow: 0 0 0px rgba(255, 255, 255, 0);
   }
 }
 
