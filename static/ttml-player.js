@@ -113,30 +113,16 @@ function renderSweepPlayer() {
       mainP.className = 'karaoke-main-vocal';
 
       if (rawSylls.length > 0) {
-        const words = [];
-        let curWord = [];
         rawSylls.forEach((syl, sIdx) => {
-          curWord.push({ syl, sIdx });
-          if (/\s$/.test(syl.text) || sIdx === rawSylls.length - 1) {
-            words.push(curWord);
-            curWord = [];
-          }
-        });
-        if (curWord.length) words.push(curWord);
+          const wrapSpan = document.createElement('span');
+          wrapSpan.className = 'syl-wrap';
 
-        words.forEach((wSyls, wIdx) => {
-          const wordSpan = document.createElement('span');
-          wordSpan.className = 'word-token';
-          wordSpan.dataset.wIdx = wIdx;
-
-          wSyls.forEach(({ syl, sIdx }) => {
-            const span = document.createElement('span');
-            span.className = 'syl-token' + (isPast ? ' finished' : '');
-            span.textContent = syl.text;
-            span.dataset.sIdx = sIdx;
-            wordSpan.appendChild(span);
-          });
-          mainP.appendChild(wordSpan);
+          const span = document.createElement('span');
+          span.className = 'syl-token' + (isPast ? ' finished' : '');
+          span.textContent = syl.text;
+          span.dataset.sIdx = sIdx;
+          wrapSpan.appendChild(span);
+          mainP.appendChild(wrapSpan);
         });
       } else {
         mainP.textContent = line.text || '';
@@ -152,30 +138,16 @@ function renderSweepPlayer() {
       adlibP.className = 'karaoke-adlib-vocal';
 
       if (adlibSylls.length > 0) {
-        const words = [];
-        let curWord = [];
         adlibSylls.forEach((syl, sIdx) => {
-          curWord.push({ syl, sIdx });
-          if (/\s$/.test(syl.text) || sIdx === adlibSylls.length - 1) {
-            words.push(curWord);
-            curWord = [];
-          }
-        });
-        if (curWord.length) words.push(curWord);
+          const wrapSpan = document.createElement('span');
+          wrapSpan.className = 'syl-wrap';
 
-        words.forEach((wSyls, wIdx) => {
-          const wordSpan = document.createElement('span');
-          wordSpan.className = 'word-token adlib';
-          wordSpan.dataset.wIdx = wIdx;
-
-          wSyls.forEach(({ syl, sIdx }) => {
-            const span = document.createElement('span');
-            span.className = 'syl-token adlib' + (isPast ? ' finished' : '');
-            span.textContent = syl.text;
-            span.dataset.sIdx = sIdx;
-            wordSpan.appendChild(span);
-          });
-          adlibP.appendChild(wordSpan);
+          const span = document.createElement('span');
+          span.className = 'syl-token adlib' + (isPast ? ' finished' : '');
+          span.textContent = syl.text;
+          span.dataset.sIdx = sIdx;
+          wrapSpan.appendChild(span);
+          adlibP.appendChild(wrapSpan);
         });
       } else {
         const text = adlibText.startsWith('(') ? adlibText : `(${adlibText})`;
@@ -199,117 +171,69 @@ function _injectSyllables(lineEl, line, ct) {
   // Main vocal — drives the line's primary wipe
   const mainP = lineEl.querySelector('.karaoke-main-vocal');
   if (mainP && line.rawSyllabi?.length) {
-    _activateSyllableGroup(mainP, line.rawSyllabi, positionMs, pRate);
+    _activateSyllableGroup(mainP.querySelectorAll('.syl-token'), line.rawSyllabi, positionMs, pRate);
   }
 
   // Background vocal (ad-lib) — same wipe machinery
   const adlibP = lineEl.querySelector('.karaoke-adlib-vocal');
   if (adlibP && line.adlibSyllabi?.length) {
-    _activateSyllableGroup(adlibP, line.adlibSyllabi, positionMs, pRate);
+    _activateSyllableGroup(adlibP.querySelectorAll('.syl-token'), line.adlibSyllabi, positionMs, pRate);
   }
 }
 
-function _activateSyllableGroup(container, syllabi, positionMs, pRate = 1.0) {
-  const spans = container.querySelectorAll('.syl-token');
+// Apply wipe state to a group of pre-rendered syllable spans.
+// Port of ModernMusicPlayer lyrics-sync.js. The base text never moves; the
+// lift is applied only to the ::after overlay via the `wipe` keyframes.
+function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
   if (spans.length !== syllabi.length) return;
 
-  // 1. Group syllabi into words (tokens without trailing space belong to the same word)
-  const words = [];
-  let curWord = [];
-  syllabi.forEach((syl, idx) => {
-    curWord.push({ syl, idx, span: spans[idx] });
-    if (/\s$/.test(syl.text) || idx === syllabi.length - 1) {
-      words.push(curWord);
-      curWord = [];
-    }
-  });
-  if (curWord.length) words.push(curWord);
-
-  const wordEls = container.querySelectorAll('.word-token, .syl-wrap');
-
-  // 2. Animate word-level breathing curve (calculated per WORD, not per syllable!)
-  words.forEach((wSyls, wIdx) => {
-    const firstSyl  = wSyls[0].syl;
-    const lastSyl   = wSyls[wSyls.length - 1].syl;
-    const wordStart = firstSyl.time;
-    const wordEnd   = lastSyl.time + lastSyl.duration;
-    const wordDur   = wordEnd - wordStart;
-
-    const wordEl = wordEls[wIdx] || wSyls[0].span.parentElement;
-
-    if (wordEl) {
-      wordEl.removeEventListener('animationend', _onWordAnimationEnd);
-      wordEl.classList.remove('highlight');
-      wordEl.style.removeProperty('--word-dur');
-      wordEl.style.removeProperty('--word-del');
-      wordEl.style.removeProperty('--word-lift');
-      wordEl.style.removeProperty('--word-scale');
-
-      if (positionMs < wordEnd) {
-        const overlapMs = wIdx > 0 ? Math.min(70, Math.max(50, Math.round(wordDur * 0.25))) : 0;
-        const rawDelay  = (wordStart - overlapMs) - positionMs;
-        const rawDur    = wordDur + overlapMs;
-
-        const durMs   = Math.round(rawDur / pRate);
-        const delayMs = Math.round(rawDelay / pRate);
-
-        // Word lift & micro-scale (calibrated directly from Apple Music recording measurement):
-        // Active words float up by minimal 1.0px up to 1.35px on sustained notes.
-        const durProgress = Math.min(Math.max((wordDur - 160) / 400, 0), 1);
-        const liftPx = 1.0 + durProgress * 0.35;
-        const scaleFactor = 1.015 + durProgress * 0.02;
-
-        wordEl.style.setProperty('--word-dur', `${durMs}ms`);
-        wordEl.style.setProperty('--word-del', `${delayMs}ms`);
-        wordEl.style.setProperty('--word-lift', `${liftPx.toFixed(2)}px`);
-        wordEl.style.setProperty('--word-scale', scaleFactor.toFixed(3));
-        wordEl.classList.add('highlight');
-        wordEl.addEventListener('animationend', _onWordAnimationEnd);
-      }
-    }
-  });
-
-  // 3. Syllable-level optical mask wipe (sequential light sweep across letters)
   syllabi.forEach((syl, idx) => {
     const span = spans[idx];
     const sylEndMs = syl.time + syl.duration;
 
+    // Wipe any leftover state from a previous activation cycle
     span.removeEventListener('animationend', _onWipeEnd);
     span.removeEventListener('animationend', _onFadeOutEnd);
     span.classList.remove('highlight', 'finished', 'fading-out');
     span.style.removeProperty('--syl-dur');
     span.style.removeProperty('--syl-del');
+    span.style.removeProperty('--syl-lift');
+    span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
     if (positionMs >= sylEndMs) {
       span.classList.add('finished');
     } else {
-      const overlapMs = idx > 0 ? Math.min(70, Math.max(50, Math.round(syl.duration * 0.25))) : 0;
-      const rawDelayMs = (syl.time - overlapMs) - positionMs;
-      const rawDurMs   = syl.duration + overlapMs;
-
-      const durMs   = Math.round(rawDurMs / pRate);
-      const delayMs = Math.round(rawDelayMs / pRate);
+      // ORDER MATTERS: data-text + custom props before .highlight, otherwise
+      // the ::after animation resolves once with fallback values.
+      // Exact time-synced delay and duration without artificial offsets;
+      // scaled by playback rate so the CSS clock matches the audio clock.
+      const delayMs = Math.round((syl.time - positionMs) / pRate);
+      const durMs   = Math.max(1, Math.round(syl.duration / pRate));
 
       span.dataset.text = syl.text;
       span.style.setProperty('--syl-dur', `${durMs}ms`);
       span.style.setProperty('--syl-del', `${delayMs}ms`);
 
+      // Velocity Lift: short/fast syllables (<250ms) stay flat; longer held vowels (>500ms) lift up to 1.055
+      let lift = 1.0;
+      let glowAlpha = 0;
+      if (durMs >= 500) {
+        lift = 1.055;
+        glowAlpha = 0.50;
+      } else if (durMs > 250) {
+        // Smoothly interpolate between 250ms and 500ms
+        const t = (durMs - 250) / 250;
+        lift = 1.0 + 0.055 * t;
+        glowAlpha = 0.50 * t;
+      }
+      span.style.setProperty('--syl-lift', lift.toFixed(4));
+      span.style.setProperty('--syl-glow', glowAlpha.toFixed(2));
+
       span.classList.add('highlight');
       span.addEventListener('animationend', _onWipeEnd);
     }
   });
-}
-
-function _onWordAnimationEnd(e) {
-  if (e.animationName !== 'word-breathe' && e.animationName !== 'word-adlib-breathe') return;
-  const wordEl = e.currentTarget;
-  wordEl.removeEventListener('animationend', _onWordAnimationEnd);
-  wordEl.classList.remove('highlight');
-  wordEl.style.removeProperty('--word-dur');
-  wordEl.style.removeProperty('--word-del');
-  wordEl.style.removeProperty('--word-lift');
-  wordEl.style.removeProperty('--word-scale');
 }
 
 function _onWipeEnd(e) {
@@ -319,21 +243,13 @@ function _onWipeEnd(e) {
   span.classList.remove('highlight');
   span.style.removeProperty('--syl-dur');
   span.style.removeProperty('--syl-del');
+  span.style.removeProperty('--syl-lift');
+  span.style.removeProperty('--syl-glow');
   delete span.dataset.text;
   span.classList.add('finished');
 }
 
 function _resetLineText(lineEl) {
-  const wordEls = lineEl.querySelectorAll('.word-token, .syl-wrap');
-  wordEls.forEach(wordEl => {
-    wordEl.removeEventListener('animationend', _onWordAnimationEnd);
-    wordEl.classList.remove('highlight');
-    wordEl.style.removeProperty('--word-dur');
-    wordEl.style.removeProperty('--word-del');
-    wordEl.style.removeProperty('--word-lift');
-    wordEl.style.removeProperty('--word-scale');
-  });
-
   const spans = lineEl.querySelectorAll('.syl-token');
   if (!spans.length) return;
   spans.forEach(span => {
@@ -342,6 +258,8 @@ function _resetLineText(lineEl) {
     span.classList.remove('highlight');
     span.style.removeProperty('--syl-dur');
     span.style.removeProperty('--syl-del');
+    span.style.removeProperty('--syl-lift');
+    span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
     if (wasActive) {
