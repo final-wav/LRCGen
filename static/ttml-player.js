@@ -39,9 +39,14 @@ function getActiveLineGroup(lines, curTimeSec) {
 
   // Fallback between lines: keep most recently started line active
   if (activeGroup.length === 0) {
+    const allZero = lines.every(l => (l.start || 0) === 0 && (l.end || 0) === 0);
+    if (allZero) return [0];
+
     let lastStarted = -1;
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].start <= curTimeSec) lastStarted = i;
+      if (lines[i].start <= curTimeSec && (lines[i].end > 0 || lines[i].start > 0)) {
+        lastStarted = i;
+      }
     }
     if (lastStarted >= 0) activeGroup.push(lastStarted);
     else activeGroup.push(0);
@@ -93,7 +98,8 @@ function renderSweepPlayer() {
     lineDiv.dataset.start = line.start;
     lineDiv.dataset.end = line.end;
 
-    const rawSylls = line.rawSyllabi || [];
+    const isLineMode = (typeof Studio !== 'undefined' && Studio.workflowMode === 'line');
+    const rawSylls = isLineMode ? [] : (line.rawSyllabi || []);
     const hasMainVocal = rawSylls.length > 0 || (line.text && line.text.trim().length > 0);
 
     // Main vocal container (only render if line actually has lead vocals)
@@ -119,7 +125,7 @@ function renderSweepPlayer() {
     }
 
     // Background vocal / ad-lib container (if present)
-    const adlibSylls = line.adlibSyllabi || [];
+    const adlibSylls = isLineMode ? [] : (line.adlibSyllabi || []);
     const adlibText  = line.adlib || '';
     if (adlibSylls.length > 0 || adlibText) {
       const bgP = document.createElement('p');
@@ -172,8 +178,9 @@ function _onWipeEnd(e) {
   span.removeEventListener('animationend', _onWipeEnd);
   span.classList.remove('highlight');
   span.style.removeProperty('--syl-dur');
-  span.style.removeProperty('--syl-lift');
   span.style.removeProperty('--syl-del');
+  span.style.removeProperty('--syl-lift');
+  span.style.removeProperty('--syl-glow');
   delete span.dataset.text;
   span.classList.add('finished');
 }
@@ -187,28 +194,42 @@ function _activateSyllableGroup(spans, syllabi, positionMs) {
     const sylEndMs = syl.time + syl.duration;
 
     span.removeEventListener('animationend', _onWipeEnd);
-    span.classList.remove('highlight', 'finished');
+    span.removeEventListener('animationend', _onFadeOutEnd);
+    span.classList.remove('highlight', 'finished', 'fading-out');
     span.style.removeProperty('--syl-dur');
-    span.style.removeProperty('--syl-lift');
     span.style.removeProperty('--syl-del');
+    span.style.removeProperty('--syl-lift');
+    span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
     if (positionMs >= sylEndMs) {
       span.classList.add('finished');
     } else {
-      const overlapMs = idx > 0 ? Math.min(70, Math.round(syl.duration * 0.3)) : 0;
-      const rawDelayMs = (syl.time - overlapMs) - positionMs;
-      const rawDurMs   = syl.duration + overlapMs;
-      const liftPx     = Math.min(Math.max((syl.duration - 180) / 250, 0), 1) * 0.55;
+      const rawDelayMs = syl.time - positionMs;
+      const rawDurMs   = Math.max(1, syl.duration);
 
       // Scale duration & delay inversely with playbackRate
-      const durMs = Math.round(rawDurMs / pRate);
+      const durMs   = Math.round(rawDurMs / pRate);
       const delayMs = Math.round(rawDelayMs / pRate);
 
       span.dataset.text = syl.text;
       span.style.setProperty('--syl-dur', `${durMs}ms`);
-      span.style.setProperty('--syl-lift', `${liftPx.toFixed(2)}px`);
       span.style.setProperty('--syl-del', `${delayMs}ms`);
+
+      // Velocity Lift: short/fast syllables (<250ms) stay flat; longer held vowels (>500ms) lift up to 1.055
+      let lift = 1.0;
+      let glowAlpha = 0;
+      if (rawDurMs >= 500) {
+        lift = 1.055;
+        glowAlpha = 0.50;
+      } else if (rawDurMs > 250) {
+        const t = (rawDurMs - 250) / 250;
+        lift = 1.0 + 0.055 * t;
+        glowAlpha = 0.50 * t;
+      }
+      span.style.setProperty('--syl-lift', lift.toFixed(4));
+      span.style.setProperty('--syl-glow', glowAlpha.toFixed(2));
+
       span.classList.add('highlight');
       span.addEventListener('animationend', _onWipeEnd);
     }
@@ -217,18 +238,29 @@ function _activateSyllableGroup(spans, syllabi, positionMs) {
 
 function _resetLineText(lineEl) {
   const spans = lineEl.querySelectorAll('.syl-token');
+  if (!spans.length) return;
   spans.forEach(span => {
     span.removeEventListener('animationend', _onWipeEnd);
     const wasActive = span.classList.contains('finished') || span.classList.contains('highlight');
     span.classList.remove('highlight');
     span.style.removeProperty('--syl-dur');
-    span.style.removeProperty('--syl-lift');
     span.style.removeProperty('--syl-del');
+    span.style.removeProperty('--syl-lift');
+    span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
+
     if (wasActive) {
       span.classList.add('finished');
+      span.classList.add('fading-out');
+      span.addEventListener('animationend', _onFadeOutEnd, { once: true });
     }
   });
+}
+
+function _onFadeOutEnd(e) {
+  if (e.animationName !== 'syllable-fade-out' && e.animationName !== 'syllable-adlib-fade-out') return;
+  const span = e.currentTarget;
+  span.classList.remove('fading-out', 'finished');
 }
 
 function updateSweepPlayer(forceRerender = false) {
@@ -296,6 +328,10 @@ function updateSweepPlayer(forceRerender = false) {
   }
 
   // ── CSS Syllable Sweep Synchronization (Zero-Jank GPU Engine) ───────────
+  if (typeof Studio !== 'undefined' && Studio.workflowMode === 'line') {
+    return;
+  }
+
   const scrubbed = _syncLastCt >= 0 && Math.abs(curTimeSec - _syncLastCt) > 0.4;
   _syncLastCt = curTimeSec;
 
