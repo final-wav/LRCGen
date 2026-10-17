@@ -686,18 +686,70 @@ kbd {
   padding: 0;
 }
 
+.word-token,
 .syl-wrap {
-  display: inline;
+  display: inline-block;
+  vertical-align: baseline;
+  transform-origin: center bottom;
+  white-space: pre-wrap;
+  will-change: transform, filter;
+}
+
+.word-token.highlight,
+.syl-wrap.highlight {
+  position: relative;
+  animation: word-breathe var(--word-dur, 1s) cubic-bezier(0.37, 0, 0.63, 1) var(--word-del, 0ms) 1 normal both running;
+}
+
+@keyframes word-breathe {
+  0% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+  40% {
+    transform: translateY(calc(var(--word-lift, 1.0px) * -1)) scale(var(--word-scale, 1.02));
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.25));
+  }
+  75% {
+    transform: translateY(calc(var(--word-lift, 1.0px) * -0.25)) scale(calc(1 + (var(--word-scale, 1.02) - 1) * 0.25));
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.1));
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
+  }
+}
+
+.word-token.adlib.highlight {
+  animation: word-adlib-breathe var(--word-dur, 1s) cubic-bezier(0.37, 0, 0.63, 1) var(--word-del, 0ms) 1 normal both running;
+}
+
+@keyframes word-adlib-breathe {
+  0% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 0 rgba(212, 146, 40, 0));
+  }
+  40% {
+    transform: translateY(calc(var(--word-lift, 1.0px) * -1)) scale(var(--word-scale, 1.02));
+    filter: drop-shadow(0 0 3px rgba(212, 146, 40, 0.35));
+  }
+  75% {
+    transform: translateY(calc(var(--word-lift, 1.0px) * -0.25)) scale(calc(1 + (var(--word-scale, 1.02) - 1) * 0.25));
+    filter: drop-shadow(0 0 1px rgba(212, 146, 40, 0.15));
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: drop-shadow(0 0 0 rgba(212, 146, 40, 0));
+  }
 }
 
 /* ─── Apple Music Syllable Sweep (1:1 ModernMusicPlayer Engine) ────────── */
 .syl-token {
   display: inline-block;
   vertical-align: baseline;
-  transform-origin: bottom center;
   color: rgba(255, 255, 255, 0.35);
   white-space: pre-wrap;
-  will-change: color, transform;
+  will-change: color;
 }
 .syl-token.adlib {
   color: rgba(212, 146, 40, 0.4);
@@ -739,7 +791,6 @@ kbd {
   color: #ffffff;
   white-space: pre-wrap;
   pointer-events: none;
-  transform-origin: bottom center;
   -webkit-mask-image: linear-gradient(to right, #ffffff 0%, #ffffff 70%, transparent 100%);
   mask-image:         linear-gradient(to right, #ffffff 0%, #ffffff 70%, transparent 100%);
   -webkit-mask-repeat: no-repeat;
@@ -765,6 +816,8 @@ kbd {
   }
 }
 
+.karaoke-player-stage.karaoke-paused .word-token.highlight,
+.karaoke-player-stage.karaoke-paused .syl-wrap.highlight,
 .karaoke-player-stage.karaoke-paused .syl-token.highlight,
 .karaoke-player-stage.karaoke-paused .syl-token.highlight::after,
 .karaoke-player-stage.karaoke-paused .syl-token.fading-out {
