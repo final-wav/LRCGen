@@ -711,26 +711,6 @@ kbd {
 
 .syl-token.highlight {
   position: relative;
-  animation: syllable-breathe var(--syl-dur, 1s) cubic-bezier(0.37, 0, 0.63, 1) var(--syl-del, 0ms) 1 normal both running;
-}
-
-@keyframes syllable-breathe {
-  0% {
-    transform: translateY(0) scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
-  }
-  40% {
-    transform: translateY(calc(var(--syl-lift, 0px) * -1)) scale(var(--syl-scale, 1.0));
-    filter: drop-shadow(0 -1px 4px rgba(255, 255, 255, var(--syl-glow, 0.5)));
-  }
-  75% {
-    transform: translateY(calc(var(--syl-lift, 0px) * -0.25)) scale(calc(1 + (var(--syl-scale, 1.0) - 1) * 0.25));
-    filter: drop-shadow(0 0 2px rgba(255, 255, 255, calc(var(--syl-glow, 0.5) * 0.3)));
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
-  }
 }
 
 .syl-token.fading-out {
@@ -778,10 +758,18 @@ kbd {
   0% {
     -webkit-mask-size: 0% 100%;
     mask-size: 0% 100%;
+    transform: scaleY(1.0);
+    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
+  }
+  45% {
+    transform: scaleY(var(--syl-lift, 1.055));
+    filter: drop-shadow(0 -1px 4px rgba(255, 255, 255, var(--syl-glow, 0.5)));
   }
   100% {
     -webkit-mask-size: 145% 100%;
     mask-size: 145% 100%;
+    transform: scaleY(1.0);
+    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
   }
 }
 

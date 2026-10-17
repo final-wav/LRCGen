@@ -188,13 +188,12 @@ function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
     const span = spans[idx];
     const sylEndMs = syl.time + syl.duration;
 
-    span.removeEventListener('animationend', _onAnimationEnd);
+    span.removeEventListener('animationend', _onWipeEnd);
     span.removeEventListener('animationend', _onFadeOutEnd);
     span.classList.remove('highlight', 'finished', 'fading-out');
     span.style.removeProperty('--syl-dur');
     span.style.removeProperty('--syl-del');
     span.style.removeProperty('--syl-lift');
-    span.style.removeProperty('--syl-scale');
     span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
@@ -207,55 +206,53 @@ function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
       const durMs   = Math.round(rawDurMs / pRate);
       const delayMs = Math.round(rawDelayMs / pRate);
 
-      // Velocity-scaled lift & micro-scale (commits 003fdef, 0c6035f & 71f68ee)
-      // Fast syllables (<180ms) remain completely flat on baseline (0px lift, 1.0 scale).
-      // Sustained/melodic notes (>400ms) smoothly float up 1.0px to 2.4px with a 1.04 micro-scale expansion.
-      const durProgress = Math.min(Math.max((rawDurMs - 180) / 420, 0), 1);
-      const liftPx      = durProgress * 2.4;
-      const scaleFactor = 1.0 + durProgress * 0.04;
-      const glowAlpha   = durProgress * 0.50;
-
       span.dataset.text = syl.text;
       span.style.setProperty('--syl-dur', `${durMs}ms`);
       span.style.setProperty('--syl-del', `${delayMs}ms`);
-      span.style.setProperty('--syl-lift', `${liftPx.toFixed(2)}px`);
-      span.style.setProperty('--syl-scale', scaleFactor.toFixed(3));
+
+      // Velocity Lift: short/fast syllables (<250ms) stay flat; longer held vowels (>500ms) lift up to 1.055
+      let lift = 1.0;
+      let glowAlpha = 0;
+      if (rawDurMs >= 500) {
+        lift = 1.055;
+        glowAlpha = 0.50;
+      } else if (rawDurMs > 250) {
+        const t = (rawDurMs - 250) / 250;
+        lift = 1.0 + 0.055 * t;
+        glowAlpha = 0.50 * t;
+      }
+      span.style.setProperty('--syl-lift', lift.toFixed(4));
       span.style.setProperty('--syl-glow', glowAlpha.toFixed(2));
 
       span.classList.add('highlight');
-      span.addEventListener('animationend', _onAnimationEnd);
+      span.addEventListener('animationend', _onWipeEnd);
     }
   });
 }
 
-function _onAnimationEnd(e) {
+function _onWipeEnd(e) {
+  if (e.animationName !== 'wipe') return;
   const span = e.currentTarget;
-  if (e.animationName === 'wipe') {
-    delete span.dataset.text;
-    span.classList.add('finished');
-  } else if (e.animationName === 'syllable-breathe') {
-    span.removeEventListener('animationend', _onAnimationEnd);
-    span.classList.remove('highlight');
-    span.style.removeProperty('--syl-dur');
-    span.style.removeProperty('--syl-del');
-    span.style.removeProperty('--syl-lift');
-    span.style.removeProperty('--syl-scale');
-    span.style.removeProperty('--syl-glow');
-    span.classList.add('finished');
-  }
+  span.removeEventListener('animationend', _onWipeEnd);
+  span.classList.remove('highlight');
+  span.style.removeProperty('--syl-dur');
+  span.style.removeProperty('--syl-del');
+  span.style.removeProperty('--syl-lift');
+  span.style.removeProperty('--syl-glow');
+  delete span.dataset.text;
+  span.classList.add('finished');
 }
 
 function _resetLineText(lineEl) {
   const spans = lineEl.querySelectorAll('.syl-token');
   if (!spans.length) return;
   spans.forEach(span => {
-    span.removeEventListener('animationend', _onAnimationEnd);
+    span.removeEventListener('animationend', _onWipeEnd);
     const wasActive = span.classList.contains('finished') || span.classList.contains('highlight');
     span.classList.remove('highlight');
     span.style.removeProperty('--syl-dur');
     span.style.removeProperty('--syl-del');
     span.style.removeProperty('--syl-lift');
-    span.style.removeProperty('--syl-scale');
     span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
