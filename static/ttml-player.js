@@ -7,6 +7,9 @@
 var _syncActiveSet = new Set();
 var _syncLastCt = -1;
 var _syncLastActiveKey = '';
+var _syncLastPaused = null;
+var _cachedStage = null;
+var _cachedLineEls = [];
 var playerLastTrackId = null;
 
 const _DIST_CLASSES = [
@@ -67,6 +70,9 @@ function renderSweepPlayer() {
   _syncActiveSet.clear();
   _syncLastCt = -1;
   _syncLastActiveKey = '';
+  _syncLastPaused = null;
+  _cachedStage = null;
+  _cachedLineEls = [];
   playerLastTrackId = Studio.activeTrackId;
   container.innerHTML = '';
 
@@ -86,6 +92,7 @@ function renderSweepPlayer() {
   stage.id = 'karaokeLinesStage';
 
   const frag = document.createDocumentFragment();
+  const lineEls = [];
 
   lines.forEach((line, i) => {
     const lineDiv = document.createElement('div');
@@ -157,10 +164,13 @@ function renderSweepPlayer() {
     }
 
     frag.appendChild(lineDiv);
+    lineEls.push(lineDiv);
   });
 
   stage.appendChild(frag);
   container.appendChild(stage);
+  _cachedStage = stage;
+  _cachedLineEls = lineEls;
 }
 
 // ─── Apple Music Syllable Sweep (1:1 ModernMusicPlayer Engine) ───────────────
@@ -280,48 +290,34 @@ function updateSweepPlayer(forceRerender = false) {
   const container = document.getElementById('ttmlSweepPlayerContainer');
   if (!container) return;
 
-  const stage = container.querySelector('.karaoke-lines-stage');
-  if (forceRerender || playerLastTrackId !== Studio.activeTrackId || !stage || !stage.children.length) {
+  if (forceRerender || playerLastTrackId !== Studio.activeTrackId || !_cachedStage || !_cachedStage.isConnected || !_cachedLineEls.length) {
     renderSweepPlayer();
   }
 
-  const activeStage = container.querySelector('.karaoke-lines-stage');
+  const activeStage = _cachedStage;
+  const lineElements = _cachedLineEls;
   const lyrics = getActiveLyrics();
   const lines  = lyrics.lines || [];
-  if (!lines.length || !activeStage) return;
+  if (!lines.length || !activeStage || !lineElements.length) return;
 
-  // Toggle paused class on container to sync animations with audio pause
-  const isAudioPlaying = Studio.audio && !Studio.audio.paused;
-  container.classList.toggle('karaoke-paused', !isAudioPlaying);
+  // Toggle paused class on container only when paused state changes
+  const isPaused = !(Studio.audio && !Studio.audio.paused);
+  if (isPaused !== _syncLastPaused) {
+    _syncLastPaused = isPaused;
+    container.classList.toggle('karaoke-paused', isPaused);
+  }
 
   const curTimeSec = Studio.currentTime || (Studio.audio ? Studio.audio.currentTime : 0);
   const activeGroup = getActiveLineGroup(lines, curTimeSec);
   const activeKey   = activeGroup.join(',');
-  const lineElements = activeStage.querySelectorAll('.karaoke-line');
 
   // Handle active class toggling, distance-based hierarchy and centering
   if (activeKey !== _syncLastActiveKey) {
     const minA = activeGroup.length ? activeGroup[0] : -1;
     const maxA = activeGroup.length ? activeGroup[activeGroup.length - 1] : -1;
 
-    lineElements.forEach((el, i) => {
-      el.classList.remove(..._DIST_CLASSES);
-      if (activeGroup.includes(i)) {
-        el.classList.add('active');
-      } else {
-        const dist = i < minA ? i - minA : i - maxA;
-        if      (dist === -1) el.classList.add('post-active-line');
-        else if (dist === 1)  el.classList.add('next-active-line');
-        else if (dist === -2) el.classList.add('prev-2');
-        else if (dist === 2)  el.classList.add('next-2');
-        else if (dist === -3) el.classList.add('prev-3');
-        else if (dist === 3)  el.classList.add('next-3');
-        else if (dist <= -4)  el.classList.add('prev-4');
-        else if (dist >= 4)   el.classList.add('next-4');
-      }
-    });
-
-    // Smooth Dual/Multi-Active Centering via GPU translateY transform
+    // Read layout metrics BEFORE mutating classes to prevent forced synchronous layout
+    let tY = null;
     if (minA >= 0 && maxA >= 0 && minA < lineElements.length && maxA < lineElements.length) {
       const stageH = container.clientHeight || 400;
       const paddingTop = 160;
@@ -337,8 +333,29 @@ function updateSweepPlayer(forceRerender = false) {
         if (i < maxA) totalGroupH += 18;
       }
 
-      const tY = Math.round((stageH / 2) - (totalGroupH / 2) - top);
-      activeStage.style.transform = `translateY(${tY}px)`;
+      tY = Math.round((stageH / 2) - (totalGroupH / 2) - top);
+    }
+
+    for (let i = 0; i < lineElements.length; i++) {
+      const el = lineElements[i];
+      el.classList.remove(..._DIST_CLASSES);
+      if (activeGroup.includes(i)) {
+        el.classList.add('active');
+      } else {
+        const dist = i < minA ? i - minA : i - maxA;
+        if      (dist === -1) el.classList.add('post-active-line');
+        else if (dist === 1)  el.classList.add('next-active-line');
+        else if (dist === -2) el.classList.add('prev-2');
+        else if (dist === 2)  el.classList.add('next-2');
+        else if (dist === -3) el.classList.add('prev-3');
+        else if (dist === 3)  el.classList.add('next-3');
+        else if (dist <= -4)  el.classList.add('prev-4');
+        else if (dist >= 4)   el.classList.add('next-4');
+      }
+    }
+
+    if (tY !== null) {
+      activeStage.style.transform = `translate3d(0, ${tY}px, 0)`;
     }
 
     _syncLastActiveKey = activeKey;

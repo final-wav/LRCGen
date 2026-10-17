@@ -533,8 +533,9 @@ select.track-badge-select option {
 
 /* Playhead (Crisp Red Marker Line) */
 .tl-playhead {
-  position: absolute; top: 0; bottom: 0; width: 1.5px; background: #e04a4a;
+  position: absolute; top: 0; bottom: 0; left: 0; width: 1.5px; background: #e04a4a;
   pointer-events: none; z-index: 30;
+  will-change: transform;
 }
 .tl-playhead-head {
   position: absolute; top: 0; left: -4px; width: 0; height: 0;
@@ -606,24 +607,16 @@ kbd {
 
 .karaoke-line {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
-  cursor: pointer; opacity: 0.55;
-  filter: blur(2.5px);
-  transform: scale(0.95);
-  transform-origin: center center;
+  cursor: pointer; opacity: 0.45;
   transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              filter  0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-              transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94),
               color   0.18s ease;
   user-select: none; max-width: 92%; text-align: center; width: 100%;
 }
 .karaoke-line:hover:not(.active) {
   opacity: 0.9;
-  filter: blur(0.5px);
 }
 .karaoke-line.active {
   opacity: 1;
-  filter: none;
-  transform: scale(1.08);
 }
 .karaoke-line.active .karaoke-main-vocal:not(:has(.syl-token)) {
   color: #ffffff;
@@ -632,15 +625,15 @@ kbd {
   color: #d49228;
 }
 
-/* Distance-based blur & scale curve (Apple Music) */
-.karaoke-line.post-active-line { opacity: 0.88; filter: blur(0.5px); transform: scale(1.0); }
-.karaoke-line.next-active-line { opacity: 0.82; filter: blur(1.0px); transform: scale(1.0); }
+/* Distance-based opacity hierarchy (no blur, zero raster bottleneck) */
+.karaoke-line.post-active-line { opacity: 0.88; }
+.karaoke-line.next-active-line { opacity: 0.82; }
 .karaoke-line.prev-2,
-.karaoke-line.next-2           { opacity: 0.70; filter: blur(1.5px); transform: scale(0.98); }
+.karaoke-line.next-2           { opacity: 0.70; }
 .karaoke-line.prev-3,
-.karaoke-line.next-3           { opacity: 0.55; filter: blur(2.0px); transform: scale(0.96); }
+.karaoke-line.next-3           { opacity: 0.55; }
 .karaoke-line.prev-4,
-.karaoke-line.next-4           { opacity: 0.40; filter: blur(2.5px); transform: scale(0.94); }
+.karaoke-line.next-4           { opacity: 0.40; }
 
 .karaoke-line.singer-v2, .karaoke-line.singer-left {
   align-self: flex-start;
@@ -699,7 +692,6 @@ kbd {
   transform-origin: bottom center;
   color: rgba(255, 255, 255, 0.35);
   white-space: pre-wrap;
-  will-change: color, transform;
 }
 .syl-token.adlib {
   color: rgba(212, 146, 40, 0.4);
@@ -742,6 +734,7 @@ kbd {
   white-space: pre-wrap;
   pointer-events: none;
   transform-origin: bottom center;
+  will-change: transform, -webkit-mask-size, mask-size;
   -webkit-mask-image: linear-gradient(to right, #ffffff 0%, #ffffff 70%, transparent 100%);
   mask-image:         linear-gradient(to right, #ffffff 0%, #ffffff 70%, transparent 100%);
   -webkit-mask-repeat: no-repeat;
@@ -761,17 +754,14 @@ kbd {
     -webkit-mask-size: 0% 100%;
     mask-size: 0% 100%;
     transform: scaleY(1.0);
-    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
   }
   45% {
     transform: scaleY(var(--syl-lift, 1.055));
-    filter: drop-shadow(0 -1px 4px rgba(255, 255, 255, var(--syl-glow, 0.5)));
   }
   100% {
     -webkit-mask-size: 145% 100%;
     mask-size: 145% 100%;
     transform: scaleY(1.0);
-    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
   }
 }
 
