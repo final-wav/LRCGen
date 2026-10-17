@@ -758,18 +758,10 @@ kbd {
   0% {
     -webkit-mask-size: 0% 100%;
     mask-size: 0% 100%;
-    transform: scaleY(1.0);
-    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
-  }
-  45% {
-    transform: scaleY(var(--syl-lift, 1.055));
-    filter: drop-shadow(0 -1px 4px rgba(255, 255, 255, var(--syl-glow, 0.5)));
   }
   100% {
     -webkit-mask-size: 145% 100%;
     mask-size: 145% 100%;
-    transform: scaleY(1.0);
-    filter: drop-shadow(0 0 0px rgba(255, 255, 255, 0));
   }
 }
 

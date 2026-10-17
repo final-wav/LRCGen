@@ -193,8 +193,6 @@ function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
     span.classList.remove('highlight', 'finished', 'fading-out');
     span.style.removeProperty('--syl-dur');
     span.style.removeProperty('--syl-del');
-    span.style.removeProperty('--syl-lift');
-    span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
     if (positionMs >= sylEndMs) {
@@ -210,20 +208,6 @@ function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
       span.style.setProperty('--syl-dur', `${durMs}ms`);
       span.style.setProperty('--syl-del', `${delayMs}ms`);
 
-      // Velocity Lift: short/fast syllables (<250ms) stay flat; longer held vowels (>500ms) lift up to 1.055
-      let lift = 1.0;
-      let glowAlpha = 0;
-      if (rawDurMs >= 500) {
-        lift = 1.055;
-        glowAlpha = 0.50;
-      } else if (rawDurMs > 250) {
-        const t = (rawDurMs - 250) / 250;
-        lift = 1.0 + 0.055 * t;
-        glowAlpha = 0.50 * t;
-      }
-      span.style.setProperty('--syl-lift', lift.toFixed(4));
-      span.style.setProperty('--syl-glow', glowAlpha.toFixed(2));
-
       span.classList.add('highlight');
       span.addEventListener('animationend', _onWipeEnd);
     }
@@ -237,8 +221,6 @@ function _onWipeEnd(e) {
   span.classList.remove('highlight');
   span.style.removeProperty('--syl-dur');
   span.style.removeProperty('--syl-del');
-  span.style.removeProperty('--syl-lift');
-  span.style.removeProperty('--syl-glow');
   delete span.dataset.text;
   span.classList.add('finished');
 }
@@ -252,8 +234,6 @@ function _resetLineText(lineEl) {
     span.classList.remove('highlight');
     span.style.removeProperty('--syl-dur');
     span.style.removeProperty('--syl-del');
-    span.style.removeProperty('--syl-lift');
-    span.style.removeProperty('--syl-glow');
     delete span.dataset.text;
 
     if (wasActive) {
