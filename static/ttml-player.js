@@ -9,6 +9,11 @@ var _syncLastCt = -1;
 var _syncLastActiveKey = '';
 var playerLastTrackId = null;
 
+const _DIST_CLASSES = [
+  'active', 'post-active-line', 'next-active-line',
+  'prev-2', 'next-2', 'prev-3', 'next-3', 'prev-4', 'next-4'
+];
+
 function initSweepPlayer() {
   const container = document.getElementById('ttmlSweepPlayerContainer');
   if (!container) return;
@@ -286,29 +291,33 @@ function updateSweepPlayer(forceRerender = false) {
   const activeKey   = activeGroup.join(',');
   const lineElements = activeStage.querySelectorAll('.karaoke-line');
 
-  // Handle active class toggling and simultaneous bounding box centering
+  // Handle active class toggling, distance-based hierarchy and centering
   if (activeKey !== _syncLastActiveKey) {
     const minA = activeGroup.length ? activeGroup[0] : -1;
     const maxA = activeGroup.length ? activeGroup[activeGroup.length - 1] : -1;
 
     lineElements.forEach((el, i) => {
+      el.classList.remove(..._DIST_CLASSES);
       if (activeGroup.includes(i)) {
         el.classList.add('active');
-        el.classList.remove('past');
-      } else if (i < minA) {
-        el.classList.add('past');
-        el.classList.remove('active');
       } else {
-        el.classList.remove('active', 'past');
+        const dist = i < minA ? i - minA : i - maxA;
+        if      (dist === -1) el.classList.add('post-active-line');
+        else if (dist === 1)  el.classList.add('next-active-line');
+        else if (dist === -2) el.classList.add('prev-2');
+        else if (dist === 2)  el.classList.add('next-2');
+        else if (dist === -3) el.classList.add('prev-3');
+        else if (dist === 3)  el.classList.add('next-3');
+        else if (dist <= -4)  el.classList.add('prev-4');
+        else if (dist >= 4)   el.classList.add('next-4');
       }
     });
 
     // Smooth Dual/Multi-Active Centering via GPU translateY transform
     if (minA >= 0 && maxA >= 0 && minA < lineElements.length && maxA < lineElements.length) {
       const stageH = container.clientHeight || 400;
-      const paddingTop = parseInt(getComputedStyle(activeStage).paddingTop, 10) || 160;
+      const paddingTop = 160;
 
-      // Center around the active group smoothly
       let top = paddingTop;
       for (let i = 0; i < minA; i++) {
         top += (lineElements[i].offsetHeight || 44) + 18;
@@ -349,26 +358,33 @@ function updateSweepPlayer(forceRerender = false) {
         if (lineEl) _resetLineText(lineEl);
       }
     }
-    _syncActiveSet.clear();
-  }
-
-  // Inject CSS animations for newly active lines (all concurrent lines get animated simultaneously)
-  for (const idx of nowActive) {
-    if (!_syncActiveSet.has(idx) || scrubbed) {
+    _syncActiveSet = new Set();
+    for (const idx of nowActive) {
+      _syncActiveSet.add(idx);
       const lineEl = lineElements[idx];
       if (lineEl && lines[idx]) {
         _injectSyllables(lineEl, lines[idx], curTimeSec);
       }
     }
+    return;
   }
 
-  // Reset lines that just exited
-  for (const idx of _syncActiveSet) {
+  // Newly-active lines: inject syllable spans ONCE — CSS runs on its own after that.
+  for (const idx of nowActive) {
+    if (_syncActiveSet.has(idx)) continue;
+    _syncActiveSet.add(idx);
+    const lineEl = lineElements[idx];
+    if (lineEl && lines[idx]) {
+      _injectSyllables(lineEl, lines[idx], curTimeSec);
+    }
+  }
+
+  // Lines that left their active window: reset to plain text (grey)
+  for (const idx of [..._syncActiveSet]) {
     if (!nowActive.has(idx)) {
+      _syncActiveSet.delete(idx);
       const lineEl = lineElements[idx];
       if (lineEl) _resetLineText(lineEl);
     }
   }
-
-  _syncActiveSet = nowActive;
 }
