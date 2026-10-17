@@ -109,75 +109,51 @@ function renderSweepPlayer() {
 
     // Main vocal container (only render if line actually has lead vocals)
     if (hasMainVocal) {
-      const mainWrap = document.createElement('div');
-      mainWrap.className = 'karaoke-vocal-wrap karaoke-main-wrap';
-
-      const baseP = document.createElement('p');
-      baseP.className = 'karaoke-main-vocal karaoke-vocal-base';
-
-      const activeP = document.createElement('p');
-      activeP.className = 'karaoke-main-vocal karaoke-vocal-active';
-      activeP.setAttribute('aria-hidden', 'true');
+      const mainP = document.createElement('p');
+      mainP.className = 'karaoke-main-vocal';
 
       if (rawSylls.length > 0) {
         rawSylls.forEach((syl, sIdx) => {
-          const spanBase = document.createElement('span');
-          spanBase.className = 'syl-token' + (isPast ? ' finished' : '');
-          spanBase.textContent = syl.text;
-          spanBase.dataset.sIdx = sIdx;
-          baseP.appendChild(spanBase);
+          const wrapSpan = document.createElement('span');
+          wrapSpan.className = 'syl-wrap';
 
-          const spanActive = document.createElement('span');
-          spanActive.className = 'syl-token' + (isPast ? ' finished' : '');
-          spanActive.textContent = syl.text;
-          spanActive.dataset.sIdx = sIdx;
-          activeP.appendChild(spanActive);
+          const span = document.createElement('span');
+          span.className = 'syl-token' + (isPast ? ' finished' : '');
+          span.textContent = syl.text;
+          span.dataset.sIdx = sIdx;
+          wrapSpan.appendChild(span);
+          mainP.appendChild(wrapSpan);
         });
       } else {
-        baseP.textContent = line.text || '';
-        activeP.textContent = line.text || '';
+        mainP.textContent = line.text || '';
       }
-      mainWrap.appendChild(baseP);
-      mainWrap.appendChild(activeP);
-      lineDiv.appendChild(mainWrap);
+      lineDiv.appendChild(mainP);
     }
 
     // Background vocal / ad-lib container (if present)
     const adlibSylls = isLineMode ? [] : (line.adlibSyllabi || []);
     const adlibText  = line.adlib || '';
     if (adlibSylls.length > 0 || adlibText) {
-      const adlibWrap = document.createElement('div');
-      adlibWrap.className = 'karaoke-vocal-wrap karaoke-adlib-wrap';
-
-      const baseP = document.createElement('p');
-      baseP.className = 'karaoke-adlib-vocal karaoke-vocal-base';
-
-      const activeP = document.createElement('p');
-      activeP.className = 'karaoke-adlib-vocal karaoke-vocal-active';
-      activeP.setAttribute('aria-hidden', 'true');
+      const adlibP = document.createElement('p');
+      adlibP.className = 'karaoke-adlib-vocal';
 
       if (adlibSylls.length > 0) {
         adlibSylls.forEach((syl, sIdx) => {
-          const spanBase = document.createElement('span');
-          spanBase.className = 'syl-token adlib' + (isPast ? ' finished' : '');
-          spanBase.textContent = syl.text;
-          spanBase.dataset.sIdx = sIdx;
-          baseP.appendChild(spanBase);
+          const wrapSpan = document.createElement('span');
+          wrapSpan.className = 'syl-wrap';
 
-          const spanActive = document.createElement('span');
-          spanActive.className = 'syl-token adlib' + (isPast ? ' finished' : '');
-          spanActive.textContent = syl.text;
-          spanActive.dataset.sIdx = sIdx;
-          activeP.appendChild(spanActive);
+          const span = document.createElement('span');
+          span.className = 'syl-token adlib' + (isPast ? ' finished' : '');
+          span.textContent = syl.text;
+          span.dataset.sIdx = sIdx;
+          wrapSpan.appendChild(span);
+          adlibP.appendChild(wrapSpan);
         });
       } else {
         const text = adlibText.startsWith('(') ? adlibText : `(${adlibText})`;
-        baseP.textContent = text;
-        activeP.textContent = text;
+        adlibP.textContent = text;
       }
-      adlibWrap.appendChild(baseP);
-      adlibWrap.appendChild(activeP);
-      lineDiv.appendChild(adlibWrap);
+      lineDiv.appendChild(adlibP);
     }
 
     frag.appendChild(lineDiv);
@@ -187,91 +163,111 @@ function renderSweepPlayer() {
   container.appendChild(stage);
 }
 
-// ─── Cumulative Reveal & Gaussian Scale-Wave Engine (commits 8973886 & cea9992) ─
-function _syncSweepLine(lineEl, line, curTimeSec) {
-  const mainWrap = lineEl.querySelector('.karaoke-main-wrap');
-  if (mainWrap) {
-    _applyContinuousSweep(mainWrap, line.rawSyllabi || [], line, curTimeSec);
+// ─── Apple Music Syllable Sweep (1:1 ModernMusicPlayer Engine) ───────────────
+function _injectSyllables(lineEl, line, ct) {
+  const positionMs = ct * 1000;
+  const pRate = (Studio.audio ? Studio.audio.playbackRate : Studio.playbackRate) || 1.0;
+
+  // Main vocal — drives the line's primary wipe
+  const mainP = lineEl.querySelector('.karaoke-main-vocal');
+  if (mainP && line.rawSyllabi?.length) {
+    _activateSyllableGroup(mainP.querySelectorAll('.syl-token'), line.rawSyllabi, positionMs, pRate);
   }
 
-  const adlibWrap = lineEl.querySelector('.karaoke-adlib-wrap');
-  if (adlibWrap) {
-    _applyContinuousSweep(adlibWrap, line.adlibSyllabi || [], line, curTimeSec);
+  // Background vocal (ad-lib) — same wipe machinery
+  const adlibP = lineEl.querySelector('.karaoke-adlib-vocal');
+  if (adlibP && line.adlibSyllabi?.length) {
+    _activateSyllableGroup(adlibP.querySelectorAll('.syl-token'), line.adlibSyllabi, positionMs, pRate);
   }
 }
 
-function _applyContinuousSweep(vocalWrap, syllabi, line, curTimeSec) {
-  const baseSpans = vocalWrap.querySelectorAll('.karaoke-vocal-base .syl-token');
-  const activeEl  = vocalWrap.querySelector('.karaoke-vocal-active');
-  if (!activeEl) return;
+function _activateSyllableGroup(spans, syllabi, positionMs, pRate = 1.0) {
+  if (spans.length !== syllabi.length) return;
 
-  if (!baseSpans.length || !syllabi.length || baseSpans.length !== syllabi.length) {
-    const dur = Math.max(0.001, line.end - line.start);
-    const progress = Math.max(0, Math.min(1, (curTimeSec - line.start) / dur));
-    const revealPx = vocalWrap.offsetWidth * progress;
-    const mask = revealPx < 1
-      ? 'linear-gradient(to right, transparent, transparent)'
-      : `linear-gradient(to right, white 0%, white calc(${revealPx}px - 24px), rgba(255, 255, 255, 0.65) calc(${revealPx}px - 4px), transparent ${revealPx}px)`;
-    activeEl.style.webkitMaskImage = mask;
-    activeEl.style.maskImage       = mask;
-    return;
-  }
+  syllabi.forEach((syl, idx) => {
+    const span = spans[idx];
+    const sylEndMs = syl.time + syl.duration;
 
-  const lineStartSec = syllabi[0].time / 1000;
-  const lineEndSec   = (syllabi[syllabi.length - 1].time + syllabi[syllabi.length - 1].duration) / 1000;
+    span.removeEventListener('animationend', _onWipeEnd);
+    span.removeEventListener('animationend', _onFadeOutEnd);
+    span.classList.remove('highlight', 'finished', 'fading-out');
+    span.style.removeProperty('--syl-dur');
+    span.style.removeProperty('--syl-del');
+    span.style.removeProperty('--syl-lift');
+    span.style.removeProperty('--syl-glow');
+    delete span.dataset.text;
 
-  if (curTimeSec < lineStartSec) {
-    activeEl.style.webkitMaskImage = 'linear-gradient(to right, transparent, transparent)';
-    activeEl.style.maskImage       = 'linear-gradient(to right, transparent, transparent)';
-    for (let s = 0; s < baseSpans.length; s++) baseSpans[s].style.transform = '';
-    return;
-  }
-
-  if (curTimeSec >= lineEndSec) {
-    activeEl.style.webkitMaskImage = '';
-    activeEl.style.maskImage       = '';
-    for (let s = 0; s < baseSpans.length; s++) baseSpans[s].style.transform = '';
-    return;
-  }
-
-  // Calculate cumulative revealPx across the line
-  let revealPx = 0;
-  for (let s = 0; s < syllabi.length; s++) {
-    const syl = syllabi[s];
-    const span = baseSpans[s];
-    if (!span) continue;
-    const sylStart = syl.time / 1000;
-    const sylEnd   = (syl.time + syl.duration) / 1000;
-
-    if (curTimeSec >= sylEnd) {
-      revealPx = baseSpans[s + 1]?.offsetLeft ?? (span.offsetLeft + span.offsetWidth);
-    } else if (curTimeSec >= sylStart) {
-      const progress = (curTimeSec - sylStart) / Math.max(0.001, sylEnd - sylStart);
-      revealPx = span.offsetLeft + span.offsetWidth * progress;
-      break;
+    if (positionMs >= sylEndMs) {
+      span.classList.add('finished');
     } else {
-      break;
+      const rawDelayMs = syl.time - positionMs;
+      const rawDurMs   = Math.max(1, syl.duration);
+
+      const durMs   = Math.round(rawDurMs / pRate);
+      const delayMs = Math.round(rawDelayMs / pRate);
+
+      span.dataset.text = syl.text;
+      span.style.setProperty('--syl-dur', `${durMs}ms`);
+      span.style.setProperty('--syl-del', `${delayMs}ms`);
+
+      // Velocity Lift: short/fast syllables (<250ms) stay flat; longer held vowels (>500ms) lift up to 1.055
+      let lift = 1.0;
+      let glowAlpha = 0;
+      if (rawDurMs >= 500) {
+        lift = 1.055;
+        glowAlpha = 0.50;
+      } else if (rawDurMs > 250) {
+        const t = (rawDurMs - 250) / 250;
+        lift = 1.0 + 0.055 * t;
+        glowAlpha = 0.50 * t;
+      }
+      span.style.setProperty('--syl-lift', lift.toFixed(4));
+      span.style.setProperty('--syl-glow', glowAlpha.toFixed(2));
+
+      span.classList.add('highlight');
+      span.addEventListener('animationend', _onWipeEnd);
     }
-  }
+  });
+}
 
-  // 1. One cumulative gradient mask on the active layer
-  const mask = revealPx < 1
-    ? 'linear-gradient(to right, transparent, transparent)'
-    : `linear-gradient(to right, white 0%, white calc(${revealPx}px - 24px), rgba(255, 255, 255, 0.65) calc(${revealPx}px - 4px), transparent ${revealPx}px)`;
-  activeEl.style.webkitMaskImage = mask;
-  activeEl.style.maskImage       = mask;
+function _onWipeEnd(e) {
+  if (e.animationName !== 'wipe') return;
+  const span = e.currentTarget;
+  span.removeEventListener('animationend', _onWipeEnd);
+  span.classList.remove('highlight');
+  span.style.removeProperty('--syl-dur');
+  span.style.removeProperty('--syl-del');
+  span.style.removeProperty('--syl-lift');
+  span.style.removeProperty('--syl-glow');
+  delete span.dataset.text;
+  span.classList.add('finished');
+}
 
-  // 2. Smooth Gaussian Scale-Wave along the reveal front (commit 8973886 & cea9992)
-  // Each letter/syllable briefly swells up along a bell curve as the reveal front sweeps over it
-  const bump  = 0.08;
-  const sigma = 50; // px — spread of the bump
-  for (let s = 0; s < baseSpans.length; s++) {
-    const span = baseSpans[s];
-    const center = span.offsetLeft + span.offsetWidth * 0.5;
-    const dist   = revealPx - center;
-    const scale  = revealPx < 1 ? 1 : 1 + bump * Math.exp(-(dist * dist) / (2 * sigma * sigma));
-    span.style.transform = scale > 1.002 ? `scale(${scale.toFixed(3)})` : '';
-  }
+function _resetLineText(lineEl) {
+  const spans = lineEl.querySelectorAll('.syl-token');
+  if (!spans.length) return;
+  spans.forEach(span => {
+    span.removeEventListener('animationend', _onWipeEnd);
+    const wasActive = span.classList.contains('finished') || span.classList.contains('highlight');
+    span.classList.remove('highlight');
+    span.style.removeProperty('--syl-dur');
+    span.style.removeProperty('--syl-del');
+    span.style.removeProperty('--syl-lift');
+    span.style.removeProperty('--syl-glow');
+    delete span.dataset.text;
+
+    if (wasActive) {
+      span.classList.add('finished');
+      span.classList.add('fading-out');
+      span.addEventListener('animationend', _onFadeOutEnd, { once: true });
+    }
+  });
+}
+
+function _onFadeOutEnd(e) {
+  if (e.animationName !== 'syllable-fade-out' && e.animationName !== 'syllable-adlib-fade-out') return;
+  const span = e.currentTarget;
+  span.classList.remove('fading-out', 'finished');
 }
 
 function updateSweepPlayer(forceRerender = false) {
@@ -342,36 +338,55 @@ function updateSweepPlayer(forceRerender = false) {
     _syncLastActiveKey = activeKey;
   }
 
-  // ── Continuous Apple Music Reveal & Gaussian Scale Wave (commit 8973886) ───
+  // ── CSS Syllable Sweep Synchronization (Zero-Jank GPU Engine) ───────────
   if (typeof Studio !== 'undefined' && Studio.workflowMode === 'line') {
     return;
   }
 
-  lineElements.forEach((lineEl, i) => {
-    const line = lines[i];
-    if (!line) return;
+  const scrubbed = _syncLastCt >= 0 && Math.abs(curTimeSec - _syncLastCt) > 0.4;
+  _syncLastCt = curTimeSec;
 
-    const isActive = activeGroup.includes(i);
-    if (isActive) {
-      _syncSweepLine(lineEl, line, curTimeSec);
-    } else if (line.end < curTimeSec) {
-      // Past line: fully revealed (no mask)
-      const actives = lineEl.querySelectorAll('.karaoke-vocal-active');
-      actives.forEach(act => {
-        act.style.webkitMaskImage = '';
-        act.style.maskImage = '';
-      });
-      const spans = lineEl.querySelectorAll('.karaoke-vocal-base .syl-token');
-      spans.forEach(sp => { sp.style.transform = ''; });
-    } else {
-      // Future line: completely hidden
-      const actives = lineEl.querySelectorAll('.karaoke-vocal-active');
-      actives.forEach(act => {
-        act.style.webkitMaskImage = 'linear-gradient(to right, transparent, transparent)';
-        act.style.maskImage = 'linear-gradient(to right, transparent, transparent)';
-      });
-      const spans = lineEl.querySelectorAll('.karaoke-vocal-base .syl-token');
-      spans.forEach(sp => { sp.style.transform = ''; });
+  const nowActive = new Set();
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].start <= curTimeSec && curTimeSec < lines[i].end && (lines[i].rawSyllabi?.length || lines[i].adlibSyllabi?.length)) {
+      nowActive.add(i);
     }
-  });
+  }
+
+  if (scrubbed) {
+    for (const idx of _syncActiveSet) {
+      if (!nowActive.has(idx)) {
+        const lineEl = lineElements[idx];
+        if (lineEl) _resetLineText(lineEl);
+      }
+    }
+    _syncActiveSet = new Set();
+    for (const idx of nowActive) {
+      _syncActiveSet.add(idx);
+      const lineEl = lineElements[idx];
+      if (lineEl && lines[idx]) {
+        _injectSyllables(lineEl, lines[idx], curTimeSec);
+      }
+    }
+    return;
+  }
+
+  // Newly-active lines: inject syllable spans ONCE — CSS runs on its own after that.
+  for (const idx of nowActive) {
+    if (_syncActiveSet.has(idx)) continue;
+    _syncActiveSet.add(idx);
+    const lineEl = lineElements[idx];
+    if (lineEl && lines[idx]) {
+      _injectSyllables(lineEl, lines[idx], curTimeSec);
+    }
+  }
+
+  // Lines that left their active window: reset to plain text (grey)
+  for (const idx of [..._syncActiveSet]) {
+    if (!nowActive.has(idx)) {
+      _syncActiveSet.delete(idx);
+      const lineEl = lineElements[idx];
+      if (lineEl) _resetLineText(lineEl);
+    }
+  }
 }
