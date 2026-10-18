@@ -1,7 +1,48 @@
-'use strict';
-// ─────────────────────────────────────────────────────────────────────────────
-// ttml-editor.js — Multi-Lane Timeline, Syllable Editor, Waveform & Inspector
-// ─────────────────────────────────────────────────────────────────────────────
+function cleanLyricsLine(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/[\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]/g, ' ')
+    .trim();
+}
+
+function isSectionHeader(str) {
+  if (!str) return false;
+  const t = cleanLyricsLine(str);
+  // [Verse 1], [Chorus], [Refrain], [Strophe 2], [Bridge], [Pre-Chorus], [Intro], [Outro], [Hook], [Part 1]
+  if (/^\[\s*(verse|strophe|chorus|refrain|bridge|pre-chorus|prechorus|post-chorus|hook|intro|outro|part|interlude|break|build|drop|skit)\b[^\]]*\]$/i.test(t)) {
+    return true;
+  }
+  // Verse 1:, Chorus:, Refrain:, Strophe 1:, Bridge:, Intro:, Outro:
+  if (/^(verse|strophe|chorus|refrain|bridge|pre-chorus|prechorus|post-chorus|hook|intro|outro|part)\s*\d*\s*[:\-–—]\s*$/i.test(t)) {
+    return true;
+  }
+  return false;
+}
+
+function sanitizeQueue(track) {
+  if (!track || !Array.isArray(track.unplacedLines)) return [];
+  const cleanList = [];
+  track.unplacedLines.forEach((item, idx) => {
+    const raw = typeof item === 'string' ? item : (item?.text || item?.adlib || '');
+    const clean = cleanLyricsLine(raw);
+    if (!clean || clean.length === 0 || isSectionHeader(clean)) return;
+
+    if (typeof item === 'object' && item !== null && item.id) {
+      item.text = clean;
+      cleanList.push(item);
+    } else {
+      cleanList.push({
+        id: `Q-${Date.now()}-${Math.random().toString(36).substr(2, 6)}-${idx}`,
+        text: clean,
+        adlib: (typeof item === 'object' && item?.adlib) ? clean : null,
+        agent: (typeof item === 'object' && item?.agent) || 'v1',
+      });
+    }
+  });
+  track.unplacedLines = cleanList;
+  return cleanList;
+}
 
 function initStudioEditor() {
   // Timeline Zoom
@@ -93,6 +134,107 @@ function initStudioEditor() {
   document.getElementById('waveVocalsBtn')?.addEventListener('click', toggleVocalsWave);
   document.getElementById('vocalsAudioBtn')?.addEventListener('click', toggleVocalsAudio);
 
+  // 3-Step Workflow Mode Switcher
+  document.getElementById('modeBtnText')?.addEventListener('click', () => setWorkflowMode('text'));
+  document.getElementById('modeBtnLine')?.addEventListener('click', () => setWorkflowMode('line'));
+  document.getElementById('modeBtnSyllable')?.addEventListener('click', () => setWorkflowMode('syllable'));
+
+  // Mode 1: Plain Text Ingestion Tools & Actions
+  const textModeArea = document.getElementById('textModeTextarea');
+  const textModeCount = document.getElementById('textModeLineCount');
+  if (textModeArea) {
+    textModeArea.addEventListener('input', () => {
+      const lines = textModeArea.value.split('\n').map(l => l.trim()).filter(Boolean);
+      if (textModeCount) textModeCount.textContent = `${lines.length} Lines`;
+    });
+  }
+
+  document.getElementById('textModePasteBtn')?.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && textModeArea) {
+        textModeArea.value = text;
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        if (textModeCount) textModeCount.textContent = `${lines.length} Lines`;
+        toast('Lyrics pasted from clipboard!', 'success');
+      }
+    } catch {
+      textModeArea?.focus();
+    }
+  });
+
+
+  document.getElementById('textModeCleanBtn')?.addEventListener('click', () => {
+    if (!textModeArea) return;
+    const cleaned = textModeArea.value.split(/\r?\n/).map(l => cleanLyricsLine(l)).filter(l => l.length > 0 && !isSectionHeader(l)).join('\n');
+    textModeArea.value = cleaned;
+    const lines = cleaned.split('\n').filter(Boolean);
+    if (textModeCount) textModeCount.textContent = `${lines.length} Lines`;
+    toast('Removed blank lines and section headers!', 'success');
+  });
+
+  document.getElementById('textModeSendToQueueBtn')?.addEventListener('click', () => {
+    const raw = textModeArea?.value;
+    if (!raw || !raw.trim()) return toast('Please paste lyrics text first!', 'error');
+    const detectAdlibs = document.getElementById('textModeDetectAdlibs')?.checked ?? true;
+    const track = getActiveTrack();
+    if (!track) return toast('No active track selected.', 'error');
+
+    const rawLines = raw.split(/\r?\n/);
+    const newItems = [];
+    let addedCount = 0;
+
+    rawLines.forEach((rawL, idx) => {
+      const l = cleanLyricsLine(rawL);
+      if (!l || l.length === 0) return; // Ignore blank lines & whitespace
+      if (isSectionHeader(l)) return;   // Ignore headers like [Verse 1], Chorus: etc.
+
+      let isAdlib = false;
+      let cleanText = l;
+      if (detectAdlibs && ((cleanText.startsWith('(') && cleanText.endsWith(')')) || (cleanText.startsWith('[') && cleanText.endsWith(']')))) {
+        isAdlib = true;
+        cleanText = cleanLyricsLine(cleanText.substring(1, cleanText.length - 1));
+        if (!cleanText || cleanText.length === 0) return;
+      }
+
+      newItems.push({
+        id: `Q-${Date.now()}-${Math.random().toString(36).substr(2, 6)}-${idx}`,
+        text: cleanText,
+        adlib: isAdlib ? cleanText : null,
+        agent: 'v1',
+      });
+      addedCount++;
+    });
+
+    if (newItems.length === 0) {
+      return toast('No valid text lines found (only blank lines/headers?).', 'error');
+    }
+
+    // Replace unplacedLines cleanly so previous blank lines or duplicates don't linger
+    track.unplacedLines = newItems;
+    Studio.pendingQueueId = newItems[0]?.id || null;
+
+    saveActiveTrackToBackend();
+    setWorkflowMode('line');
+    switchInspectorTab('queue', true);
+    refreshEditorViews();
+    toast(`${addedCount} lines loaded into Line Pool! (Blank lines ignored)`, 'success');
+  });
+
+  async function triggerTextModeScan() {
+    const raw = textModeArea?.value.trim();
+    if (!raw) return toast('Please paste lyrics text first!', 'error');
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    await runTrackLineAlignment(lines);
+  }
+
+  document.getElementById('textModeProceedBtn')?.addEventListener('click', triggerTextModeScan);
+  document.getElementById('textModeScanBtn')?.addEventListener('click', triggerTextModeScan);
+  document.getElementById('proceedToSyllablesBtn')?.addEventListener('click', async () => {
+    await runTrackAlignment();
+    setWorkflowMode('syllable');
+  });
+
   // Timeline Mousedown / Marquee / Seek Handlers
   const tlInner = document.getElementById('tlInner');
   if (tlInner) {
@@ -138,17 +280,143 @@ function initStudioEditor() {
 }
 
 // ─── Line Selection & Vocal Role Helpers ─────────────────────────────────────
+function isLineSelected(lineId) {
+  if (!lineId) return false;
+  if (Studio.selectedLineIds && Studio.selectedLineIds.has(lineId)) return true;
+  return Studio.selectedLineId === lineId;
+}
+
 function selectLine(lineId) {
   Studio.selectedLineId = lineId;
+  Studio.lineSelected = true;
+  if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+  Studio.selectedLineIds.clear();
+  Studio.selectedLineIds.add(lineId);
+
   const lyrics = getActiveLyrics();
   const line = (lyrics.lines || []).find(l => l.id === lineId);
   if (line) {
-    if (Studio.selectedSyllables.size === 0) {
-      Studio.selectedSylIdx = 0;
-      Studio.selectedIsAdlib = false;
-    }
+    Studio.selectedSyllables.clear();
+    (line.rawSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.set(getSyllableKey(line.id, false, sIdx), {
+        lineId: line.id,
+        isAdlib: false,
+        sIdx,
+        syl,
+      });
+    });
+    (line.adlibSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.set(getSyllableKey(line.id, true, sIdx), {
+        lineId: line.id,
+        isAdlib: true,
+        sIdx,
+        syl,
+      });
+    });
+    Studio.selectedSylIdx = (line.rawSyllabi && line.rawSyllabi.length > 0) ? 0 : null;
+    Studio.selectedIsAdlib = false;
   }
+  updateSelectionBadge();
   renderTimelineLines();
+  renderTimelineSyllables();
+  renderInspectorLines();
+}
+
+function toggleLineSelection(lineId) {
+  if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+  const lyrics = getActiveLyrics();
+  const line = (lyrics.lines || []).find(l => l.id === lineId);
+  if (!line) return;
+
+  if (Studio.selectedLineIds.has(lineId)) {
+    Studio.selectedLineIds.delete(lineId);
+    (line.rawSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.delete(getSyllableKey(line.id, false, sIdx));
+    });
+    (line.adlibSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.delete(getSyllableKey(line.id, true, sIdx));
+    });
+    if (Studio.selectedLineId === lineId) {
+      const remaining = Array.from(Studio.selectedLineIds);
+      Studio.selectedLineId = remaining.length > 0 ? remaining[remaining.length - 1] : null;
+      Studio.lineSelected = remaining.length > 0;
+    }
+  } else {
+    Studio.selectedLineIds.add(lineId);
+    Studio.selectedLineId = lineId;
+    Studio.lineSelected = true;
+    (line.rawSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.set(getSyllableKey(line.id, false, sIdx), {
+        lineId: line.id,
+        isAdlib: false,
+        sIdx,
+        syl,
+      });
+    });
+    (line.adlibSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.set(getSyllableKey(line.id, true, sIdx), {
+        lineId: line.id,
+        isAdlib: true,
+        sIdx,
+        syl,
+      });
+    });
+  }
+
+  updateSelectionBadge();
+  renderTimelineLines();
+  renderTimelineSyllables();
+  renderInspectorLines();
+}
+
+function rangeSelectLines(targetLineId) {
+  const lyrics = getActiveLyrics();
+  const lines = lyrics.lines || [];
+  if (lines.length === 0) return;
+
+  if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+  const lastSelectedId = Studio.selectedLineId || (lines[0] ? lines[0].id : null);
+  const startIdx = lines.findIndex(l => l.id === lastSelectedId);
+  const endIdx = lines.findIndex(l => l.id === targetLineId);
+
+  if (startIdx === -1 || endIdx === -1) {
+    selectLine(targetLineId);
+    return;
+  }
+
+  const minIdx = Math.min(startIdx, endIdx);
+  const maxIdx = Math.max(startIdx, endIdx);
+
+  Studio.selectedLineIds.clear();
+  Studio.selectedSyllables.clear();
+
+  for (let i = minIdx; i <= maxIdx; i++) {
+    const l = lines[i];
+    Studio.selectedLineIds.add(l.id);
+    (l.rawSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.set(getSyllableKey(l.id, false, sIdx), {
+        lineId: l.id,
+        isAdlib: false,
+        sIdx,
+        syl,
+      });
+    });
+    (l.adlibSyllabi || []).forEach((syl, sIdx) => {
+      Studio.selectedSyllables.set(getSyllableKey(l.id, true, sIdx), {
+        lineId: l.id,
+        isAdlib: true,
+        sIdx,
+        syl,
+      });
+    });
+  }
+
+  Studio.selectedLineId = targetLineId;
+  Studio.lineSelected = true;
+
+  updateSelectionBadge();
+  renderTimelineLines();
+  renderTimelineSyllables();
   renderInspectorLines();
 }
 
@@ -170,7 +438,137 @@ function toggleSingerAgent(newAgent) {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`Stimme auf ${line.agent.toUpperCase()} (${line.side}) geändert.`, 'success');
+  toast(`Voice set to ${line.agent.toUpperCase()} (${line.side}).`, 'success');
+}
+
+function getLaneLabel(laneIdx) {
+  if (laneIdx === 2) return 'A1';
+  if (laneIdx === 3) return 'A2';
+  return `L${(laneIdx || 0) + 1}`;
+}
+
+function getLaneName(laneIdx) {
+  if (laneIdx === 1) return 'Lane 2 (Duet)';
+  if (laneIdx === 2) return 'Lane 3 (Ad-Lib 1)';
+  if (laneIdx === 3) return 'Lane 4 (Ad-Lib 2)';
+  return 'Lane 1 (Lead)';
+}
+
+function getLineDisplayText(line) {
+  if (!line) return '';
+  const mainT = line.text || '';
+  const adlibT = line.adlib ? (line.adlib.startsWith('(') ? line.adlib : `(${line.adlib})`) : '';
+  if (mainT && adlibT) return `${mainT} ${adlibT}`;
+  return mainT || adlibT || '';
+}
+
+function parseLineTextAndAdlib(input) {
+  if (!input) return { text: '', adlib: null };
+  const trimmed = input.trim();
+  const m = trimmed.match(/^(.*?)\s*[\(\[](.*?)[\)\]]\s*$/);
+  if (m) {
+    const main = m[1].trim();
+    const adlib = m[2].trim();
+    if (!main && adlib) {
+      return { text: '', adlib: adlib };
+    }
+    return { text: main, adlib: adlib };
+  }
+  return { text: trimmed, adlib: null };
+}
+
+function joinSyllablesToText(syllabi) {
+  if (!syllabi || !syllabi.length) return '';
+  let res = '';
+  syllabi.forEach((s, idx) => {
+    let t = s.text || '';
+    res += t;
+    if (!t.endsWith(' ') && !t.endsWith('-') && !s.isSubSyllable && idx < syllabi.length - 1) {
+      const next = syllabi[idx + 1];
+      if (next && !next.isSubSyllable) {
+        res += ' ';
+      }
+    }
+  });
+  return res.trim();
+}
+
+function normalizeSyllablesFromLineText(line) {
+  if (!line || !line.text) return;
+  const rawText = line.text.trim();
+  const allS = line.rawSyllabi || [];
+  if (!allS.length) return;
+
+  let searchPos = 0;
+  allS.forEach((s, idx) => {
+    const cleanWord = (s.text || '').trim();
+    if (!cleanWord) return;
+    let matchIdx = rawText.indexOf(cleanWord, searchPos);
+    if (matchIdx === -1) {
+      matchIdx = rawText.toLowerCase().indexOf(cleanWord.toLowerCase(), searchPos);
+    }
+    if (matchIdx !== -1) {
+      const afterIdx = matchIdx + cleanWord.length;
+      searchPos = afterIdx;
+      if (afterIdx < rawText.length && rawText[afterIdx] === ' ') {
+        s.text = cleanWord + ' ';
+        s.isSubSyllable = false;
+        while (searchPos < rawText.length && rawText[searchPos] === ' ') searchPos++;
+      } else if (idx < allS.length - 1) {
+        s.text = cleanWord;
+        s.isSubSyllable = true;
+      } else {
+        s.text = cleanWord;
+        s.isSubSyllable = false;
+      }
+    } else {
+      if (idx < allS.length - 1 && !s.text.endsWith(' ') && !s.isSubSyllable) {
+        s.text = cleanWord + ' ';
+      }
+    }
+  });
+}
+
+function splitLineAdlibIntoSeparateTrack(lineId) {
+  const targetId = lineId || Studio.selectedLineId;
+  if (!targetId) return;
+  const lyrics = getActiveLyrics();
+  const line = (lyrics.lines || []).find(l => l.id === targetId);
+  if (!line || !line.adlib) {
+    toast('No ad-lib detected in this line.', 'info');
+    return;
+  }
+
+  pushHistory();
+  const adlibText = line.adlib;
+  const adlibSyls = line.adlibSyllabi || [];
+  
+  // Clean parent line
+  line.adlib = null;
+  line.adlibSyllabi = [];
+
+  // Create new line on Lane 3 (ADLIB 1, laneIndex: 2)
+  const newLine = {
+    id: `L-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    start: line.start,
+    end: line.end,
+    text: '',
+    adlib: adlibText,
+    rawSyllabi: [],
+    adlibSyllabi: adlibSyls,
+    agent: line.agent || 'v1',
+    side: line.side || 'right',
+    isSimultaneous: true,
+    laneIndex: 2, // ADLIB 1
+  };
+
+  lyrics.lines.push(newLine);
+  lyrics.lines.sort((a, b) => a.start - b.start);
+  Studio.selectedLineId = newLine.id;
+
+  saveActiveTrackToBackend();
+  refreshEditorViews();
+  toast('Ad-lib extracted to dedicated lane (ADLIB 1)!', 'success');
 }
 
 function toggleLineLane(lineId) {
@@ -182,8 +580,12 @@ function toggleLineLane(lineId) {
 
   pushHistory();
   const oldLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
-  const newLane = oldLane === 1 ? 0 : 1;
+  const newLane = (oldLane + 1) % 4;
   line.laneIndex = newLane;
+
+  if (newLane >= 2) {
+    if (!line.adlib && line.text) line.adlib = line.text;
+  }
 
   // Move line's syllables that were aligned with the old lane
   (line.rawSyllabi || []).forEach(s => {
@@ -194,7 +596,7 @@ function toggleLineLane(lineId) {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`Zeile auf Ebene ${newLane + 1} (LINES ${newLane + 1}) verschoben`, 'success');
+  toast(`Moved line to ${getLaneName(newLane)} (${getLaneLabel(newLane)})`, 'success');
 }
 
 function setLineLane(targetLane, lineId) {
@@ -208,6 +610,9 @@ function setLineLane(targetLane, lineId) {
 
   pushHistory();
   line.laneIndex = targetLane;
+  if (targetLane >= 2) {
+    if (!line.adlib && line.text) line.adlib = line.text;
+  }
   (line.rawSyllabi || []).forEach(s => {
     if (s.lane === oldLane || s.lane === undefined) {
       s.lane = targetLane;
@@ -216,7 +621,7 @@ function setLineLane(targetLane, lineId) {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`Zeile auf Ebene ${targetLane + 1} (LINES ${targetLane + 1}) verschoben`, 'success');
+  toast(`Moved line to ${getLaneName(targetLane)} (${getLaneLabel(targetLane)})`, 'success');
 }
 
 function toggleAdlibRole() {
@@ -277,7 +682,7 @@ function toggleAdlibRole() {
     clearSyllableSelection();
     saveActiveTrackToBackend();
     refreshEditorViews();
-    toast(`${toggledCount} Silbe(n) als ${anyBecameAdlib ? 'Ad-lib (Ebene 4)' : 'Hauptgesang'} markiert [B].`, 'success');
+    toast(`${toggledCount} syllable(s) marked as ${anyBecameAdlib ? 'Ad-lib (Lane 4)' : 'Lead vocal'} [B].`, 'success');
     return;
   }
 
@@ -302,13 +707,13 @@ function toggleAdlibRole() {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(line.adlib ? 'Zeile als Ad-lib (x-bg) markiert [B].' : 'Zeile als Hauptgesang markiert [B].', 'success');
+  toast(line.adlib ? 'Line marked as ad-lib (x-bg) [B].' : 'Line marked as lead vocal [B].', 'success');
 }
 
 function toggleSnapping() {
   Studio.snapEnabled = !Studio.snapEnabled;
   updateSnapBtnUI();
-  toast(Studio.snapEnabled ? 'Magnetisches Snappen: EIN [S]' : 'Magnetisches Snappen: AUS [S]', 'success');
+  toast(Studio.snapEnabled ? 'Magnetic Snapping: ON [S]' : 'Magnetic Snapping: OFF [S]', 'success');
 }
 
 function updateSnapBtnUI() {
@@ -372,6 +777,7 @@ function setPlayUI(playing) {
   Studio.isPlaying = playing;
   document.getElementById('iconPlay')?.classList.toggle('hidden', playing);
   document.getElementById('iconPause')?.classList.toggle('hidden', !playing);
+  if (typeof updateSweepPlayer === 'function') updateSweepPlayer(false);
 }
 
 function seekAudio(delta) {
@@ -580,7 +986,7 @@ function updatePlayheadDOM() {
   const ph = document.getElementById('tlPlayhead');
   if (!ph) return;
   const x = (Studio.currentTime || 0) * Studio.pps;
-  ph.style.left = `${x}px`;
+  ph.style.transform = `translate3d(${x}px, 0, 0)`;
 
   if (Studio.isPlaying) {
     const scroll = document.getElementById('tlScrollArea');
@@ -616,7 +1022,7 @@ function startStudioRAF() {
   Studio.rafId = requestAnimationFrame(loop);
 }
 
-// ─── Multi-Lane Timeline Rendering ───────────────────────────────────────────
+// ─── Multi-Lane Timeline Rendering (4 Lanes: Lead, Duett, Adlib 1, Adlib 2) ───
 function renderTimelineLines() {
   const track = document.getElementById('tlLinesTrack');
   if (!track) return;
@@ -625,34 +1031,39 @@ function renderTimelineLines() {
   const lyrics = getActiveLyrics();
   const lines  = lyrics.lines || [];
 
-  // Add horizontal lane guide line between Lines 1 and Lines 2
-  const guide = document.createElement('div');
-  guide.className = 'tl-lines-track-guide';
-  track.appendChild(guide);
+  // Add 3 horizontal lane guide lines for the 4 lanes (at 38px, 76px, 114px)
+  for (let g = 1; g < 4; g++) {
+    const guide = document.createElement('div');
+    guide.className = 'tl-lines-track-guide';
+    guide.style.top = `${g * 38}px`;
+    track.appendChild(guide);
+  }
 
   lines.forEach(line => {
     const x = line.start * Studio.pps;
     const w = Math.max(6, (line.end - line.start) * Studio.pps);
     const trackLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
-    const topPx = trackLane === 1 ? 43 : 3;
+    const clampedLane = Math.max(0, Math.min(3, trackLane));
+    const topPx = clampedLane * 38 + 2;
     const blockH = 34;
 
     const div = document.createElement('div');
     div.className = 'tl-line-block' +
-      (line.id === Studio.selectedLineId ? ' selected' : '') +
+      (isLineSelected(line.id) ? ' selected' : '') +
       (line.agent === 'v2' ? ' duet-v2' : '') +
-      (trackLane > 0 ? ` lane-offset-${trackLane}` : '');
+      ` lane-offset-${clampedLane}`;
     div.style.left   = `${x}px`;
     div.style.width  = `${w}px`;
     div.style.top    = `${topPx}px`;
     div.style.height = `${blockH}px`;
     div.dataset.lineId = line.id;
 
-    // Lane badge (E1 / E2) - Clickable to instantly toggle between Ebene 1 and Ebene 2
+    // Lane badge (E1 / E2 / A1 / A2) - Clickable to cycle between all 4 lanes
     const badge = document.createElement('span');
-    badge.className = `tl-line-lane-badge ${trackLane === 1 ? 'badge-l2' : 'badge-l1'}`;
-    badge.textContent = `E${trackLane + 1}`;
-    badge.title = `Klicken: Wechseln zu Ebene ${trackLane === 1 ? 1 : 2}`;
+    const badgeClass = clampedLane === 0 ? 'badge-l1' : (clampedLane === 1 ? 'badge-l2' : (clampedLane === 2 ? 'badge-l3' : 'badge-l4'));
+    badge.className = `tl-line-lane-badge ${badgeClass}`;
+    badge.textContent = getLaneLabel(clampedLane);
+    badge.title = `Click to switch to next lane (${getLaneName((clampedLane + 1) % 4)})`;
     badge.addEventListener('mousedown', e => e.stopPropagation());
     badge.addEventListener('click', e => {
       e.stopPropagation();
@@ -662,7 +1073,15 @@ function renderTimelineLines() {
 
     const span = document.createElement('span');
     span.className = 'tl-line-text';
-    span.textContent = line.text || (line.adlib ? `(${line.adlib})` : '…');
+    const mainT = line.text || '';
+    const adlibT = line.adlib ? (line.adlib.startsWith('(') ? line.adlib : `(${line.adlib})`) : '';
+    if (mainT && adlibT) {
+      span.innerHTML = `${escHTML(mainT)} <span class="tl-line-adlib-part" style="color:#c084fc; font-style:italic;">${escHTML(adlibT)}</span>`;
+    } else if (adlibT) {
+      span.innerHTML = `<span class="tl-line-adlib-part" style="color:#c084fc; font-style:italic;">${escHTML(adlibT)}</span>`;
+    } else {
+      span.textContent = mainT || '…';
+    }
     div.appendChild(span);
 
     // Left & Right Trim Handles
@@ -670,11 +1089,59 @@ function renderTimelineLines() {
     const er = document.createElement('div'); er.className = 'tl-edge tl-edge-r';
     div.appendChild(el); div.appendChild(er);
 
-    el.addEventListener('mousedown', e => startDrag(e, 'line', line.id, null, 'left'));
-    er.addEventListener('mousedown', e => startDrag(e, 'line', line.id, null, 'right'));
+    el.addEventListener('mousedown', e => {
+      selectLine(line.id);
+      startDrag(e, 'line', line.id, null, 'left');
+    });
+    el.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      const allS = [...(line.rawSyllabi || []), ...(line.adlibSyllabi || [])];
+      if (allS.length > 0) {
+        pushHistory();
+        const minT = Math.min(...allS.map(s => s.time)) / 1000;
+        line.start = Math.round(minT * 1000) / 1000;
+        saveActiveTrackToBackend();
+        renderTimelineLines();
+        renderInspectorLines();
+        toast('Line start snapped to first syllable.', 'success');
+      }
+    });
+
+    er.addEventListener('mousedown', e => {
+      selectLine(line.id);
+      startDrag(e, 'line', line.id, null, 'right');
+    });
+    er.addEventListener('dblclick', e => {
+      e.stopPropagation();
+      const allS = [...(line.rawSyllabi || []), ...(line.adlibSyllabi || [])];
+      if (allS.length > 0) {
+        pushHistory();
+        const maxT = Math.max(...allS.map(s => s.time + s.duration)) / 1000;
+        line.end = Math.round(maxT * 1000) / 1000;
+        saveActiveTrackToBackend();
+        renderTimelineLines();
+        renderInspectorLines();
+        toast('Line end snapped to last syllable.', 'success');
+      }
+    });
+
     div.addEventListener('mousedown', e => {
       if (e.target.classList.contains('tl-edge')) return;
-      selectLine(line.id);
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleLineSelection(line.id);
+        return;
+      }
+      if (e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        rangeSelectLines(line.id);
+        return;
+      }
+      if (!isLineSelected(line.id)) {
+        selectLine(line.id);
+      }
       startDrag(e, 'line', line.id, null, 'move');
     });
 
@@ -696,6 +1163,7 @@ function isSyllableSelected(lineId, isAdlib, sIdx) {
 }
 
 function selectSingleSyllable(lineId, sIdx, isAdlib) {
+  Studio.lineSelected = false;
   Studio.selectedSyllables.clear();
   Studio.selectedLineId = lineId;
   Studio.selectedSylIdx = sIdx;
@@ -716,6 +1184,7 @@ function selectSingleSyllable(lineId, sIdx, isAdlib) {
 }
 
 function toggleSyllableSelection(lineId, sIdx, isAdlib) {
+  Studio.lineSelected = false;
   const key = getSyllableKey(lineId, isAdlib, sIdx);
   if (Studio.selectedSyllables.has(key)) {
     Studio.selectedSyllables.delete(key);
@@ -751,8 +1220,11 @@ function clearSyllableSelection() {
 
 function selectAllSyllables() {
   Studio.selectedSyllables.clear();
+  if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+  Studio.selectedLineIds.clear();
   const lyrics = getActiveLyrics();
   (lyrics.lines || []).forEach(line => {
+    Studio.selectedLineIds.add(line.id);
     (line.rawSyllabi || []).forEach((syl, sIdx) => {
       Studio.selectedSyllables.set(getSyllableKey(line.id, false, sIdx), { lineId: line.id, isAdlib: false, sIdx, syl });
     });
@@ -760,17 +1232,31 @@ function selectAllSyllables() {
       Studio.selectedSyllables.set(getSyllableKey(line.id, true, sIdx), { lineId: line.id, isAdlib: true, sIdx, syl });
     });
   });
+  if (lyrics.lines && lyrics.lines.length > 0) {
+    Studio.selectedLineId = lyrics.lines[0].id;
+    Studio.lineSelected = true;
+  }
   updateSelectionBadge();
+  renderTimelineLines();
   renderTimelineSyllables();
-  toast(`${Studio.selectedSyllables.size} Silben ausgewählt (Alle)`, 'success');
+  renderInspectorLines();
+  toast(`${Studio.selectedLineIds.size} lines (${Studio.selectedSyllables.size} syllables) selected (Ctrl+A)`, 'success');
 }
 
 function updateSelectionBadge() {
   const badge = document.getElementById('tlSelectionBadge');
   if (!badge) return;
-  const count = Studio.selectedSyllables.size;
-  if (count > 0) {
-    badge.textContent = `${count} ausgewählt`;
+  const lineCount = Studio.selectedLineIds ? Studio.selectedLineIds.size : (Studio.selectedLineId ? 1 : 0);
+  const sylCount = Studio.selectedSyllables.size;
+
+  if (lineCount > 1) {
+    badge.textContent = `${lineCount} lines (${sylCount} syl)`;
+    badge.classList.remove('hidden');
+  } else if (sylCount > 0) {
+    badge.textContent = `${sylCount} selected`;
+    badge.classList.remove('hidden');
+  } else if (lineCount === 1) {
+    badge.textContent = `1 line selected`;
     badge.classList.remove('hidden');
   } else {
     badge.classList.add('hidden');
@@ -780,17 +1266,17 @@ function updateSelectionBadge() {
 function addVocalLane() {
   Studio.numLanes = (Studio.numLanes || 4) + 1;
   renderTimelineSyllables();
-  toast(`Ebene hinzugefügt (Jetzt ${Studio.numLanes} Ebenen)`, 'success');
+  toast(`Lane added (Now ${Studio.numLanes} lanes)`, 'success');
 }
 
 function removeVocalLane() {
   if ((Studio.numLanes || 4) <= 2) {
-    toast('Mindestens 2 Ebenen bleiben erhalten.', 'error');
+    toast('Minimum 2 lanes required.', 'error');
     return;
   }
   Studio.numLanes = (Studio.numLanes || 4) - 1;
   renderTimelineSyllables();
-  toast(`Ebene entfernt (noch ${Studio.numLanes} Ebenen)`, 'success');
+  toast(`Lane removed (${Studio.numLanes} lanes remaining)`, 'success');
 }
 
 // ─── Multi-Lane Timeline Rendering ───────────────────────────────────────────
@@ -828,12 +1314,12 @@ function renderTimelineSyllables() {
   const labelsWrap = document.getElementById('tlLanesLabelsWrap');
   if (labelsWrap) {
     labelsWrap.innerHTML = '';
-    const laneNames = ['Ebene 1 (Frei)', 'Ebene 2 (Frei)', 'Ebene 3 (Sänger 2)', 'Ebene 4 (Ad-lib)'];
+    const laneNames = ['Lane 1 (Lead)', 'Lane 2 (Duet)', 'Lane 3 (Ad-Lib 1)', 'Lane 4 (Ad-Lib 2)'];
     for (let i = 0; i < Studio.numLanes; i++) {
       const lbl = document.createElement('div');
       lbl.className = `tl-lane-label-item lane-${i}`;
       lbl.style.height = `${laneH}px`;
-      lbl.textContent = laneNames[i] || `Ebene ${i + 1}`;
+      lbl.textContent = laneNames[i] || `Lane ${i + 1}`;
       labelsWrap.appendChild(lbl);
     }
   }
@@ -887,10 +1373,20 @@ function renderTimelineSyllables() {
           toggleSyllableSelection(line.id, sIdx, false);
           return;
         }
-        if (!isSyllableSelected(line.id, false, sIdx)) {
+        const alreadySelected = isSyllableSelected(line.id, false, sIdx);
+        if (!alreadySelected || Studio.selectedSyllables.size <= 1) {
           selectSingleSyllable(line.id, sIdx, false);
+        } else {
+          Studio.selectedLineId = line.id;
+          Studio.selectedSylIdx = sIdx;
+          Studio.selectedIsAdlib = false;
         }
         startDrag(e, 'syl', line.id, sIdx, 'move', false);
+      });
+      chip.addEventListener('click', e => {
+        if (e.target.classList.contains('tl-edge')) return;
+        if (e.shiftKey || e.ctrlKey || e.metaKey) return;
+        selectSingleSyllable(line.id, sIdx, false);
       });
       chip.addEventListener('dblclick', (e) => {
         e.stopPropagation();
@@ -936,10 +1432,20 @@ function renderTimelineSyllables() {
           toggleSyllableSelection(line.id, sIdx, true);
           return;
         }
-        if (!isSyllableSelected(line.id, true, sIdx)) {
+        const alreadySelected = isSyllableSelected(line.id, true, sIdx);
+        if (!alreadySelected || Studio.selectedSyllables.size <= 1) {
           selectSingleSyllable(line.id, sIdx, true);
+        } else {
+          Studio.selectedLineId = line.id;
+          Studio.selectedSylIdx = sIdx;
+          Studio.selectedIsAdlib = true;
         }
         startDrag(e, 'syl', line.id, sIdx, 'move', true);
+      });
+      chip.addEventListener('click', e => {
+        if (e.target.classList.contains('tl-edge')) return;
+        if (e.shiftKey || e.ctrlKey || e.metaKey) return;
+        selectSingleSyllable(line.id, sIdx, true);
       });
       chip.addEventListener('dblclick', (e) => {
         e.stopPropagation();
@@ -1143,12 +1649,30 @@ function handleDragMove(e) {
     snapCandidates.push(playheadTime);
 
     if (dg.type === 'line') {
-      // Line blocks of other lines
+      // 1. Line blocks of other lines & other syllables
       (lyrics.lines || []).forEach(l => {
         if (l.id !== dg.lineId) {
           snapCandidates.push(l.start);
           snapCandidates.push(l.end);
+          (l.rawSyllabi || []).forEach(s => {
+            snapCandidates.push(s.time / 1000);
+            snapCandidates.push((s.time + s.duration) / 1000);
+          });
+          (l.adlibSyllabi || []).forEach(s => {
+            snapCandidates.push(s.time / 1000);
+            snapCandidates.push((s.time + s.duration) / 1000);
+          });
         }
+      });
+
+      // 2. Syllables of THIS line (especially for trimming left/right handles to first/last syllable)
+      (dg.origRawSylls || []).forEach(s => {
+        snapCandidates.push(s.time / 1000);
+        snapCandidates.push((s.time + s.duration) / 1000);
+      });
+      (dg.origAdlibSylls || []).forEach(s => {
+        snapCandidates.push(s.time / 1000);
+        snapCandidates.push((s.time + s.duration) / 1000);
       });
 
       const lineDur = dg.origEnd - dg.origStart;
@@ -1308,15 +1832,18 @@ function handleDragMove(e) {
       line.rawSyllabi = dg.origRawSylls.map(s => ({ ...s, time: Math.max(0, s.time + deltaMs) }));
       line.adlibSyllabi = dg.origAdlibSylls.map(s => ({ ...s, time: Math.max(0, s.time + deltaMs) }));
 
-      // Vertical lane movement for lines (Lines 1 vs Lines 2)
+      // Vertical lane movement for lines (4 Lanes: 0..3)
       const linesTrack = document.getElementById('tlLinesTrack');
       if (linesTrack) {
         const trackRect = linesTrack.getBoundingClientRect();
         const relY = e.clientY - trackRect.top;
-        const targetLineLane = relY < 40 ? 0 : 1;
+        const targetLineLane = Math.max(0, Math.min(3, Math.floor(relY / 38)));
         if (line.laneIndex !== targetLineLane) {
           const oldLane = line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0);
           line.laneIndex = targetLineLane;
+          if (targetLineLane >= 2) {
+            if (!line.adlib && line.text) line.adlib = line.text;
+          }
           // Sync raw syllables that were aligned to the old lane
           (line.rawSyllabi || []).forEach(s => {
             if (s.lane === oldLane || s.lane === undefined) {
@@ -1453,7 +1980,69 @@ function copySelectedSyllables() {
   const lyrics = getActiveLyrics();
   const lines = lyrics.lines || [];
 
-  // 1. If syllables are selected via multi-selection / chip click
+  const hasSelectedLines = Studio.selectedLineIds && Studio.selectedLineIds.size > 0;
+  const singleLineSelected = Studio.lineSelected && Studio.selectedLineId;
+
+  // Case A: Lines are selected (via Ctrl+Click, Shift+Click, or selectAll)
+  if (hasSelectedLines || (singleLineSelected && Studio.selectedSyllables.size === 0)) {
+    const targetLineIds = hasSelectedLines
+      ? Array.from(Studio.selectedLineIds)
+      : (Studio.selectedLineId ? [Studio.selectedLineId] : []);
+
+    const selectedLines = lines.filter(l => targetLineIds.includes(l.id));
+    if (selectedLines.length === 0) {
+      toast('No lines selected to copy.', 'error');
+      return;
+    }
+
+    selectedLines.sort((a, b) => a.start - b.start);
+    const minStartMs = Math.round(selectedLines[0].start * 1000);
+
+    const lineGroups = selectedLines.map(l => {
+      const lStartMs = Math.round(l.start * 1000);
+      const lEndMs = Math.round(l.end * 1000);
+      const rawSyls = (l.rawSyllabi || []).map(s => ({
+        ...s,
+        relTime: s.time - minStartMs,
+        isAdlib: false,
+        lane: s.lane !== undefined ? s.lane : (l.agent === 'v2' ? 1 : 0),
+      }));
+      const adlibSyls = (l.adlibSyllabi || []).map(s => ({
+        ...s,
+        relTime: s.time - minStartMs,
+        isAdlib: true,
+        lane: s.lane !== undefined ? s.lane : 3,
+      }));
+      const allSyls = [...rawSyls, ...adlibSyls].sort((a, b) => a.time - b.time);
+
+      return {
+        origLineId: l.id,
+        agent: l.agent || 'v1',
+        side: l.side || 'right',
+        laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
+        text: l.text || '',
+        adlib: l.adlib || null,
+        relLineStartMs: lStartMs - minStartMs,
+        relLineEndMs: lEndMs - minStartMs,
+        duration: l.end - l.start,
+        syls: allSyls,
+      };
+    });
+
+    const totalSyls = lineGroups.reduce((acc, grp) => acc + grp.syls.length, 0);
+
+    Studio.clipboard = {
+      type: 'lines',
+      minTime: minStartMs,
+      lineGroups: lineGroups,
+      items: lineGroups.flatMap(grp => grp.syls),
+    };
+
+    toast(`Copied ${lineGroups.length} line(s) (${totalSyls} syllables) [Ctrl+C]`, 'success');
+    return;
+  }
+
+  // Case B: Individual syllables selected (via marquee or single syllable clicks)
   if (Studio.selectedSyllables.size > 0) {
     const items = [];
     const lineMap = new Map(); // lineId -> { line, syls: [] }
@@ -1470,7 +2059,7 @@ function copySelectedSyllables() {
         lineId: l.id,
         agent: l.agent || 'v1',
         side: l.side || 'right',
-        laneIndex: l.laneIndex || 0,
+        laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
         text: s.text,
         time: s.time,
         duration: s.duration,
@@ -1487,26 +2076,29 @@ function copySelectedSyllables() {
     });
 
     if (!items.length) {
-      toast('Keine Silben zum Kopieren ausgewählt.', 'error');
+      toast('No syllables selected to copy.', 'error');
       return;
     }
 
     items.sort((a, b) => a.time - b.time);
     const minTime = items[0].time;
 
-    // Build structured line groups in order of appearance
     const lineGroups = [];
     lineMap.forEach((val, lineId) => {
       val.syls.sort((a, b) => a.time - b.time);
+      const lStartMs = Math.round(val.line.start * 1000);
+      const lEndMs = Math.round(val.line.end * 1000);
       lineGroups.push({
         origLineId: lineId,
         agent: val.line.agent || 'v1',
         side: val.line.side || 'right',
-        laneIndex: val.line.laneIndex || 0,
+        laneIndex: val.line.laneIndex !== undefined ? val.line.laneIndex : (val.line.agent === 'v2' ? 1 : 0),
         text: val.line.text || '',
         adlib: val.line.adlib || null,
         minTime: val.syls[0].time,
-        relLineStart: val.syls[0].time - minTime,
+        relLineStartMs: val.syls[0].time - minTime,
+        relLineEndMs: (val.syls[val.syls.length - 1].time + val.syls[val.syls.length - 1].duration) - minTime,
+        duration: (lEndMs - lStartMs) / 1000,
         syls: val.syls.map(s => ({
           ...s,
           relTime: s.time - minTime,
@@ -1525,15 +2117,16 @@ function copySelectedSyllables() {
       })),
     };
 
-    toast(`${items.length} Silben kopiert (${lineGroups.length} Zeile(n)) [Ctrl+C]`, 'success');
+    toast(`Copied ${items.length} syllables (${lineGroups.length} line(s)) [Ctrl+C]`, 'success');
     return;
   }
 
-  // 2. If a Line block is selected (and no individual syllables selected)
+  // Case C: Single line selected fallback
   if (Studio.selectedLineId) {
     const l = lines.find(line => line.id === Studio.selectedLineId);
     if (l) {
       const lineStartMs = Math.round(l.start * 1000);
+      const lineEndMs = Math.round(l.end * 1000);
       const rawSyls = (l.rawSyllabi || []).map(s => ({
         ...s,
         relTime: s.time - lineStartMs,
@@ -1555,26 +2148,28 @@ function copySelectedSyllables() {
           origLineId: l.id,
           agent: l.agent || 'v1',
           side: l.side || 'right',
-          laneIndex: l.laneIndex || 0,
+          laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
           text: l.text || '',
           adlib: l.adlib || null,
+          relLineStartMs: 0,
+          relLineEndMs: lineEndMs - lineStartMs,
           duration: (l.end - l.start),
           syls: allSyls,
         }],
         items: allSyls,
       };
 
-      toast(`Zeile "${(l.text || 'Zeile').slice(0, 25)}" kopiert [Ctrl+C]`, 'success');
+      toast(`Copied line "${(l.text || 'Line').slice(0, 25)}" [Ctrl+C]`, 'success');
       return;
     }
   }
 
-  toast('Keine Silben oder Zeile zum Kopieren ausgewählt.', 'error');
+  toast('No syllables or line selected to copy.', 'error');
 }
 
 function pasteSyllables() {
   if (!Studio.clipboard || !Studio.clipboard.lineGroups?.length) {
-    toast('Zwischenablage ist leer. Bitte zuerst Silben/Zeilen kopieren (Ctrl+C).', 'error');
+    toast('Clipboard is empty. Copy syllables or lines first (Ctrl+C).', 'error');
     return;
   }
 
@@ -1586,14 +2181,17 @@ function pasteSyllables() {
   const playheadMs = Math.round(playheadSec * 1000);
 
   Studio.selectedSyllables.clear();
-  let totalPastedSyllables = 0;
+  if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+  Studio.selectedLineIds.clear();
 
-  // Create newly timed lines at playhead position for each line group in clipboard
+  let totalPastedSyllables = 0;
+  const newCreatedLines = [];
+
   Studio.clipboard.lineGroups.forEach((grp, gIdx) => {
     const rawSyls = [];
     const adlibSyls = [];
 
-    grp.syls.forEach(s => {
+    (grp.syls || []).forEach(s => {
       const newSyl = {
         text: s.text,
         time: playheadMs + s.relTime,
@@ -1612,11 +2210,16 @@ function pasteSyllables() {
     rawSyls.sort((a, b) => a.time - b.time);
     adlibSyls.sort((a, b) => a.time - b.time);
 
-    const allStarts = [...rawSyls.map(s => s.time), ...adlibSyls.map(s => s.time)];
-    const allEnds   = [...rawSyls.map(s => s.time + s.duration), ...adlibSyls.map(s => s.time + s.duration)];
-
-    const lStart = allStarts.length > 0 ? (Math.min(...allStarts) / 1000) : (playheadSec + (grp.relLineStart || 0) / 1000);
-    const lEnd   = allEnds.length > 0   ? (Math.max(...allEnds) / 1000)   : (lStart + (grp.duration || 3.0));
+    let lStart, lEnd;
+    if (grp.relLineStartMs !== undefined && grp.relLineEndMs !== undefined) {
+      lStart = (playheadMs + grp.relLineStartMs) / 1000;
+      lEnd = (playheadMs + grp.relLineEndMs) / 1000;
+    } else {
+      const allStarts = [...rawSyls.map(s => s.time), ...adlibSyls.map(s => s.time)];
+      const allEnds   = [...rawSyls.map(s => s.time + s.duration), ...adlibSyls.map(s => s.time + s.duration)];
+      lStart = allStarts.length > 0 ? (Math.min(...allStarts) / 1000) : (playheadSec + (grp.relLineStart || 0) / 1000);
+      lEnd   = allEnds.length > 0   ? (Math.max(...allEnds) / 1000)   : (lStart + (grp.duration || 3.0));
+    }
 
     const lineText = rawSyls.length > 0 ? rawSyls.map(s => s.text).join('').trim() : (grp.text || 'New Line');
     const lineAdlib = adlibSyls.length > 0 ? adlibSyls.map(s => s.text).join('').trim() : grp.adlib;
@@ -1632,10 +2235,12 @@ function pasteSyllables() {
       agent: grp.agent || 'v1',
       side: grp.side || (grp.agent === 'v2' ? 'left' : 'right'),
       isSimultaneous: false,
-      laneIndex: grp.laneIndex || (grp.agent === 'v2' ? 1 : 0),
+      laneIndex: grp.laneIndex !== undefined ? grp.laneIndex : (grp.agent === 'v2' ? 1 : 0),
     };
 
     lyrics.lines.push(newLine);
+    newCreatedLines.push(newLine);
+    Studio.selectedLineIds.add(newLine.id);
 
     // Select syllables in new line
     rawSyls.forEach((syl, sIdx) => {
@@ -1648,10 +2253,6 @@ function pasteSyllables() {
         lineId: newLine.id, isAdlib: true, sIdx, syl,
       });
     });
-
-    if (gIdx === 0) {
-      Studio.selectedLineId = newLine.id;
-    }
   });
 
   // Sort all lines by start time
@@ -1662,17 +2263,22 @@ function pasteSyllables() {
     lyrics.lines[i].isSimultaneous = lyrics.lines[i].start < lyrics.lines[i - 1].end;
   }
 
+  if (newCreatedLines.length > 0) {
+    Studio.selectedLineId = newCreatedLines[0].id;
+    Studio.lineSelected = true;
+  }
+
   saveActiveTrackToBackend();
   updateSelectionBadge();
   refreshEditorViews();
   if (typeof updateSweepPlayer === 'function') updateSweepPlayer(true);
 
-  toast(`${totalPastedSyllables} Silben an Position ${fmt(playheadSec)} eingefügt (Ctrl+V)`, 'success');
+  toast(`Pasted ${newCreatedLines.length} line(s) (${totalPastedSyllables} syllables) at ${fmt(playheadSec)} [Ctrl+V]`, 'success');
 }
 
 function duplicateSelectedSyllables() {
-  if (Studio.selectedSyllables.size === 0 && !Studio.selectedLineId) {
-    toast('Keine Silben oder Zeile zum Duplizieren ausgewählt.', 'error');
+  if (Studio.selectedSyllables.size === 0 && !Studio.selectedLineId && (!Studio.selectedLineIds || Studio.selectedLineIds.size === 0)) {
+    toast('No syllables or lines selected to duplicate.', 'error');
     return;
   }
 
@@ -1681,9 +2287,13 @@ function duplicateSelectedSyllables() {
 
   // Find max end relative time among copied items
   let maxEndMs = 0;
-  Studio.clipboard.items.forEach(it => {
-    const end = (it.relTime || 0) + (it.duration || 0);
-    if (end > maxEndMs) maxEndMs = end;
+  Studio.clipboard.lineGroups.forEach(grp => {
+    const lEnd = grp.relLineEndMs !== undefined ? grp.relLineEndMs : 3000;
+    if (lEnd > maxEndMs) maxEndMs = lEnd;
+    (grp.syls || []).forEach(s => {
+      const sEnd = (s.relTime || 0) + (s.duration || 0);
+      if (sEnd > maxEndMs) maxEndMs = sEnd;
+    });
   });
 
   // Calculate new playhead time right after the selection (+100ms gap)
@@ -1692,37 +2302,90 @@ function duplicateSelectedSyllables() {
   updatePlayheadDOM();
 
   pasteSyllables();
-  toast('Silben/Zeilen dupliziert (Ctrl+D)', 'success');
+  toast('Duplicated syllables/lines (Ctrl+D)', 'success');
 }
 
 function deleteSelectedItems() {
   const lyrics = getActiveLyrics();
+  if (!lyrics || !lyrics.lines) return;
 
-  if (Studio.selectedSyllables.size > 0) {
-    pushHistory();
-    let delCount = 0;
-    Studio.selectedSyllables.forEach(sel => {
-      const line = (lyrics.lines || []).find(l => l.id === sel.lineId);
-      if (!line) return;
-      const list = sel.isAdlib ? line.adlibSyllabi : line.rawSyllabi;
-      if (list && list[sel.sIdx]) {
-        list.splice(sel.sIdx, 1);
-        delCount++;
-      }
-    });
+  pushHistory();
+
+  // 1. Multiple lines selected
+  if (Studio.lineSelected && Studio.selectedLineIds && Studio.selectedLineIds.size > 0) {
+    const idsToDelete = new Set(Studio.selectedLineIds);
+    if (Studio.selectedLineId) idsToDelete.add(Studio.selectedLineId);
+    const beforeCount = lyrics.lines.length;
+    lyrics.lines = lyrics.lines.filter(l => !idsToDelete.has(l.id));
+    const delCount = beforeCount - lyrics.lines.length;
+    Studio.selectedLineIds.clear();
+    Studio.selectedLineId = null;
+    Studio.lineSelected = false;
     clearSyllableSelection();
     saveActiveTrackToBackend();
     refreshEditorViews();
-    toast(`${delCount} Silbe(n) gelöscht.`, 'success');
-  } else if (Studio.selectedLineId) {
-    pushHistory();
-    const idx = (lyrics.lines || []).findIndex(l => l.id === Studio.selectedLineId);
+    toast(`Deleted ${delCount} line(s) and all their syllables.`, 'success');
+    return;
+  }
+
+  // 2. Single line selected
+  if (Studio.lineSelected && Studio.selectedLineId) {
+    const idx = lyrics.lines.findIndex(l => l.id === Studio.selectedLineId);
     if (idx >= 0) {
       lyrics.lines.splice(idx, 1);
       Studio.selectedLineId = null;
+      Studio.lineSelected = false;
+      clearSyllableSelection();
       saveActiveTrackToBackend();
       refreshEditorViews();
-      toast('Zeile gelöscht.', 'success');
+      toast('Line and all its syllables deleted.', 'success');
+      return;
+    }
+  }
+
+  // 3. Syllables selected
+  if (Studio.selectedSyllables.size > 0) {
+    const toDelete = new Set();
+    Studio.selectedSyllables.forEach(sel => {
+      if (sel.syl) toDelete.add(sel.syl);
+    });
+
+    let delCount = 0;
+    (lyrics.lines || []).forEach(line => {
+      if (line.rawSyllabi) {
+        const before = line.rawSyllabi.length;
+        line.rawSyllabi = line.rawSyllabi.filter(s => !toDelete.has(s));
+        delCount += (before - line.rawSyllabi.length);
+      }
+      if (line.adlibSyllabi) {
+        const before = line.adlibSyllabi.length;
+        line.adlibSyllabi = line.adlibSyllabi.filter(s => !toDelete.has(s));
+        delCount += (before - line.adlibSyllabi.length);
+      }
+
+      if (line.rawSyllabi && line.rawSyllabi.length > 0) {
+        line.text = line.rawSyllabi.map(s => s.text).join('').trim();
+      } else if (line.adlibSyllabi && line.adlibSyllabi.length > 0) {
+        line.text = '';
+      }
+    });
+
+    clearSyllableSelection();
+    saveActiveTrackToBackend();
+    refreshEditorViews();
+    toast(`Deleted ${delCount} syllable(s).`, 'success');
+    return;
+  }
+
+  if (Studio.selectedLineId) {
+    const idx = lyrics.lines.findIndex(l => l.id === Studio.selectedLineId);
+    if (idx >= 0) {
+      lyrics.lines.splice(idx, 1);
+      Studio.selectedLineId = null;
+      clearSyllableSelection();
+      saveActiveTrackToBackend();
+      refreshEditorViews();
+      toast('Line deleted.', 'success');
     }
   }
 }
@@ -1734,10 +2397,12 @@ function deleteSelectedSyllables() {
 // ─── Syllable Splitting & Merging ───────────────────────────────────────────
 function getTargetSyllableForSplit() {
   const lyrics = getActiveLyrics();
-  // 1. If Studio.selectedSyllables has an entry
+  const lines = lyrics.lines || [];
+
+  // 1. If Studio.selectedSyllables has exactly 1 entry
   if (Studio.selectedSyllables && Studio.selectedSyllables.size === 1) {
     const sel = Array.from(Studio.selectedSyllables.values())[0];
-    const line = (lyrics.lines || []).find(l => l.id === sel.lineId);
+    const line = lines.find(l => l.id === sel.lineId);
     if (line) {
       const list = sel.isAdlib ? line.adlibSyllabi : line.rawSyllabi;
       if (list && list[sel.sIdx]) {
@@ -1746,22 +2411,9 @@ function getTargetSyllableForSplit() {
     }
   }
 
-  // 2. If Studio.selectedLineId & Studio.selectedSylIdx
-  if (Studio.selectedLineId && Studio.selectedSylIdx !== null) {
-    const line = (lyrics.lines || []).find(l => l.id === Studio.selectedLineId);
-    if (line) {
-      const list = Studio.selectedIsAdlib ? line.adlibSyllabi : line.rawSyllabi;
-      if (list && list[Studio.selectedSylIdx]) {
-        return { line, list, sIdx: Studio.selectedSylIdx, syl: list[Studio.selectedSylIdx], isAdlib: Studio.selectedIsAdlib };
-      }
-    }
-  }
-
-  // 3. Fallback: check if playhead is currently over any syllable
+  // 2. Check if playhead is currently inside any syllable (checking selected line first)
   const tMs = Math.round((Studio.currentTime || 0) * 1000);
-  const targetLines = Studio.selectedLineId
-    ? (lyrics.lines || []).filter(l => l.id === Studio.selectedLineId)
-    : (lyrics.lines || []);
+  const targetLines = (Studio.selectedLineId ? lines.filter(l => l.id === Studio.selectedLineId) : lines);
 
   for (const line of targetLines) {
     for (let sIdx = 0; sIdx < (line.rawSyllabi || []).length; sIdx++) {
@@ -1774,6 +2426,35 @@ function getTargetSyllableForSplit() {
       const s = line.adlibSyllabi[sIdx];
       if (tMs >= s.time && tMs <= s.time + s.duration) {
         return { line, list: line.adlibSyllabi, sIdx, syl: s, isAdlib: true };
+      }
+    }
+  }
+
+  // 3. Fallback: check all lines for playhead position
+  if (Studio.selectedLineId) {
+    for (const line of lines) {
+      for (let sIdx = 0; sIdx < (line.rawSyllabi || []).length; sIdx++) {
+        const s = line.rawSyllabi[sIdx];
+        if (tMs >= s.time && tMs <= s.time + s.duration) {
+          return { line, list: line.rawSyllabi, sIdx, syl: s, isAdlib: false };
+        }
+      }
+      for (let sIdx = 0; sIdx < (line.adlibSyllabi || []).length; sIdx++) {
+        const s = line.adlibSyllabi[sIdx];
+        if (tMs >= s.time && tMs <= s.time + s.duration) {
+          return { line, list: line.adlibSyllabi, sIdx, syl: s, isAdlib: true };
+        }
+      }
+    }
+  }
+
+  // 4. Fallback: If Studio.selectedLineId & Studio.selectedSylIdx
+  if (Studio.selectedLineId && Studio.selectedSylIdx !== null) {
+    const line = lines.find(l => l.id === Studio.selectedLineId);
+    if (line) {
+      const list = Studio.selectedIsAdlib ? line.adlibSyllabi : line.rawSyllabi;
+      if (list && list[Studio.selectedSylIdx]) {
+        return { line, list, sIdx: Studio.selectedSylIdx, syl: list[Studio.selectedSylIdx], isAdlib: Studio.selectedIsAdlib };
       }
     }
   }
@@ -1889,7 +2570,7 @@ function calculateSplitSyllables(target, parts, timeMode, playheadMs) {
 function openSplitSyllableModal() {
   const target = getTargetSyllableForSplit();
   if (!target) {
-    toast('Wähle zuerst eine Silbe auf der Timeline aus (oder setze den Playhead darauf).', 'error');
+    toast('Select a syllable on the timeline first (or move playhead over it).', 'error');
     return;
   }
 
@@ -1939,7 +2620,7 @@ function openSplitSyllableModal() {
         playheadLabel.style.opacity = '0.4';
         playheadLabel.style.pointerEvents = 'none';
       }
-      if (playheadTimeVal) playheadTimeVal.textContent = 'außerhalb';
+      if (playheadTimeVal) playheadTimeVal.textContent = 'outside';
     }
   }
 
@@ -1973,7 +2654,7 @@ function updateSplitPreview() {
 
   previewContainer.innerHTML = '';
   if (calculated.length <= 1) {
-    previewContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">Tippe einen Bindestrich (-) ein, um zu trennen (z. B. bo-dy).</span>';
+    previewContainer.innerHTML = '<span style="font-size:12px; color:var(--text-muted);">Type a hyphen (-) or space to split (e.g. bo-dy).</span>';
     return;
   }
 
@@ -1997,7 +2678,7 @@ function commitSplitSyllable() {
   const parts = parseSplitPattern(rawPattern, target.syl.text);
 
   if (parts.length <= 1) {
-    toast('Bitte gib mindestens eine Trennstelle mit Bindestrich (-) oder Leerzeichen an (z. B. bo-dy).', 'error');
+    toast('Specify at least one split point using a hyphen (-) or space (e.g. bo-dy).', 'error');
     return;
   }
 
@@ -2019,13 +2700,13 @@ function commitSplitSyllable() {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`"${target.syl.text.trim()}" in ${newSyllables.length} Silben getrennt: [${parts.map(p => p.trim()).join('] [')}]`, 'success');
+  toast(`Split "${target.syl.text.trim()}" into ${newSyllables.length} syllables: [${parts.map(p => p.trim()).join('] [')}]`, 'success');
 }
 
 function mergeSelectedSyllables() {
   const lyrics = getActiveLyrics();
   if (Studio.selectedSyllables.size < 2) {
-    toast('Wähle mindestens 2 benachbarte Silben mit Shift+Klick aus, um sie zu vereinen.', 'error');
+    toast('Select at least 2 adjacent syllables using Shift+Click to merge.', 'error');
     return;
   }
 
@@ -2033,7 +2714,7 @@ function mergeSelectedSyllables() {
   const first = selList[0];
   const sameLine = selList.every(s => s.lineId === first.lineId && s.isAdlib === first.isAdlib);
   if (!sameLine) {
-    toast('Nur Silben derselben Zeile können vereint werden.', 'error');
+    toast('Only syllables from the same line can be merged.', 'error');
     return;
   }
 
@@ -2046,7 +2727,7 @@ function mergeSelectedSyllables() {
 
   for (let i = 1; i < selList.length; i++) {
     if (selList[i].sIdx !== selList[i - 1].sIdx + 1) {
-      toast('Die ausgewählten Silben müssen direkt nebeneinander liegen.', 'error');
+      toast('Selected syllables must be directly adjacent.', 'error');
       return;
     }
   }
@@ -2076,7 +2757,7 @@ function mergeSelectedSyllables() {
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`Silben zu "${combinedText.trim()}" vereint (J).`, 'success');
+  toast(`Merged syllables into "${combinedText.trim()}" (J).`, 'success');
 }
 
 function addNewLineAtPlayhead() {
@@ -2118,20 +2799,20 @@ async function runTrackLineAlignment(explicitLines = null) {
   const btn = document.getElementById('alignLinesBtn');
   const btnQueue = document.getElementById('btnAiAlignQueue');
   const btnParseAlign = document.getElementById('btnParseAndAlignLines');
-  const lang = document.getElementById('langSelect')?.value || 'en';
-  const whisperModel = document.getElementById('whisperModelSelect')?.value || 'base';
+  const lang = Studio.project?.language || document.getElementById('langSelect')?.value || localStorage.getItem('lrc_preferred_lang') || 'de';
+  const whisperModel = document.getElementById('whisperModelSelect')?.value || localStorage.getItem('lrc_whisper_model') || 'large-v3-turbo';
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = 'Whisper KI Zeilen-Scan…';
+    btn.textContent = 'Whisper Line Scan…';
   }
   if (btnQueue) {
     btnQueue.disabled = true;
-    btnQueue.textContent = 'KI Scanning…';
+    btnQueue.textContent = 'Scanning…';
   }
   if (btnParseAlign) {
     btnParseAlign.disabled = true;
-    btnParseAlign.textContent = 'KI Scanning…';
+    btnParseAlign.textContent = 'Scanning…';
   }
 
   try {
@@ -2152,7 +2833,7 @@ async function runTrackLineAlignment(explicitLines = null) {
 
     if (!resp.ok) {
       const errData = await resp.json().catch(() => ({}));
-      throw new Error(errData.error || 'Zeilen-Alignment fehlgeschlagen');
+      throw new Error(errData.error || 'Line alignment failed');
     }
 
     const data = await resp.json();
@@ -2161,24 +2842,31 @@ async function runTrackLineAlignment(explicitLines = null) {
     track.unplacedLines = [];
     Studio.pendingQueueId = null;
 
+    if (data.vocalsUrl) {
+      track.vocalsUrl = data.vocalsUrl;
+      track.vocalsPath = data.track?.vocalsPath || track.vocalsPath;
+      Studio.vocalsUrl = data.vocalsUrl;
+    }
+
     if (typeof renderAlbumSidebar === 'function') renderAlbumSidebar();
+    setWorkflowMode('line');
     switchInspectorTab('inspector', true);
     refreshEditorViews();
-    toast(`${data.line_count || 'Alle'} Zeilen erfolgreich an der Waveform ausgerichtet!`, 'success');
+    toast(`Successfully aligned ${data.line_count || 'all'} lines to waveform!`, 'success');
   } catch (err) {
-    toast(`Line Alignment Fehler: ${err.message}`, 'error');
+    toast(`Line Alignment Error: ${err.message}`, 'error');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Align Lines';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Line Scan';
     }
     if (btnQueue) {
       btnQueue.disabled = false;
-      btnQueue.textContent = '⚡ KI Align Lines';
+      btnQueue.textContent = 'Align Lines';
     }
     if (btnParseAlign) {
       btnParseAlign.disabled = false;
-      btnParseAlign.textContent = '⚡ Text einfügen & KI Align Lines';
+      btnParseAlign.textContent = 'Paste Text & Align Lines';
     }
   }
 }
@@ -2187,19 +2875,19 @@ async function runTrackAlignment() {
   const track = getActiveTrack();
   if (!track || !Studio.project?.id) return;
   const btn = document.getElementById('alignTrackBtn');
-  const mode = document.getElementById('alignModeSelect')?.value || 'studio_ai';
-  const lang = document.getElementById('langSelect')?.value || 'en';
-  const whisperModel = document.getElementById('whisperModelSelect')?.value || 'base';
+  const mode = document.getElementById('alignModeSelect')?.value || localStorage.getItem('lrc_align_mode') || 'studio_ai';
+  const lang = Studio.project?.language || document.getElementById('langSelect')?.value || localStorage.getItem('lrc_preferred_lang') || 'de';
+  const whisperModel = document.getElementById('whisperModelSelect')?.value || localStorage.getItem('lrc_whisper_model') || 'large-v3-turbo';
 
   if (btn) {
     btn.disabled = true;
-    btn.textContent = mode === 'studio_ai' ? 'Isoliere Acapella…' : 'Berechne Silben…';
+    btn.textContent = mode === 'studio_ai' ? 'Isolating Vocals…' : 'Computing Syllables…';
   }
 
   try {
     if (mode === 'studio_ai') {
       setTimeout(() => {
-        if (btn && btn.disabled) btn.textContent = 'WhisperX CTC Phonem-Scan…';
+        if (btn && btn.disabled) btn.textContent = 'WhisperX CTC Phoneme Scan…';
       }, 3000);
     }
 
@@ -2214,7 +2902,7 @@ async function runTrackAlignment() {
         whisper_model: whisperModel,
       }),
     });
-    if (!resp.ok) throw new Error('Alignment fehlgeschlagen');
+    if (!resp.ok) throw new Error('Alignment failed');
     const data = await resp.json();
 
     track.lyrics = data.track.lyrics;
@@ -2225,19 +2913,20 @@ async function runTrackAlignment() {
       decodeAudioPeaks(data.vocalsUrl, Studio.pps).then(res => {
         Studio.vocalsAudioBuf = res.audioBuf;
         Studio.vocalsWavePeaks = res.peaks;
-        toast('Acapella-Gesangsspur bereit.', 'success');
+        toast('Acapella vocals track ready.', 'success');
       }).catch(() => {});
     }
 
     if (typeof renderAlbumSidebar === 'function') renderAlbumSidebar();
+    setWorkflowMode('syllable');
     refreshEditorViews();
-    toast(mode === 'studio_ai' ? 'Studio KI Silben-Ausrichtung abgeschlossen.' : 'Silben schnell ausgerichtet.', 'success');
+    toast(mode === 'studio_ai' ? 'Studio syllable alignment completed.' : 'Quick syllable alignment completed.', 'success');
   } catch (err) {
-    toast(`Alignment Fehler: ${err.message}`, 'error');
+    toast(`Alignment Error: ${err.message}`, 'error');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Align Syllables';
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Syllable Scan';
     }
   }
 }
@@ -2248,7 +2937,7 @@ function editLineText(lineId, divEl) {
   const line = (lyrics.lines || []).find(l => l.id === lineId);
   if (!line) return;
 
-  const currentText = line.text || line.adlib || '';
+  const currentText = getLineDisplayText(line);
 
   if (divEl) {
     const textSpan = divEl.querySelector('.tl-line-text');
@@ -2269,8 +2958,10 @@ function editLineText(lineId, divEl) {
         const newText = inp.value.trim();
         if (newText && newText !== currentText) {
           pushHistory();
-          if (line.adlib && !line.text) line.adlib = newText;
-          else line.text = newText;
+          const parsed = parseLineTextAndAdlib(newText);
+          line.text = parsed.text;
+          line.adlib = parsed.adlib;
+          normalizeSyllablesFromLineText(line);
           saveActiveTrackToBackend();
         }
         refreshEditorViews();
@@ -2298,6 +2989,7 @@ function editLineText(lineId, divEl) {
   } else {
     line.text = newText.trim();
   }
+  normalizeSyllablesFromLineText(line);
   saveActiveTrackToBackend();
   refreshEditorViews();
 }
@@ -2326,10 +3018,19 @@ function editSyllableText(lineId, sylIdx, isAdlib, chipEl) {
       const commit = () => {
         if (committed) return;
         committed = true;
-        const newText = inp.value;
+        let newText = inp.value;
         if (newText !== syl.text) {
           pushHistory();
+          const nextSyl = list[sylIdx + 1];
+          if (newText.trim() && !newText.endsWith(' ') && !syl.isSubSyllable && sylIdx < list.length - 1) {
+            if (!nextSyl || !nextSyl.isSubSyllable) {
+              newText = newText.trim() + ' ';
+            }
+          }
           syl.text = newText;
+          if (line.rawSyllabi && line.rawSyllabi.length > 0) {
+            line.text = joinSyllablesToText(line.rawSyllabi);
+          }
           saveActiveTrackToBackend();
         }
         refreshEditorViews();
@@ -2367,27 +3068,37 @@ function renderInspectorLines() {
 
   lines.forEach((line, idx) => {
     const row = document.createElement('div');
-    row.className = 'inspector-row' + (line.id === Studio.selectedLineId ? ' active' : '');
+    row.className = 'inspector-row' + (isLineSelected(line.id) ? ' active' : '');
     row.dataset.id = line.id;
+
+    const lLane = Math.max(0, Math.min(3, line.laneIndex !== undefined ? line.laneIndex : (line.agent === 'v2' ? 1 : 0)));
+    const lLabel = getLaneLabel(lLane);
+    const lName = getLaneName(lLane);
 
     row.innerHTML = `
       <div class="insp-time-col">
         <input type="text" class="insp-time-input" value="${fmt(line.start)}" data-field="start">
       </div>
       <div class="insp-text-col">
-        <input type="text" class="insp-text-input" value="${escHTML(line.text || line.adlib || '')}" placeholder="Zeilentext eingeben">
+        <input type="text" class="insp-text-input" value="${escHTML(getLineDisplayText(line))}" placeholder="Enter line text">
         <div class="insp-syl-badges">
-          ${(line.rawSyllabi || []).map((s, sIdx) => `<span class="insp-syl-pill" data-sidx="${sIdx}" data-adlib="0" title="Klicken zum Bearbeiten der Silbe">${escHTML(s.text)}</span>`).join('')}
-          ${(line.adlibSyllabi || []).map((s, sIdx) => `<span class="insp-syl-pill adlib" data-sidx="${sIdx}" data-adlib="1" title="Klicken zum Bearbeiten der Ad-lib-Silbe">${escHTML(s.text)}</span>`).join('')}
+          ${(line.rawSyllabi || []).map((s, sIdx) => `<span class="insp-syl-pill" data-sidx="${sIdx}" data-adlib="0" title="Click to edit syllable">${escHTML(s.text)}</span>`).join('')}
+          ${(line.adlibSyllabi || []).map((s, sIdx) => `<span class="insp-syl-pill adlib" data-sidx="${sIdx}" data-adlib="1" title="Click to edit ad-lib syllable">${escHTML(s.text)}</span>`).join('')}
         </div>
       </div>
       <div class="insp-role-col">
-        <button class="btn-insp-lane ${line.laneIndex === 1 ? 'lane-2' : 'lane-1'}" title="Zeilenebene wechseln (Ebene 1 / Ebene 2)">E${(line.laneIndex || 0) + 1}</button>
+        <button class="btn-insp-lane lane-${lLane}" title="Change lane: current ${lName}">${lLabel}</button>
         <button class="btn-insp-role ${line.agent === 'v2' ? 'duet' : ''}" title="Toggle Singer Agent (v1 / v2)">${line.agent || 'v1'}</button>
         <button class="btn-insp-bg ${line.adlib ? 'active' : ''}" title="Toggle Ad-lib (x-bg)">BG</button>
-        <button class="btn-insp-del" title="Zeile löschen" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:0 4px;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
+        ${(line.text && line.adlib) ? `<button class="btn-insp-split-adlib" title="Extract ad-lib to dedicated ADLIB 1 lane" style="border:1px solid #8b5cf6; background:rgba(139,92,246,0.15); color:#c084fc; font-size:.64rem; font-weight:700; padding:2px 5px; border-radius:2px; cursor:pointer;">Extract</button>` : ''}
+        <button class="btn-insp-del" title="Delete line" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:0 4px;" onmouseover="this.style.color='#f87171'" onmouseout="this.style.color='var(--text-muted)'">✕</button>
       </div>
     `;
+
+    row.querySelector('.btn-insp-split-adlib')?.addEventListener('click', e => {
+      e.stopPropagation();
+      splitLineAdlibIntoSeparateTrack(line.id);
+    });
 
     row.querySelector('.btn-insp-del')?.addEventListener('click', e => {
       e.stopPropagation();
@@ -2398,7 +3109,7 @@ function renderInspectorLines() {
         if (Studio.selectedLineId === line.id) Studio.selectedLineId = null;
         saveActiveTrackToBackend();
         refreshEditorViews();
-        toast('Zeile gelöscht.', 'success');
+        toast('Line deleted.', 'success');
       }
     });
 
@@ -2445,12 +3156,16 @@ function renderInspectorLines() {
     });
     textInput?.addEventListener('change', e => {
       const val = e.target.value.trim();
-      if (val === (line.text || line.adlib || '')) return;
+      const currentFull = getLineDisplayText(line);
+      if (val === currentFull) return;
       pushHistory();
-      if (line.adlib && !line.text) line.adlib = val;
-      else line.text = val;
+      const parsed = parseLineTextAndAdlib(val);
+      line.text = parsed.text;
+      line.adlib = parsed.adlib;
+      normalizeSyllablesFromLineText(line);
       saveActiveTrackToBackend();
       renderTimelineLines();
+      renderTimelineSyllables();
       if (typeof updateSweepPlayer === 'function') updateSweepPlayer(true);
     });
 
@@ -2478,10 +3193,19 @@ function renderInspectorLines() {
         const commit = () => {
           if (committed) return;
           committed = true;
-          const newVal = inp.value;
+          let newVal = inp.value;
           if (newVal !== syl.text) {
             pushHistory();
+            const nextSyl = list[sIdx + 1];
+            if (newVal.trim() && !newVal.endsWith(' ') && !syl.isSubSyllable && sIdx < list.length - 1) {
+              if (!nextSyl || !nextSyl.isSubSyllable) {
+                newVal = newVal.trim() + ' ';
+              }
+            }
             syl.text = newVal;
+            if (line.rawSyllabi && line.rawSyllabi.length > 0) {
+              line.text = joinSyllablesToText(line.rawSyllabi);
+            }
             saveActiveTrackToBackend();
             renderTimelineSyllables();
             if (typeof updateSweepPlayer === 'function') updateSweepPlayer(true);
@@ -2516,7 +3240,19 @@ function renderInspectorLines() {
       toggleAdlibRole();
     });
 
-    row.addEventListener('click', () => selectLine(line.id));
+    row.addEventListener('click', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        toggleLineSelection(line.id);
+        return;
+      }
+      if (e.shiftKey) {
+        e.preventDefault();
+        rangeSelectLines(line.id);
+        return;
+      }
+      selectLine(line.id);
+    });
     list.appendChild(row);
   });
 }
@@ -2531,7 +3267,7 @@ async function toggleVocalsWave() {
   if (btn) btn.classList.toggle('active', Studio.useVocalsWave);
 
   if (Studio.useVocalsWave && !Studio.vocalsWavePeaks && vocalsUrl) {
-    toast('Lade Gesangs-Waveform…', '');
+    toast('Loading vocals waveform…', '');
     try {
       const res = await decodeAudioPeaks(vocalsUrl, Studio.pps);
       Studio.vocalsAudioBuf = res.audioBuf;
@@ -2548,7 +3284,7 @@ async function toggleVocalsAudio() {
   const btn = document.getElementById('vocalsAudioBtn');
 
   if (!vocalsUrl) {
-    toast('Noch keine Acapella vorhanden. Klicke zuerst auf "Align Syllables"!', 'error');
+    toast('No acapella available yet. Run "AI Syllable Scan" first!', 'error');
     return;
   }
 
@@ -2565,21 +3301,24 @@ async function toggleVocalsAudio() {
       if (wasPlay) Studio.audio.play().catch(() => {});
     }, { once: true });
     Studio.audio.load();
-    toast(Studio.useVocalsAudio ? 'Acapella-Gesang solo aktiviert' : 'Master-Audio aktiviert', 'success');
+    toast(Studio.useVocalsAudio ? 'Acapella vocals solo enabled' : 'Master audio enabled', 'success');
   }
 }
 
 // ─── Keyboard Event Handler ──────────────────────────────────────────────────
 function handleEditorKeyDown(e) {
+  if (e.code === 'KeyS' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    if (typeof saveAlbumProjectFile === 'function') saveAlbumProjectFile(false);
+    return;
+  }
+
   const tag = document.activeElement?.tagName;
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
 
   if (e.code === 'Space') {
     e.preventDefault();
     togglePlayPause();
-  } else if (e.code === 'KeyS' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    if (typeof saveAlbumProjectFile === 'function') saveAlbumProjectFile();
   } else if (e.code === 'KeyC' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     copySelectedSyllables();
@@ -2599,12 +3338,19 @@ function handleEditorKeyDown(e) {
     e.preventDefault();
     selectAllSyllables();
   } else if (e.code === 'Delete' || e.code === 'Backspace') {
-    if (Studio.selectedSyllables.size > 0 || Studio.selectedLineId) {
+    if (Studio.selectedSyllables.size > 0 || Studio.selectedLineId || (Studio.selectedLineIds && Studio.selectedLineIds.size > 0)) {
       e.preventDefault();
       deleteSelectedItems();
     }
   } else if (e.code === 'Escape') {
     clearSyllableSelection();
+    if (Studio.selectedLineIds) Studio.selectedLineIds.clear();
+    Studio.selectedLineId = null;
+    Studio.lineSelected = false;
+    updateSelectionBadge();
+    renderTimelineLines();
+    renderTimelineSyllables();
+    renderInspectorLines();
   } else if (e.code === 'KeyS' && !e.ctrlKey && !e.metaKey) {
     e.preventDefault();
     toggleSnapping();
@@ -2616,10 +3362,14 @@ function handleEditorKeyDown(e) {
     toggleLineLane();
   } else if (e.code === 'ArrowUp' && e.altKey) {
     e.preventDefault();
-    setLineLane(0);
+    const l = (getActiveLyrics().lines || []).find(li => li.id === Studio.selectedLineId);
+    const curLane = l ? (l.laneIndex || 0) : 0;
+    setLineLane(Math.max(0, curLane - 1));
   } else if (e.code === 'ArrowDown' && e.altKey) {
     e.preventDefault();
-    setLineLane(1);
+    const l = (getActiveLyrics().lines || []).find(li => li.id === Studio.selectedLineId);
+    const curLane = l ? (l.laneIndex || 0) : 0;
+    setLineLane(Math.min(3, curLane + 1));
   } else if (e.code === 'Digit1') {
     e.preventDefault();
     toggleSingerAgent('v1');
@@ -2666,7 +3416,7 @@ function initInspectorTabs() {
     if (!area) return;
     const rawText = area.value.trim();
     if (!rawText) {
-      toast('Bitte füge zuerst einen Songtext ein!', 'error');
+      toast('Please paste lyrics text first!', 'error');
       return;
     }
     const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0 && !/^\[(Verse|Chorus|Bridge|Hook|Outro|Intro|Part)[^\]]*\]$/i.test(l));
@@ -2736,34 +3486,34 @@ function updateInspectorCounters() {
 function parseRawLyricsToQueue() {
   const area = document.getElementById('rawLyricsPasteArea');
   if (!area) return;
-  const rawText = area.value.trim();
-  if (!rawText) {
-    toast('Bitte füge zuerst einen Songtext ein!', 'error');
+  const rawText = area.value;
+  if (!rawText || !rawText.trim()) {
+    toast('Please paste lyrics text first!', 'error');
     return;
   }
 
   const detectAdlibs = document.getElementById('rawDetectAdlibsCheck')?.checked ?? true;
   const track = getActiveTrack();
   if (!track) {
-    toast('Kein aktiver Track ausgewählt.', 'error');
+    toast('No active track selected.', 'error');
     return;
   }
 
   track.unplacedLines = track.unplacedLines || [];
-  const rawLines = rawText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  const rawLines = rawText.split(/\r?\n/);
 
   let addedCount = 0;
-  rawLines.forEach((l, idx) => {
-    // Skip section headers like [Verse 1], [Chorus]
-    if (/^\[(Verse|Chorus|Bridge|Hook|Outro|Intro|Part)[^\]]*\]$/i.test(l)) {
-      return;
-    }
+  rawLines.forEach((rawL, idx) => {
+    const l = cleanLyricsLine(rawL);
+    if (!l || l.length === 0) return; // Strict skip empty lines / spaces
+    if (isSectionHeader(l)) return;   // Strict skip section headers
 
     let isAdlib = false;
     let cleanText = l;
     if (detectAdlibs && ((cleanText.startsWith('(') && cleanText.endsWith(')')) || (cleanText.startsWith('[') && cleanText.endsWith(']')))) {
       isAdlib = true;
-      cleanText = cleanText.substring(1, cleanText.length - 1).trim();
+      cleanText = cleanLyricsLine(cleanText.substring(1, cleanText.length - 1));
+      if (!cleanText || cleanText.length === 0) return;
     }
 
     track.unplacedLines.push({
@@ -2775,12 +3525,16 @@ function parseRawLyricsToQueue() {
     addedCount++;
   });
 
+  if (addedCount === 0) {
+    return toast('No valid text lines found (only empty lines or section headers?).', 'error');
+  }
+
   area.value = '';
   Studio.userSelectedTab = true;
   switchInspectorTab('queue');
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`${addedCount} Zeilen in den Zeilen-Pool geladen!`, 'success');
+  toast(`Loaded ${addedCount} lines into Line Pool! (Empty lines ignored)`, 'success');
 }
 
 function renderQueueLines() {
@@ -2789,7 +3543,7 @@ function renderQueueLines() {
   list.innerHTML = '';
 
   const track = getActiveTrack();
-  const queue = track?.unplacedLines || [];
+  const queue = sanitizeQueue(track);
 
   if (queue.length === 0) {
     const empty = document.createElement('div');
@@ -2798,11 +3552,11 @@ function renderQueueLines() {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28" style="opacity:0.4;">
         <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/>
       </svg>
-      <div style="font-size:0.80rem; font-weight:600; color:var(--text-2);">Der Zeilen-Pool ist leer</div>
+      <div style="font-size:0.80rem; font-weight:600; color:var(--text-2);">The Line Pool is empty</div>
       <div style="font-size:0.72rem; color:var(--text-3); max-width:240px;">
-        Füge Songtext im Reiter <b>"Text einfügen"</b> ein, um unplatzierte Zeilen hier zu sammeln.
+        Paste lyrics in <b>"Paste Text"</b> tab to collect unplaced lines here.
       </div>
-      <button class="btn btn-secondary btn-xs" style="margin-top:6px;" onclick="switchInspectorTab('import', true)">Zum Text-Import</button>
+      <button class="btn btn-secondary btn-xs" style="margin-top:6px;" onclick="switchInspectorTab('import', true)">Go to Paste Text</button>
     `;
     list.appendChild(empty);
     return;
@@ -2816,14 +3570,14 @@ function renderQueueLines() {
 
     card.innerHTML = `
       <div class="queue-card-left">
-        <span class="queue-grip-icon" title="Mit der Maus greifen und auf die Waveform ziehen">⋮⋮</span>
+        <span class="queue-grip-icon" title="Drag and drop onto timeline">⋮⋮</span>
         <span class="queue-idx-badge">${String(qIdx + 1).padStart(2, '0')}</span>
         <span class="queue-card-text" title="${escHTML(item.text)}">${escHTML(item.text)}</span>
         ${item.adlib ? '<span class="queue-adlib-pill">BG</span>' : ''}
       </div>
       <div class="queue-card-actions">
-        <button class="btn-queue-stamp" title="An aktuellem Playhead platzieren [Enter]">+ Playhead</button>
-        <button class="btn-queue-del" title="Zeile aus Pool entfernen">✕</button>
+        <button class="btn-queue-stamp" title="Place at playhead [Enter]">+ Playhead</button>
+        <button class="btn-queue-del" title="Remove line from pool">✕</button>
       </div>
     `;
 
@@ -2871,12 +3625,12 @@ function renderQueueLines() {
 function clearQueueLines() {
   const track = getActiveTrack();
   if (!track || !track.unplacedLines || track.unplacedLines.length === 0) return;
-  if (!confirm('Möchtest du alle Zeilen aus dem unplatzierten Pool entfernen?')) return;
+  if (!confirm('Remove all lines from the Line Pool?')) return;
   track.unplacedLines = [];
   Studio.pendingQueueId = null;
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast('Zeilen-Pool geleert.', 'success');
+  toast('Line Pool cleared.', 'success');
 }
 
 function placeQueueLineAtTime(queueId, startSec, laneIndex = 0, explicitDur = null) {
@@ -2903,12 +3657,13 @@ function placeQueueLineAtTime(queueId, startSec, laneIndex = 0, explicitDur = nu
   const startT = Math.max(0, Math.round(startSec * 1000) / 1000);
   const endT = Math.round((startT + naturalDur) * 1000) / 1000;
 
+  const isAdlibLane = laneIndex >= 2;
   const newLine = {
     id: `L-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     start: startT,
     end: endT,
     text: item.text,
-    adlib: item.adlib,
+    adlib: item.adlib || (isAdlibLane ? item.text : null),
     rawSyllabi: [],
     adlibSyllabi: [],
     agent: item.agent || (laneIndex === 1 ? 'v2' : 'v1'),
@@ -2923,7 +3678,7 @@ function placeQueueLineAtTime(queueId, startSec, laneIndex = 0, explicitDur = nu
 
   saveActiveTrackToBackend();
   refreshEditorViews();
-  toast(`Platziert: "${item.text.substring(0, 30)}${item.text.length > 30 ? '…' : ''}"`, 'success');
+  toast(`Placed on ${getLaneName(laneIndex)}: "${item.text.substring(0, 30)}${item.text.length > 30 ? '…' : ''}"`, 'success');
 }
 
 function placeNextQueueLineAtPlayhead() {
@@ -2946,7 +3701,7 @@ function hasUnplacedQueueLines() {
 function placeAllQueueLines() {
   const track = getActiveTrack();
   if (!track || !track.unplacedLines || track.unplacedLines.length === 0) {
-    toast('Keine Zeilen im Pool vorhanden.', 'error');
+    toast('No lines in Line Pool.', 'error');
     return;
   }
 
@@ -2987,7 +3742,7 @@ function placeAllQueueLines() {
   saveActiveTrackToBackend();
   refreshEditorViews();
   switchInspectorTab('inspector', true);
-  toast(`${count} Zeilen sequenziell auf der Timeline platziert!`, 'success');
+  toast(`Placed ${count} lines sequentially on timeline!`, 'success');
 }
 
 function initTimelineDropZone() {
@@ -3029,13 +3784,81 @@ function initTimelineDropZone() {
       let laneIdx = 0;
       if (linesTrack) {
         const ltRect = linesTrack.getBoundingClientRect();
-        if (e.clientY > ltRect.top + ltRect.height / 2) {
-          laneIdx = 1;
-        }
+        const relY = e.clientY - ltRect.top;
+        laneIdx = Math.max(0, Math.min(3, Math.floor(relY / 38)));
       }
 
       placeQueueLineAtTime(queueId, dropSec, laneIdx);
     });
   });
+}
+
+// ─── 3-Step Workflow Mode System (Text -> Lines -> Syllables) ──────────────────
+function setWorkflowMode(mode) {
+  Studio.workflowMode = mode;
+
+  // 1. Update buttons
+  const btnText = document.getElementById('modeBtnText');
+  const btnLine = document.getElementById('modeBtnLine');
+  const btnSyl = document.getElementById('modeBtnSyllable');
+  btnText?.classList.toggle('active', mode === 'text');
+  btnLine?.classList.toggle('active', mode === 'line');
+  btnSyl?.classList.toggle('active', mode === 'syllable');
+
+  // 2. Update workspace container attribute
+  const ws = document.getElementById('mainWorkspace');
+  if (ws) ws.dataset.mode = mode;
+
+  // 3. Mode-specific updates
+  if (mode === 'text') {
+    populateTextModeEditor();
+  } else if (mode === 'line') {
+    layoutTimeline();
+    if (typeof updateSweepPlayer === 'function') updateSweepPlayer(true);
+  } else if (mode === 'syllable') {
+    layoutTimeline();
+    if (typeof updateSweepPlayer === 'function') updateSweepPlayer(true);
+  }
+}
+
+function autoSetWorkflowModeForTrack(track) {
+  if (!track) return;
+  if (track.status === 'syllable_synced') {
+    setWorkflowMode('syllable');
+  } else if (track.status === 'line_synced') {
+    setWorkflowMode('line');
+  } else {
+    setWorkflowMode('text');
+  }
+}
+
+function populateTextModeEditor() {
+  const area = document.getElementById('textModeTextarea');
+  const countEl = document.getElementById('textModeLineCount');
+  if (!area) return;
+
+  const track = getActiveTrack();
+  if (!track) return;
+
+  const existingLines = track.lyrics?.lines || [];
+  const unplaced = track.unplacedLines || [];
+
+  if (existingLines.length > 0) {
+    const textLines = existingLines.map(l => {
+      let t = l.text || '';
+      if (l.adlib) t += ` (${l.adlib})`;
+      return t;
+    });
+    area.value = textLines.join('\n');
+    if (countEl) countEl.textContent = `${textLines.length} Lines`;
+  } else if (unplaced.length > 0) {
+    const textLines = unplaced.map(l => (typeof l === 'string' ? l : (l.text || l.adlib || '')));
+    area.value = textLines.join('\n');
+    if (countEl) countEl.textContent = `${textLines.length} Lines`;
+  } else {
+    if (!area.value.trim()) {
+      if (countEl) countEl.textContent = `0 Lines`;
+    }
+  }
 }
 

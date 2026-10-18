@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TTML Lyrics Studio — Album & Syllable Time-Sync</title>
+  <title>TTML Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css?v=20261008_2">
+  <link rel="stylesheet" href="/static/style.css?v=20261016_5">
 </head>
 <body>
 
@@ -19,86 +19,48 @@
         <path d="M9 18V5l12-2v13"/>
         <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
       </svg>
-      <span class="brand-name">TTML Lyrics Studio</span>
-      <span class="badge-ttml-profile">Apple Music Spec</span>
+      <span class="brand-name">TTML Studio</span>
     </div>
 
+    <!-- Center: Adobe-style Flat Workspace Switcher -->
+    <nav class="workspace-nav" id="studioModeSwitcher">
+      <button id="modeBtnText" class="ws-tab" data-mode="text" title="1. Import & prepare lyrics">
+        <span class="ws-step">1</span> Text
+      </button>
+      <button id="modeBtnLine" class="ws-tab" data-mode="line" title="2. Align lines to waveform">
+        <span class="ws-step">2</span> Line Sync
+      </button>
+      <button id="modeBtnSyllable" class="ws-tab active" data-mode="syllable" title="3. Syllable tuning & preview">
+        <span class="ws-step">3</span> Syllable Tuning
+      </button>
+    </nav>
+
     <div class="header-right">
-      <div class="ctrl-group">
-        <label class="ctrl-label">Ausrichtung</label>
-        <select id="alignModeSelect" class="select" title="Wähle die Ausrichtungs-Genauigkeit">
-          <option value="studio_ai" selected>WhisperX Phoneme CTC + UVR5</option>
-          <option value="fast">Standard (Proportional)</option>
-        </select>
-      </div>
-
-      <div class="ctrl-group">
-        <label class="ctrl-label">Modell</label>
-        <select id="whisperModelSelect" class="select" title="Wähle die KI-Modellgröße">
-          <option value="base" selected>base</option>
-          <option value="small">small</option>
-          <option value="medium">medium</option>
-          <option value="large-v3-turbo">large-v3-turbo</option>
-        </select>
-      </div>
-
-      <div class="ctrl-group">
-        <label class="ctrl-label">Sprache</label>
-        <select id="langSelect" class="select">
-          <option value="en" selected>English</option>
-          <option value="de">German</option>
-          <option value="tr">Turkish</option>
-          <option value="fr">French</option>
-          <option value="es">Spanish</option>
-          <option value="it">Italian</option>
-          <option value="pt">Portuguese</option>
-          <option value="ru">Russian</option>
-          <option value="ja">Japanese</option>
-          <option value="ko">Korean</option>
-          <option value="zh">Chinese</option>
-        </select>
-      </div>
-
-      <button id="batchAlignBtn" class="btn btn-secondary btn-sm" title="Convert all line-synced lyrics in album to syllables">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-        </svg>
-        Album ausrichten
+      <button id="newProjectBtn" class="btn btn-secondary btn-sm" title="Create new project (Back to setup)">
+        + New Project
       </button>
 
-      <div style="width:1px; height:20px; background:var(--border2); margin:0 2px;"></div>
-
-      <button id="newProjectBtn" class="btn btn-secondary btn-sm" title="Neues Projekt anlegen (Zurück zum Setup)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Neues Projekt
+      <button id="saveProjectBtn" class="btn btn-secondary btn-sm" title="Save directly to disk [Ctrl+S]">
+        Save Project
       </button>
-
-      <button id="saveProjectBtn" class="btn btn-secondary btn-sm" title="Projektdatei (.lrcproj) speichern [Ctrl+S]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>
-        Projekt speichern
+      <button id="saveProjectAsBtn" class="btn btn-ghost btn-sm" title="Save copy to file (.lrcproj) [Download]">
+        Save As...
       </button>
+      <span id="autosaveStatusBadge" style="font-size:10px; color:var(--text-muted); opacity:0.8; padding: 3px 6px; background: rgba(255,255,255,0.04); border-radius: 4px; border: 1px solid var(--border2);" title="Autosave runs every 60s and on every change to disk">Autosave: On</span>
 
-      <label class="btn btn-secondary btn-sm" title="Gespeicherte .lrcproj Projektdatei öffnen">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-        </svg>
-        Projekt öffnen
+      <label class="btn btn-secondary btn-sm" title="Open saved .lrcproj project file">
+        Open
         <input type="file" id="projectFileInput" accept=".lrcproj,.json" hidden>
       </label>
+
+      <div style="width:1px; height:20px; background:var(--border2); margin:0 2px;"></div>
 
       <button id="exportAlbumZipBtn" class="btn btn-primary btn-sm" title="Download ZIP with all TTML files">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
-        Album Exportieren (.zip)
+        Export Album (.zip)
       </button>
     </div>
   </header>
@@ -115,19 +77,19 @@
           </svg>
         </div>
         <div class="album-meta-col">
-          <div class="album-title" id="albumTitleDisplay">Kein Album geladen</div>
-          <div class="album-artist" id="albumArtistDisplay">Ordner oder Dateien ablegen</div>
+          <div class="album-title" id="albumTitleDisplay">No album loaded</div>
+          <div class="album-artist" id="albumArtistDisplay">Drop folder or files</div>
           <div class="album-count" id="albumTrackCount">0 Tracks</div>
         </div>
       </div>
 
       <div class="sidebar-actions-bar">
-        <label class="btn btn-ghost btn-xs btn-upload-label" title="Audio-Dateien hinzufügen">
+        <label class="btn btn-ghost btn-xs btn-upload-label" title="Add audio files">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
           + Audio
           <input type="file" id="sidebarAudioInput" multiple hidden accept=".mp3,.flac,.wav,.m4a,.ogg,.opus,.aac">
         </label>
-        <label class="btn btn-ghost btn-xs btn-upload-label" title="Lyrics-Dateien hinzufügen">
+        <label class="btn btn-ghost btn-xs btn-upload-label" title="Add lyrics files">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           + Lyrics
           <input type="file" id="sidebarLyricsInput" multiple hidden accept=".lrc,.ttml,.xml,.vtt,.srt,.txt,.json,.qrc,.krc">
@@ -137,7 +99,7 @@
       <div class="album-tracklist" id="albumTracklist">
         <!-- Track items rendered dynamically by ttml-album.js -->
         <div class="tracklist-empty-hint">
-          Lade zuerst Audio-Dateien oder ein Album hoch.
+          Please upload audio files or an album first.
         </div>
       </div>
     </aside>
@@ -148,44 +110,44 @@
       <!-- Separated 2-Step Ingestion Dashboard -->
       <div id="albumDropZone" class="album-drop-zone">
         <div class="welcome-header">
-          <h2 class="welcome-title">Projekt-Setup</h2>
-          <p class="welcome-sub">Audio-Dateien und Lyrics importieren</p>
+          <h2 class="welcome-title">Project Setup</h2>
+          <p class="welcome-sub">Import audio files and lyrics</p>
         </div>
 
         <div class="upload-cards-grid">
           <!-- Card 1: Audio Ingestion -->
           <div class="upload-card" id="audioDropCard">
-            <div class="card-badge" id="audioBadge">Schritt 1</div>
+            <div class="card-badge" id="audioBadge">Step 1</div>
             <div class="card-icon-wrap audio-icon-wrap" id="audioIconWrap">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="32" height="32">
                 <path d="M9 18V5l12-2v13"/>
                 <circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
               </svg>
             </div>
-            <h3 class="card-title" id="audioCardTitle">1. Audio importieren</h3>
-            <p class="card-desc" id="audioCardDesc">Audio-Dateien oder Album-Ordner ablegen.</p>
+            <h3 class="card-title" id="audioCardTitle">1. Import Audio</h3>
+            <p class="card-desc" id="audioCardDesc">Drop audio files or album folder here.</p>
             <span class="card-formats">MP3 · FLAC · WAV · M4A · OGG · OPUS</span>
             
             <div class="card-btns-row">
               <label class="btn btn-secondary btn-md">
-                Album-Ordner
+                Album Folder
                 <input type="file" id="audioFolderInput" webkitdirectory directory multiple hidden>
               </label>
               <label class="btn btn-secondary btn-md">
-                Audio-Dateien
+                Audio Files
                 <input type="file" id="audioFilesInput" multiple hidden accept=".mp3,.flac,.wav,.m4a,.ogg,.opus,.aac">
               </label>
             </div>
 
             <div class="card-status-box hidden" id="audioStatusBox">
               <span class="status-check">✓</span>
-              <span class="status-text" id="audioStatusText">0 Songs geladen</span>
+              <span class="status-text" id="audioStatusText">0 tracks loaded</span>
             </div>
           </div>
 
           <!-- Card 2: Lyrics Ingestion -->
           <div class="upload-card" id="lyricsDropCard">
-            <div class="card-badge" id="lyricsBadge">Schritt 2</div>
+            <div class="card-badge" id="lyricsBadge">Step 2</div>
             <div class="card-icon-wrap lyrics-icon-wrap" id="lyricsIconWrap">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="32" height="32">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -194,31 +156,31 @@
                 <line x1="16" y1="17" x2="8" y2="17"/>
               </svg>
             </div>
-            <h3 class="card-title" id="lyricsCardTitle">2. Lyrics zuweisen</h3>
-            <p class="card-desc" id="lyricsCardDesc">Lyrics-Dateien ablegen zur automatischen Zuordnung.</p>
+            <h3 class="card-title" id="lyricsCardTitle">2. Assign Lyrics</h3>
+            <p class="card-desc" id="lyricsCardDesc">Drop lyrics files for automatic matching.</p>
             <span class="card-formats">LRC · TTML · WebVTT · SRT · JSON · TXT</span>
 
             <div class="card-btns-row">
               <label class="btn btn-secondary btn-md">
-                Lyrics-Ordner
+                Lyrics Folder
                 <input type="file" id="lyricsFolderInput" webkitdirectory directory multiple hidden>
               </label>
               <label class="btn btn-secondary btn-md">
-                Lyrics-Dateien
+                Lyrics Files
                 <input type="file" id="lyricsFilesInput" multiple hidden accept=".lrc,.ttml,.xml,.vtt,.srt,.txt,.json,.qrc,.krc">
               </label>
             </div>
 
             <div class="card-status-box hidden" id="lyricsStatusBox">
               <span class="status-check">✓</span>
-              <span class="status-text" id="lyricsStatusText">0 Lyrics verknüpft</span>
+              <span class="status-text" id="lyricsStatusText">0 lyrics matched</span>
             </div>
           </div>
         </div>
 
         <div class="setup-open-proj-bar" style="display:flex; justify-content:center; margin-top: 14px; gap: 10px;">
-          <label class="btn btn-secondary btn-sm" title="Gespeicherte .lrcproj Projektdatei öffnen">
-            Projektdatei öffnen (.lrcproj)
+          <label class="btn btn-secondary btn-sm" title="Open saved .lrcproj project file">
+            Open Project File (.lrcproj)
             <input type="file" id="welcomeProjectFileInput" accept=".lrcproj,.json" hidden>
           </label>
         </div>
@@ -226,7 +188,7 @@
         <!-- Action bottom bar once at least audio is loaded -->
         <div class="setup-bottom-bar hidden" id="setupBottomBar">
           <button id="openStudioBtn" class="btn btn-primary btn-lg">
-            Weiter zum Editor
+            Proceed to Editor
           </button>
         </div>
       </div>
@@ -234,59 +196,136 @@
       <!-- Main Editor Workspace (Active Track) -->
       <div id="mainWorkspace" class="main-editor-view hidden">
 
-        <!-- Track Header & Quick Actions -->
+        <!-- Track Header & Quick Actions (2-Row DAW Header) -->
         <div class="track-header-bar">
-          <div class="track-title-edit-wrap">
-            <span class="active-track-nr-badge" id="activeTrackNr">Track 01</span>
-            <input type="text" id="trackTitleInput" class="track-input-title" placeholder="Track Title">
-            <span class="track-title-sep">—</span>
-            <input type="text" id="trackArtistInput" class="track-input-artist" placeholder="Artist Name">
+          <!-- ROW 1: Track Info, Manual Status, & Global Settings / Models -->
+          <div class="track-header-row track-header-top-row">
+            <div class="track-title-edit-wrap">
+              <span class="active-track-nr-badge" id="activeTrackNr">Track 01</span>
+              <input type="text" id="trackTitleInput" class="track-input-title" placeholder="Track Title">
+              <span class="track-title-sep">—</span>
+              <input type="text" id="trackArtistInput" class="track-input-artist" placeholder="Artist Name">
+              <select id="activeTrackStatusSelect" class="track-badge track-badge-select badge-empty" title="Manually set track status">
+                <option value="line_synced">Line Synced</option>
+                <option value="syllable_synced">TTML Ready</option>
+                <option value="raw_lyrics">Plain Text</option>
+                <option value="empty">No Lyrics</option>
+              </select>
+            </div>
+
+            <div class="track-header-models-wrap">
+              <div class="ctrl-group">
+                <label class="ctrl-label" for="langSelect">Language (Global)</label>
+                <select id="langSelect" class="select" title="Global language for Line Scan & Syllable Engine (Project-wide)">
+                  <option value="de" selected>German</option>
+                  <option value="en">English</option>
+                  <option value="tr">Turkish</option>
+                  <option value="fr">French</option>
+                  <option value="es">Spanish</option>
+                  <option value="it">Italian</option>
+                  <option value="pt">Portuguese</option>
+                  <option value="ru">Russian</option>
+                  <option value="ja">Japanese</option>
+                  <option value="ko">Korean</option>
+                  <option value="zh">Chinese</option>
+                </select>
+              </div>
+
+              <div class="ctrl-group">
+                <label class="ctrl-label" for="whisperModelSelect">Line AI</label>
+                <select id="whisperModelSelect" class="select" title="Whisper model for Line Scan">
+                  <option value="large-v3-turbo" selected>large-v3-turbo</option>
+                  <option value="base">base (fast)</option>
+                  <option value="small">small</option>
+                  <option value="medium">medium</option>
+                </select>
+              </div>
+
+              <div class="ctrl-group">
+                <label class="ctrl-label" for="alignModeSelect">Syllable AI</label>
+                <select id="alignModeSelect" class="select" title="Syllable and phoneme alignment engine">
+                  <option value="studio_ai" selected>WhisperX Phoneme CTC (Ultra)</option>
+                  <option value="fast">Pyphen Standard (Proportional)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
-          <div class="track-header-actions">
-            <button id="vocalsAudioBtn" class="btn btn-ghost btn-sm" title="Acapella-Gesangsspur solo abspielen">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              </svg>
-              Acapella Solo
-            </button>
+          <!-- ROW 2: Audio Monitoring & Action Buttons -->
+          <div class="track-header-row track-header-bottom-row">
+            <div class="track-audio-actions">
+              <button id="vocalsAudioBtn" class="btn btn-ghost btn-sm" title="Solo play acapella vocals track">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                </svg>
+                Acapella Solo
+              </button>
 
-            <button id="waveVocalsBtn" class="btn btn-ghost btn-sm" title="Zwischen Master- und Gesangs-Waveform umschalten">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                <path d="M2 12h20M6 8v8M10 5v14M14 7v10M18 9v6"/>
-              </svg>
-              Vocals Wave
-            </button>
+              <button id="waveVocalsBtn" class="btn btn-ghost btn-sm" title="Toggle between master and vocals waveform">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <path d="M2 12h20M6 8v8M10 5v14M14 7v10M18 9v6"/>
+                </svg>
+                Vocals Wave
+              </button>
+            </div>
 
-            <button id="tapSyncModalBtn" class="btn btn-secondary btn-sm" title="Multi-Voice Syllable Tap Sync öffnen">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-              </svg>
-              Tap Sync
-            </button>
+            <div class="track-header-divider"></div>
 
-            <button id="alignLinesBtn" class="btn btn-secondary btn-sm" title="Songtext per Whisper KI akustisch an der Waveform ausrichten (Zeilen-Start & Ende)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/>
-              </svg>
-              Align Lines
-            </button>
+            <div class="track-action-buttons">
+              <button id="alignLinesBtn" class="btn btn-secondary btn-sm" title="Align lyrics lines to waveform with Whisper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                Line Scan
+              </button>
 
-            <button id="alignTrackBtn" class="btn btn-secondary btn-sm" title="Silben für diesen Track automatisch ausrichten">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              Align Syllables
-            </button>
+              <button id="alignTrackBtn" class="btn btn-secondary btn-sm" title="Compute syllables for this track using Syllable engine">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                Syllable Scan
+              </button>
 
-            <button id="exportTrackTtmlBtn" class="btn btn-primary btn-sm" title="Diesen Track als Apple Music TTML exportieren">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Export TTML
-            </button>
+              <button id="tapSyncModalBtn" class="btn btn-secondary btn-sm" title="Open Multi-Voice Syllable Tap Sync">
+                Tap Sync
+              </button>
+
+              <button id="exportTrackTtmlBtn" class="btn btn-primary btn-sm" title="Export this track as TTML">
+                Export TTML
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MODE 1: Text Ingestion & Preparation Workspace -->
+        <div id="textWorkspaceView" class="text-workspace-view">
+          <div class="text-editor-container">
+            <div class="text-editor-header">
+              <div class="text-editor-meta">
+                <span class="text-editor-title">Lyrics Preparation (Plain Text)</span>
+                <span class="text-editor-badge" id="textModeLineCount">0 Lines</span>
+              </div>
+              <div class="text-editor-tools">
+                <button id="textModePasteBtn" class="btn btn-ghost btn-xs">Paste Clipboard</button>
+                <button id="textModeCleanBtn" class="btn btn-ghost btn-xs">Remove Empty Lines</button>
+                <label class="text-adlib-toggle">
+                  <input type="checkbox" id="textModeDetectAdlibs" checked>
+                  <span>Auto-detect (parentheses) as ad-libs</span>
+                </label>
+              </div>
+            </div>
+            <textarea id="textModeTextarea" class="text-mode-textarea" placeholder="Paste lyrics line by line here (Ctrl+V)...&#10;&#10;Each line will be aligned to the waveform in the next step.&#10;Text in (parentheses) is automatically detected as an ad-lib / background vocal."></textarea>
+            <div class="text-editor-footer">
+              <div class="text-editor-footer-left">
+                <button id="textModeSendToQueueBtn" class="btn btn-secondary btn-sm">Load into Line Pool &rarr;</button>
+              </div>
+              <div class="text-editor-footer-right">
+                <button id="textModeProceedBtn" class="btn btn-primary btn-md">
+                  Align Lyrics to Audio (Step 2: Line Sync) &rarr;
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -311,10 +350,10 @@
               </div>
               <div class="volume-wrap">
                 <svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 7.97v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                <input type="range" id="volumeSlider" class="vol-slider" min="0" max="1" step="0.01" value="1" title="Lautstärke">
+                <input type="range" id="volumeSlider" class="vol-slider" min="0" max="1" step="0.01" value="1" title="Volume">
               </div>
               <div class="ctrl-group speed-group">
-                <select id="speedSelect" class="select select-speed" title="Wiedergabegeschwindigkeit">
+                <select id="speedSelect" class="select select-speed" title="Playback Speed">
                   <option value="1">1.00x</option>
                   <option value="0.75">0.75x</option>
                   <option value="0.5">0.50x</option>
@@ -331,29 +370,29 @@
             </div>
 
             <div class="tl-actions">
-              <span id="tlSelectionBadge" class="tl-selection-badge hidden">0 ausgewählt</span>
-              <button id="copySylBtn" class="btn btn-ghost btn-xs" title="Ausgewählte Silben kopieren [Ctrl+C]">Kopieren</button>
-              <button id="pasteSylBtn" class="btn btn-ghost btn-xs" title="Silben an Playhead einfügen [Ctrl+V]">Einfügen</button>
-              <button id="dupSylBtn" class="btn btn-ghost btn-xs" title="Silben duplizieren [Ctrl+D]">Duplizieren</button>
-              <button id="splitSylBtn" class="btn btn-ghost btn-xs" title="Silbe / Wort in Silben trennen [X]">Trennen [X]</button>
-              <button id="mergeSylBtn" class="btn btn-ghost btn-xs" title="Ausgewählte Silben vereinen [J]">Vereinen [J]</button>
-              <button id="delSylBtn" class="btn btn-ghost btn-xs" title="Ausgewählte Silben löschen [Del]">Löschen</button>
+              <span id="tlSelectionBadge" class="tl-selection-badge hidden">0 selected</span>
+              <button id="copySylBtn" class="btn btn-ghost btn-xs" title="Copy selected syllables [Ctrl+C]">Copy</button>
+              <button id="pasteSylBtn" class="btn btn-ghost btn-xs" title="Paste syllables at playhead [Ctrl+V]">Paste</button>
+              <button id="dupSylBtn" class="btn btn-ghost btn-xs" title="Duplicate syllables [Ctrl+D]">Duplicate</button>
+              <button id="splitSylBtn" class="btn btn-ghost btn-xs" title="Split syllable / word into syllables [X]">Split [X]</button>
+              <button id="mergeSylBtn" class="btn btn-ghost btn-xs" title="Merge selected syllables [J]">Merge [J]</button>
+              <button id="delSylBtn" class="btn btn-ghost btn-xs" title="Delete selected syllables [Del]">Delete</button>
               <div class="tl-actions-sep"></div>
-              <button id="undoBtn" class="btn btn-icon btn-xs-icon" title="Rückgängig [Ctrl+Z]" disabled>
+              <button id="undoBtn" class="btn btn-icon btn-xs-icon" title="Undo [Ctrl+Z]" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
               </button>
-              <button id="redoBtn" class="btn btn-icon btn-xs-icon" title="Wiederholen [Ctrl+Y]" disabled>
+              <button id="redoBtn" class="btn btn-icon btn-xs-icon" title="Redo [Ctrl+Y]" disabled>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
               </button>
-              <button id="snapToggleBtn" class="btn btn-secondary btn-xs active" title="Magnetisches Snappen umschalten [S]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="3" x2="8" y2="3"/><line x1="16" y1="3" x2="20" y2="3"/><line x1="4" y1="7" x2="8" y2="7"/><line x1="16" y1="7" x2="20" y2="7"/></svg>
+              <button id="snapToggleBtn" class="btn btn-secondary btn-xs active" title="Toggle magnetic snapping [S]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="3" x2="8" y2="3"/><line x1="16" y1="13" x2="20" y2="3"/><line x1="4" y1="7" x2="8" y2="7"/><line x1="16" y1="7" x2="20" y2="7"/></svg>
                 Snap
               </button>
               <div class="tl-actions-sep"></div>
-              <button id="addLaneBtn" class="btn btn-secondary btn-sm" title="Ebene hinzufügen">+ Ebene</button>
-              <button id="removeLaneBtn" class="btn btn-ghost btn-xs-icon" title="Ebene entfernen">− Ebene</button>
-              <button id="addLineBtn" class="btn btn-secondary btn-sm" title="Zeile an Playhead hinzufügen [Enter]">+ Zeile</button>
-              <button id="sortLinesBtn" class="btn btn-ghost btn-sm" title="Zeilen nach Zeit sortieren">Sortieren</button>
+              <button id="addLaneBtn" class="btn btn-secondary btn-sm" title="Add lane">+ Lane</button>
+              <button id="removeLaneBtn" class="btn btn-ghost btn-xs-icon" title="Remove lane">− Lane</button>
+              <button id="addLineBtn" class="btn btn-secondary btn-sm" title="Add line at playhead [Enter]">+ Line</button>
+              <button id="sortLinesBtn" class="btn btn-ghost btn-sm" title="Sort lines by timestamp">Sort</button>
             </div>
           </div>
 
@@ -364,23 +403,30 @@
               <div class="tl-label-cell" style="height:80px">
                 <span class="track-name">WAVEFORM</span>
               </div>
-              <div class="tl-label-cell" style="height:80px; display:flex; flex-direction:column; justify-content:space-around; padding: 2px 8px;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="track-name">LINES 1</span>
-                  <span class="track-sub" style="color:#4da3ff;">Ebene 1</span>
+              <div class="tl-label-cell tl-lines-label-cell" id="tlLinesLabelCell">
+                <div class="tl-line-lane-lbl tl-lbl-l1">
+                  <span class="track-name">LEAD</span>
+                  <span class="track-sub" style="color:#4da3ff;">Lane 1</span>
                 </div>
-                <div style="border-top: 1px dashed rgba(255,255,255,0.07); margin: 1px 0;"></div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <span class="track-name">LINES 2</span>
-                  <span class="track-sub" style="color:#2bb673;">Ebene 2</span>
+                <div class="tl-line-lane-lbl tl-lbl-l2">
+                  <span class="track-name">DUET</span>
+                  <span class="track-sub" style="color:#2bb673;">Lane 2</span>
+                </div>
+                <div class="tl-line-lane-lbl tl-lbl-l3">
+                  <span class="track-name">ADLIB 1</span>
+                  <span class="track-sub" style="color:#a78bfa;">Lane 3</span>
+                </div>
+                <div class="tl-line-lane-lbl tl-lbl-l4">
+                  <span class="track-name">ADLIB 2</span>
+                  <span class="track-sub" style="color:#fbbf24;">Lane 4</span>
                 </div>
               </div>
               <div class="tl-label-cell tl-lanes-header-cell" id="tlLanesHeaderCell">
                 <div style="display:flex; justify-content:space-between; align-items:center; padding: 4px 8px 2px;">
-                  <span class="track-name">EBENEN</span>
+                  <span class="track-name">LANES</span>
                   <div style="display:flex; gap:4px;">
-                    <button id="removeLaneBtnMini" class="tl-lane-add-btn" title="Ebene entfernen">−</button>
-                    <button id="addLaneBtnMini" class="tl-lane-add-btn" title="Neue Ebene hinzufügen">+</button>
+                    <button id="removeLaneBtnMini" class="tl-lane-add-btn" title="Remove lane">−</button>
+                    <button id="addLaneBtnMini" class="tl-lane-add-btn" title="Add new lane">+</button>
                   </div>
                 </div>
                 <div id="tlLanesLabelsWrap" class="tl-lanes-labels-wrap">
@@ -407,28 +453,28 @@
           <div class="tl-hint-bar">
             <kbd>Space</kbd> Play/Pause &nbsp;·&nbsp;
             <kbd>S</kbd> Snap &nbsp;·&nbsp;
-            <kbd>Klick / Rahmen</kbd> Mehrfachauswahl &nbsp;·&nbsp;
-            <kbd>Ctrl+C / V</kbd> Kopieren/Einfügen &nbsp;·&nbsp;
-            <kbd>Ctrl+D</kbd> Duplizieren &nbsp;·&nbsp;
-            <kbd>Del</kbd> Löschen &nbsp;·&nbsp;
+            <kbd>Click / Marquee</kbd> Multi-select &nbsp;·&nbsp;
+            <kbd>Ctrl+C / V</kbd> Copy / Paste &nbsp;·&nbsp;
+            <kbd>Ctrl+D</kbd> Duplicate &nbsp;·&nbsp;
+            <kbd>Del</kbd> Delete &nbsp;·&nbsp;
             <kbd>B</kbd> Ad-lib (x-bg) &nbsp;·&nbsp;
-            <kbd>1</kbd>/<kbd>2</kbd> Stimme &nbsp;·&nbsp;
-            <kbd>L</kbd> / <kbd>Alt+↑↓</kbd> Zeilenebene &nbsp;·&nbsp;
-            <kbd>Vertikal ziehen</kbd> Ebene wechseln
+            <kbd>1</kbd>/<kbd>2</kbd> Voice &nbsp;·&nbsp;
+            <kbd>L</kbd> / <kbd>Alt+↑↓</kbd> Line lane &nbsp;·&nbsp;
+            <kbd>Drag vertically</kbd> Change lane
           </div>
         </div>
 
         <!-- Bottom Layout: Live Apple Music Karaoke Sweep + Inspector Table -->
         <div class="editor-bottom-grid">
 
-          <!-- Live Apple Music Karaoke Sweep Player -->
+          <!-- Live Apple Music Karaoke Sweep Player (Used for both Line-Sync and Syllables) -->
           <div class="panel karaoke-preview-panel">
             <div class="panel-header">
               <span class="panel-title">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                   <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
                 </svg>
-                Apple Music Karaoke Sweep Preview
+                Preview
               </span>
               <span class="badge badge-ttml">Real-time GPU Mask</span>
             </div>
@@ -441,30 +487,30 @@
           <div class="panel inspector-panel">
             <div class="panel-header insp-tab-header">
               <div class="insp-tabs">
-                <button class="insp-tab-btn active" id="inspTabInspectorBtn" data-tab="inspector" title="Tabelle platzierter Zeilen und Silben">
+                <button class="insp-tab-btn active" id="inspTabInspectorBtn" data-tab="inspector" title="Table of placed lines and syllables">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                     <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
                   </svg>
                   Inspector
                   <span class="insp-tab-count" id="inspLinesCountBadge">0</span>
                 </button>
-                <button class="insp-tab-btn" id="inspTabQueueBtn" data-tab="queue" title="Warteschlange unplatzierter Zeilen (Drag & Drop in Timeline)">
+                <button class="insp-tab-btn" id="inspTabQueueBtn" data-tab="queue" title="Queue of unplaced lines (Drag & drop to timeline)">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                     <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/>
                   </svg>
-                  Zeilen-Pool
+                  Line Pool
                   <span class="insp-tab-count queue-count" id="inspQueueCountBadge">0</span>
                 </button>
-                <button class="insp-tab-btn" id="inspTabImportBtn" data-tab="import" title="Songtext einfügen und in Zeilen zerlegen">
+                <button class="insp-tab-btn" id="inspTabImportBtn" data-tab="import" title="Paste lyrics and break into lines">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                   </svg>
-                  Text einfügen
+                  Paste Text
                 </button>
               </div>
               <div class="insp-tab-actions">
-                <button id="addQueueLineAtPlayheadBtn" class="btn btn-primary btn-xs" title="Nächste Zeile aus dem Pool am Playhead platzieren [Enter]">
-                  + Nächste an Playhead [Enter]
+                <button id="addQueueLineAtPlayheadBtn" class="btn btn-primary btn-xs" title="Place next line from pool at playhead [Enter]">
+                  + Next at Playhead [Enter]
                 </button>
               </div>
             </div>
@@ -479,14 +525,14 @@
               </div>
             </div>
 
-            <!-- Tab 2: Zeilen-Pool (Queue of unplaced lines) -->
+            <!-- Tab 2: Line Pool (Queue of unplaced lines) -->
             <div class="insp-tab-content" id="inspContentQueue">
               <div class="queue-toolbar">
-                <span class="queue-hint">Klicke eine Zeile an oder ziehe sie per Drag &amp; Drop auf die Timeline</span>
+                <span class="queue-hint">Click a line card or drag &amp; drop onto timeline</span>
                 <div class="queue-toolbar-btns">
-                  <button id="clearQueueBtn" class="btn btn-ghost btn-xs" title="Alle unplatzierten Zeilen aus dem Pool entfernen">Pool leeren</button>
-                  <button id="placeAllQueueBtn" class="btn btn-ghost btn-xs" title="Alle Zeilen nacheinander ab aktuellem Playhead platzieren">Alle platzieren</button>
-                  <button id="btnAiAlignQueue" class="btn btn-primary btn-xs" title="Unplatzierte Zeilen aus dem Pool per Whisper KI automatisch auf der Timeline ausrichten">⚡ KI Align Lines</button>
+                  <button id="clearQueueBtn" class="btn btn-ghost btn-xs" title="Clear all unplaced lines from pool">Clear Pool</button>
+                  <button id="placeAllQueueBtn" class="btn btn-ghost btn-xs" title="Place all lines consecutively starting at playhead">Place All</button>
+                  <button id="btnAiAlignQueue" class="btn btn-primary btn-xs" title="Auto-align unplaced lines onto timeline using Whisper AI">AI Align Lines</button>
                 </div>
               </div>
               <div class="queue-list" id="queueLinesList">
@@ -494,21 +540,21 @@
               </div>
             </div>
 
-            <!-- Tab 3: Text einfügen (Raw text input) -->
+            <!-- Tab 3: Paste Text (Raw text input) -->
             <div class="insp-tab-content" id="inspContentImport">
               <div class="raw-import-wrap">
-                <textarea id="rawLyricsPasteArea" class="raw-lyrics-textarea" placeholder="Songtext hier einfach einfügen (Strg+V)...&#10;&#10;Jede Zeile wird automatisch zu einer Karte im Zeilen-Pool.&#10;Von dort kannst du die Zeilen einfach auf die Waveform ziehen oder mit [Enter] am Playhead stempeln."></textarea>
+                <textarea id="rawLyricsPasteArea" class="raw-lyrics-textarea" placeholder="Paste lyrics here (Ctrl+V)...&#10;&#10;Each line will automatically become a card in the Line Pool.&#10;From there, drag lines onto the waveform or stamp them at the playhead with [Enter]."></textarea>
                 <div class="raw-import-footer">
                   <label class="raw-import-opt">
                     <input type="checkbox" id="rawDetectAdlibsCheck" checked>
-                    <span>(Klammern) automatisch als Ad-lib / Background-Vocal erkennen</span>
+                    <span>Auto-detect (parentheses) as ad-lib / background vocal</span>
                   </label>
                   <div class="raw-import-actions">
                     <button id="btnParseToQueue" class="btn btn-secondary btn-sm">
-                      In Zeilen-Pool laden &rarr;
+                      Load into Line Pool &rarr;
                     </button>
-                    <button id="btnParseAndAlignLines" class="btn btn-primary btn-sm" title="Songtext einfügen und sofort per Whisper KI an der Waveform ausrichten">
-                      ⚡ Text einfügen &amp; KI Align Lines
+                    <button id="btnParseAndAlignLines" class="btn btn-primary btn-sm" title="Paste lyrics and immediately align to waveform with Whisper AI">
+                      Paste Text &amp; AI Align Lines
                     </button>
                   </div>
                 </div>
@@ -578,60 +624,61 @@
           <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
           <line x1="8.12" y1="8.12" x2="12" y2="12"/>
         </svg>
-        Wort in Silben trennen [X]
+        Split Word into Syllables [X]
       </h3>
       <button class="modal-close-btn" id="closeSplitSylModalBtn">&times;</button>
     </div>
     <div class="modal-body">
       <div style="margin-bottom: 12px;">
-        <label style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">Original Wort / Silbe</label>
+        <label style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">Original Word / Syllable</label>
         <div id="splitOrigTextDisplay" style="font-size: 16px; font-weight: 700; color: #fff; background: var(--surface2); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border); font-family: var(--mono);">body</div>
       </div>
 
       <div style="margin-bottom: 16px;">
         <label for="splitPatternInput" style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 4px; font-weight: 600;">
-          Silbentrennung eingeben (mit Bindestrich <kbd style="background:#222; padding:1px 4px; border-radius:2px;">-</kbd> oder Leerzeichen)
+          Enter hyphenation (using hyphen <kbd style="background:#222; padding:1px 4px; border-radius:2px;">-</kbd> or space)
         </label>
-        <input type="text" id="splitPatternInput" class="input input-text" style="width: 100%; font-size: 16px; font-weight: 600; font-family: var(--mono); padding: 8px 12px; background: #1c2333; color: #fff; border: 1px solid var(--accent); border-radius: 4px;" placeholder="z. B. bo-dy oder bo dy">
+        <input type="text" id="splitPatternInput" class="input input-text" style="width: 100%; font-size: 16px; font-weight: 600; font-family: var(--mono); padding: 8px 12px; background: #1c2333; color: #fff; border: 1px solid var(--accent); border-radius: 4px;" placeholder="e.g. bo-dy or bo dy">
         <div style="font-size: 11px; color: var(--text-muted); margin-top: 5px;">
-          Beispiel: Aus <code>body</code> wird <code>bo-dy</code> &rarr; 2 Silben: [bo] und [dy]
+          Example: <code>body</code> becomes <code>bo-dy</code> &rarr; 2 syllables: [bo] and [dy]
         </div>
       </div>
 
       <div style="margin-bottom: 16px; background: var(--surface2); padding: 10px 12px; border-radius: 4px; border: 1px solid var(--border);">
-        <label style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Zeitaufteilung</label>
+        <label style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Time Division</label>
         <div style="display: flex; gap: 14px; align-items: center; font-size: 12px;">
           <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
             <input type="radio" name="splitTimeMode" value="proportional" checked>
-            Nach Zeichenlänge (oder 50/50)
+            Proportional to character length (or 50/50)
           </label>
           <label id="splitAtPlayheadLabel" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
             <input type="radio" name="splitTimeMode" value="playhead">
-            Am aktuellen Playhead (<span id="splitPlayheadTimeVal">--:--</span>)
+            At current playhead (<span id="splitPlayheadTimeVal">--:--</span>)
           </label>
         </div>
       </div>
 
       <div style="margin-bottom: 16px;">
-        <label style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">Vorschau der neuen Silben</label>
+        <label style="display:block; font-size: 11px; text-transform:uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600;">New Syllables Preview</label>
         <div id="splitPreviewChips" style="display: flex; gap: 8px; flex-wrap: wrap; min-height: 34px; align-items: center;"></div>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
-        <button id="cancelSplitSylBtn" class="btn btn-secondary btn-sm">Abbrechen (Esc)</button>
-        <button id="confirmSplitSylBtn" class="btn btn-primary btn-sm">Silben trennen (Enter)</button>
+        <button id="cancelSplitSylBtn" class="btn btn-secondary btn-sm">Cancel (Esc)</button>
+        <button id="confirmSplitSylBtn" class="btn btn-primary btn-sm">Split Syllables (Enter)</button>
       </div>
     </div>
   </div>
 </div>
 
+
 <!-- Scripts -->
-<script src="/static/shared.js?v=20261015_2"></script>
-<script src="/static/ttml-state.js?v=20261015_2"></script>
-<script src="/static/ttml-album.js?v=20261015_2"></script>
-<script src="/static/ttml-player.js?v=20261015_2"></script>
-<script src="/static/ttml-editor.js?v=20261015_2"></script>
-<script src="/static/ttml-tap.js?v=20261015_2"></script>
-<script src="/static/ttml-app.js?v=20261015_2"></script>
+<script src="/static/shared.js?v=20261018_multiline"></script>
+<script src="/static/ttml-state.js?v=20261018_multiline"></script>
+<script src="/static/ttml-album.js?v=20261018_multiline"></script>
+<script src="/static/ttml-player.js?v=20261018_multiline"></script>
+<script src="/static/ttml-editor.js?v=20261018_multiline"></script>
+<script src="/static/ttml-tap.js?v=20261018_multiline"></script>
+<script src="/static/ttml-app.js?v=20261018_multiline"></script>
 </body>
 </html>

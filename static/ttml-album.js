@@ -62,7 +62,14 @@ function initAlbumExplorer() {
 
   // Save / Load Project Files (.lrcproj)
   document.getElementById('newProjectBtn')?.addEventListener('click', createNewProject);
-  document.getElementById('saveProjectBtn')?.addEventListener('click', saveAlbumProjectFile);
+  document.getElementById('saveProjectBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    saveAlbumProjectFile(false);
+  });
+  document.getElementById('saveProjectAsBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    saveAlbumProjectFile(true);
+  });
   document.getElementById('projectFileInput')?.addEventListener('change', e => {
     if (e.target.files && e.target.files[0]) openAlbumProjectFile(e.target.files[0]);
   });
@@ -77,11 +84,23 @@ function initAlbumExplorer() {
       enterStudioWorkspace();
     });
   }
+
+  // Active Track Status Manual Changer (Header Bar)
+  document.getElementById('activeTrackStatusSelect')?.addEventListener('change', async (e) => {
+    const track = getActiveTrack();
+    if (!track) return;
+    const newStatus = e.target.value;
+    track.status = newStatus;
+    if (typeof autoSetWorkflowModeForTrack === 'function') autoSetWorkflowModeForTrack(track);
+    await saveActiveTrackToBackend();
+    renderAlbumSidebar();
+    toast(`Track status set to "${e.target.options[e.target.selectedIndex].text}".`, 'info');
+  });
 }
 
 function createNewProject() {
   if (Studio.project && Studio.project.tracks && Studio.project.tracks.length > 0) {
-    const ok = confirm('Möchtest du ein neues Projekt starten?\n\nVergewissere dich, dass du dein aktuelles Projekt gespeichert hast ("Projekt speichern"), falls du deine Änderungen behalten möchtest.');
+    const ok = confirm('Start a new project?\n\nMake sure you saved your current project ("Save Project") if you want to keep your changes.');
     if (!ok) return;
   }
 
@@ -117,13 +136,13 @@ function createNewProject() {
 
   const audioBadge = document.getElementById('audioBadge');
   if (audioBadge) {
-    audioBadge.textContent = 'Schritt 1';
+    audioBadge.textContent = 'Step 1';
     audioBadge.style.background = '';
     audioBadge.style.color = '';
   }
   const lyricsBadge = document.getElementById('lyricsBadge');
   if (lyricsBadge) {
-    lyricsBadge.textContent = 'Schritt 2';
+    lyricsBadge.textContent = 'Step 2';
     lyricsBadge.style.background = '';
     lyricsBadge.style.color = '';
   }
@@ -146,7 +165,7 @@ function createNewProject() {
   // 6. Sidebar zurücksetzen
   renderAlbumSidebar();
 
-  toast('Neues Projekt bereit. Lade jetzt deine Audio-Dateien hoch.', 'info');
+  toast('New project ready. Upload your audio files now.', 'info');
 }
 
 function enterStudioWorkspace() {
@@ -187,9 +206,9 @@ async function handleAudioUpload(fileList) {
     const audioStatusText = document.getElementById('audioStatusText');
     const audioBadge = document.getElementById('audioBadge');
     if (audioStatusBox) audioStatusBox.classList.remove('hidden');
-    if (audioStatusText) audioStatusText.textContent = `${Studio.project.tracks.length} Songs geladen (${Studio.project.title || 'Album'})`;
+    if (audioStatusText) audioStatusText.textContent = `${Studio.project.tracks.length} songs loaded (${Studio.project.title || 'Album'})`;
     if (audioBadge) {
-      audioBadge.textContent = 'Bereit';
+      audioBadge.textContent = 'Ready';
       audioBadge.style.background = 'rgba(20, 115, 230, 0.15)';
       audioBadge.style.color = '#4da3ff';
     }
@@ -204,9 +223,9 @@ async function handleAudioUpload(fileList) {
     const setupBar = document.getElementById('setupBottomBar');
     const openStudioBtn = document.getElementById('openStudioBtn');
     if (setupBar) setupBar.classList.remove('hidden');
-    if (openStudioBtn) openStudioBtn.textContent = `Weiter zum Studio (${Studio.project.tracks.length} Tracks)`;
+    if (openStudioBtn) openStudioBtn.textContent = `Proceed to Studio (${Studio.project.tracks.length} Tracks)`;
 
-    toast(`${Studio.project.tracks.length} Songs geladen. Lyrics-Ordner auswählen oder auf "Weiter zum Studio" klicken.`, 'success');
+    toast(`${Studio.project.tracks.length} songs loaded. Select lyrics folder or click "Proceed to Studio".`, 'success');
   } catch (err) {
     toast(`Audio upload error: ${err.message}`, 'error');
   } finally {
@@ -218,7 +237,7 @@ async function handleLyricsUpload(fileList) {
   if (!fileList || !fileList.length) return;
 
   if (!Studio.project || !Studio.project.id) {
-    toast('Bitte lade zuerst Audio-Tracks hoch (Schritt 1)!', 'error');
+    toast('Please upload audio tracks first (Step 1)!', 'error');
     return;
   }
 
@@ -246,9 +265,9 @@ async function handleLyricsUpload(fileList) {
     const lyricsStatusText = document.getElementById('lyricsStatusText');
     const lyricsBadge = document.getElementById('lyricsBadge');
     if (lyricsStatusBox) lyricsStatusBox.classList.remove('hidden');
-    if (lyricsStatusText) lyricsStatusText.textContent = `${data.matched_count} von ${Studio.project.tracks.length} Tracks mit Lyrics verknüpft`;
+    if (lyricsStatusText) lyricsStatusText.textContent = `${data.matched_count} of ${Studio.project.tracks.length} tracks matched with lyrics`;
     if (lyricsBadge) {
-      lyricsBadge.textContent = 'Verknüpft';
+      lyricsBadge.textContent = 'Matched';
       lyricsBadge.style.background = 'rgba(20, 115, 230, 0.15)';
       lyricsBadge.style.color = '#4da3ff';
     }
@@ -259,7 +278,7 @@ async function handleLyricsUpload(fileList) {
       if (tr) refreshEditorViews();
     }
 
-    toast(`Lyrics zugewiesen: ${data.matched_count} Datei(en) verknüpft.`, 'success');
+    toast(`Lyrics assigned: ${data.matched_count} file(s) matched.`, 'success');
   } catch (err) {
     toast(`Lyrics upload error: ${err.message}`, 'error');
   } finally {
@@ -274,11 +293,11 @@ function renderAlbumSidebar() {
   const countEl = document.getElementById('albumTrackCount');
 
   if (!Studio.project) {
-    if (titleEl) titleEl.textContent = 'Kein Album geladen';
-    if (artistEl) artistEl.textContent = 'Ordner oder Dateien ablegen';
+    if (titleEl) titleEl.textContent = 'No album loaded';
+    if (artistEl) artistEl.textContent = 'Drop folder or files';
     if (countEl) countEl.textContent = '0 Tracks';
     if (sidebar) {
-      sidebar.innerHTML = '<div class="tracklist-empty-hint">Lade zuerst Audio-Dateien oder ein Album hoch.</div>';
+      sidebar.innerHTML = '<div class="tracklist-empty-hint">Upload audio files or an album first.</div>';
     }
     return;
   }
@@ -313,8 +332,13 @@ function renderAlbumSidebar() {
       <div class="track-nr">${String(track.trackNumber).padStart(2, '0')}</div>
       <div class="track-info-col">
         <div class="track-title-row">
-          <span class="track-title">${escHTML(track.title)}</span>
-          <span class="track-badge ${badgeClass}">${badgeText}</span>
+          <span class="track-title" title="${escHTML(track.title)}">${escHTML(track.title)}</span>
+          <select class="track-badge track-badge-select ${badgeClass}" title="Manually set status">
+            <option value="line_synced" ${track.status === 'line_synced' ? 'selected' : ''}>Line Synced</option>
+            <option value="syllable_synced" ${track.status === 'syllable_synced' ? 'selected' : ''}>TTML Ready</option>
+            <option value="raw_lyrics" ${track.status === 'raw_lyrics' ? 'selected' : ''}>Plain Text</option>
+            <option value="empty" ${track.status === 'empty' ? 'selected' : ''}>No Lyrics</option>
+          </select>
         </div>
         <div class="track-meta-row">
           <span class="track-artist">${escHTML(track.artist || Studio.project.artist)}</span>
@@ -322,6 +346,28 @@ function renderAlbumSidebar() {
         </div>
       </div>
     `;
+
+    const statusSel = item.querySelector('.track-badge-select');
+    if (statusSel) {
+      statusSel.addEventListener('click', e => e.stopPropagation());
+      statusSel.addEventListener('mousedown', e => e.stopPropagation());
+      statusSel.addEventListener('change', async (e) => {
+        e.stopPropagation();
+        const newStatus = e.target.value;
+        track.status = newStatus;
+        if (track.id === Studio.activeTrackId) {
+          if (typeof autoSetWorkflowModeForTrack === 'function') autoSetWorkflowModeForTrack(track);
+          const headerSel = document.getElementById('activeTrackStatusSelect');
+          if (headerSel) {
+            headerSel.value = newStatus;
+            headerSel.className = `track-badge track-badge-select badge-${newStatus === 'line_synced' ? 'line' : (newStatus === 'syllable_synced' ? 'syllable' : (newStatus === 'raw_lyrics' ? 'plain' : 'empty'))}`;
+          }
+        }
+        await saveActiveTrackToBackend();
+        renderAlbumSidebar();
+        toast(`Marked track "${track.title}" as "${e.target.options[e.target.selectedIndex].text}".`, 'info');
+      });
+    }
 
     item.addEventListener('click', () => selectTrack(track.id));
     sidebar.appendChild(item);
@@ -340,15 +386,40 @@ async function selectTrack(trackId) {
   const track = getActiveTrack();
   if (!track) return;
 
+  // Auto-migrate untimed plain-text lines with start 0 and end 0 to unplacedLines
+  const lines = track.lyrics?.lines || [];
+  const allZero = lines.length > 0 && lines.every(l => (l.start || 0) === 0 && (l.end || 0) === 0);
+  if (allZero) {
+    track.unplacedLines = lines.map((l, idx) => ({
+      id: `Q-${idx + 1}`,
+      text: l.text || '',
+      adlib: l.adlib || null,
+      agent: l.agent || 'v1',
+    }));
+    track.lyrics.lines = [];
+    track.status = 'raw_lyrics';
+    saveActiveTrackToBackend();
+  }
+
   renderAlbumSidebar();
 
   // Update Track Header
-  const titleInp  = document.getElementById('trackTitleInput');
-  const artistInp = document.getElementById('trackArtistInput');
-  const trackNrEl = document.getElementById('activeTrackNr');
-  if (titleInp)  titleInp.value  = track.title || '';
-  if (artistInp) artistInp.value = track.artist || Studio.project.artist || '';
-  if (trackNrEl) trackNrEl.textContent = `Track ${track.trackNumber}`;
+  const titleInp   = document.getElementById('trackTitleInput');
+  const artistInp  = document.getElementById('trackArtistInput');
+  const trackNrEl  = document.getElementById('activeTrackNr');
+  const headerStat = document.getElementById('activeTrackStatusSelect');
+  if (titleInp)   titleInp.value   = track.title || '';
+  if (artistInp)  artistInp.value  = track.artist || Studio.project.artist || '';
+  if (trackNrEl)  trackNrEl.textContent = `Track ${track.trackNumber}`;
+  if (headerStat) {
+    headerStat.value = track.status || 'empty';
+    headerStat.className = `track-badge track-badge-select badge-${track.status === 'line_synced' ? 'line' : (track.status === 'syllable_synced' ? 'syllable' : (track.status === 'raw_lyrics' ? 'plain' : 'empty'))}`;
+  }
+
+  const langSel = document.getElementById('langSelect');
+  if (langSel && Studio.project?.language) {
+    langSel.value = Studio.project.language;
+  }
 
   // Reset History & tab auto-selection
   Studio.history = [];
@@ -368,6 +439,11 @@ async function selectTrack(trackId) {
   // Load Audio
   if (typeof initStudioAudio === 'function') {
     initStudioAudio(track.audioUrl);
+  }
+
+  // Auto-adapt workflow mode to track's current status
+  if (typeof autoSetWorkflowModeForTrack === 'function') {
+    autoSetWorkflowModeForTrack(track);
   }
 
   // Render Views
@@ -420,7 +496,7 @@ async function runBatchAlignAlbum() {
     btn.disabled = false;
     btn.textContent = 'Batch Align Album';
   }
-  toast(`Batch-Ausrichtung abgeschlossen! (${alignedCount} Tracks verarbeitet)`, 'success');
+  toast(`Batch alignment complete! (${alignedCount} tracks processed)`, 'success');
   refreshEditorViews();
 }
 
@@ -488,9 +564,9 @@ async function exportSingleTrackTTML() {
 }
 
 // ─── Project File Save & Load (.lrcproj) ────────────────────────────────────
-async function saveAlbumProjectFile() {
+async function saveAlbumProjectFile(saveAs = false) {
   if (!Studio.project || !Studio.project.tracks || !Studio.project.tracks.length) {
-    toast('Kein aktives Projekt zum Speichern vorhanden.', 'error');
+    toast('No active project to save.', 'error');
     return;
   }
 
@@ -502,21 +578,14 @@ async function saveAlbumProjectFile() {
     id: Studio.project.id || `proj-${Date.now()}`,
     title: Studio.project.title || 'Album',
     artist: Studio.project.artist || 'Various Artists',
+    language: Studio.project.language || document.getElementById('langSelect')?.value || 'de',
     numLanes: Studio.numLanes || 4,
     tracks: Studio.project.tracks || [],
   };
 
-  // 1. Download .lrcproj JSON file
   const jsonStr = JSON.stringify(projectData, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `${(projectData.title || 'Album').replace(/[/\\?%*:|"<>]/g, '_')}.lrcproj`;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-  // 2. Persist to backend and localStorage
+  // 1. Direct silent save to backend disk & browser localStorage
   try {
     localStorage.setItem('lrcgen_active_project', jsonStr);
     await fetch('/api/project/save_project', {
@@ -524,11 +593,24 @@ async function saveAlbumProjectFile() {
       headers: { 'Content-Type': 'application/json' },
       body: jsonStr,
     });
+    if (typeof updateAutosaveIndicator === 'function') updateAutosaveIndicator();
   } catch (e) {
     console.warn('Backend project persistence warning:', e);
   }
 
-  toast(`Projekt "${projectData.title}" als .lrcproj gespeichert (Ctrl+S).`, 'success');
+  // 2. ONLY trigger browser file download dialog if user explicitly clicked 'Save As...'
+  if (saveAs === true) {
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${(projectData.title || 'Album').replace(/[/\\?%*:|"<>]/g, '_')}.lrcproj`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast(`Project downloaded as "${projectData.title}.lrcproj".`, 'success');
+  } else {
+    toast(`Saved project "${projectData.title}" directly to disk (Ctrl+S).`, 'success');
+  }
 }
 
 async function openAlbumProjectFile(file) {
@@ -542,10 +624,15 @@ async function openAlbumProjectFile(file) {
     const data = JSON.parse(text);
 
     if (!data.tracks || !Array.isArray(data.tracks)) {
-      throw new Error('Ungültige Projektdatei: Keine Tracks gefunden.');
+      throw new Error('Invalid project file: No tracks found.');
     }
 
     Studio.project = data;
+    if (data.language) {
+      const langSel = document.getElementById('langSelect');
+      if (langSel) langSel.value = data.language;
+      localStorage.setItem('lrc_preferred_lang', data.language);
+    }
     if (data.numLanes) Studio.numLanes = Math.max(4, data.numLanes);
 
     // Persist to backend so backend knows about this project
@@ -568,9 +655,9 @@ async function openAlbumProjectFile(file) {
       await selectTrack(Studio.project.tracks[0].id);
     }
 
-    toast(`Projekt "${data.title || 'Album'}" geladen (${data.tracks.length} Tracks).`, 'success');
+    toast(`Project "${data.title || 'Album'}" loaded (${data.tracks.length} tracks).`, 'success');
   } catch (err) {
-    toast(`Fehler beim Öffnen des Projekts: ${err.message}`, 'error');
+    toast(`Error opening project: ${err.message}`, 'error');
   } finally {
     if (loader) loader.classList.add('hidden');
   }

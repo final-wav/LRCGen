@@ -161,10 +161,18 @@ class TTMLEngine:
             adlib_syls = [s for s in line.get("adlibSyllabi", [])]
             main_text = line.get("text", "")
             adlib_text = line.get("adlib", "")
+            line_lane = line.get("laneIndex", 0)
 
-            # If any raw_syls have lane == 3 or explicit adlib flag, split them cleanly into background
-            lead_syls = [s for s in raw_syls if s.get("lane") != 3]
-            extra_bg_syls = [s for s in raw_syls if s.get("lane") == 3]
+            # If line is on Adlib lane 2 or 3 and has main_text, route text & syllables to adlib / background
+            if line_lane in [2, 3] and not adlib_text and main_text:
+                adlib_text = main_text
+                main_text = ""
+                adlib_syls = adlib_syls + raw_syls
+                raw_syls = []
+
+            # If any raw_syls have lane in [2, 3] or explicit adlib flag, split them cleanly into background
+            lead_syls = [s for s in raw_syls if s.get("lane") not in [2, 3]]
+            extra_bg_syls = [s for s in raw_syls if s.get("lane") in [2, 3]]
             combined_adlib_syls = adlib_syls + extra_bg_syls
 
             # Normalize main syllables spacing against reference text

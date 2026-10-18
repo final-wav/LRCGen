@@ -126,7 +126,14 @@ function renderSweepPlayer() {
 
           const span = document.createElement('span');
           span.className = 'syl-token' + (isPast ? ' finished' : '');
-          span.textContent = syl.text;
+          let txt = syl.text || '';
+          if (!syl.isSubSyllable && sIdx < rawSylls.length - 1 && !txt.endsWith(' ') && !txt.endsWith('-')) {
+            const next = rawSylls[sIdx + 1];
+            if (next && !next.isSubSyllable) {
+              txt += ' ';
+            }
+          }
+          span.textContent = txt;
           span.dataset.sIdx = sIdx;
           wrapSpan.appendChild(span);
           mainP.appendChild(wrapSpan);
@@ -151,7 +158,14 @@ function renderSweepPlayer() {
 
           const span = document.createElement('span');
           span.className = 'syl-token adlib' + (isPast ? ' finished' : '');
-          span.textContent = syl.text;
+          let txt = syl.text || '';
+          if (!syl.isSubSyllable && sIdx < adlibSylls.length - 1 && !txt.endsWith(' ') && !txt.endsWith('-')) {
+            const next = adlibSylls[sIdx + 1];
+            if (next && !next.isSubSyllable) {
+              txt += ' ';
+            }
+          }
+          span.textContent = txt;
           span.dataset.sIdx = sIdx;
           wrapSpan.appendChild(span);
           adlibP.appendChild(wrapSpan);

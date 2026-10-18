@@ -8,6 +8,8 @@ import sys
 import io
 import uuid
 import re
+import json
+import time
 import logging
 import threading
 from pathlib import Path
@@ -28,6 +30,7 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)]
 )
+logger = logging.getLogger("ttml_app")
 for log_name in ["separator", "uvicorn", "uvicorn.access"]:
     l = logging.getLogger(log_name)
     l.setLevel(logging.INFO)
@@ -54,7 +57,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for d in ["uploads", "outputs", "static", "projects"]:
+for d in ["uploads", "outputs", "static", "projects", "projects/autosaves"]:
     Path(d).mkdir(exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -438,9 +441,19 @@ async def upload_project_lyrics(project_id: str, files: list[UploadFile] = File(
         target_nr = int(track_nr_match.group(1)) if track_nr_match else None
 
         parsed_lyrics = UniversalLyricsParser.parse(content, filename=fname)
-        has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in parsed_lyrics.get("lines", []))
-        status = "syllable_synced" if has_syls else ("line_synced" if parsed_lyrics.get("lines") else "raw_lyrics")
+        lines = parsed_lyrics.get("lines", [])
+        has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in lines)
+        has_timestamps = any(l.get("start", 0) > 0 or l.get("end", 0) > 0 for l in lines)
         input_fmt = parsed_lyrics.get("meta", {}).get("source", "lrc")
+
+        if has_syls:
+            status = "syllable_synced"
+        elif has_timestamps:
+            status = "line_synced"
+        elif lines:
+            status = "raw_lyrics"
+        else:
+            status = "empty"
 
         # Find best matching track in project
         matched_track = None
@@ -461,7 +474,20 @@ async def upload_project_lyrics(project_id: str, files: list[UploadFile] = File(
                     break
 
         if matched_track:
-            matched_track["lyrics"] = parsed_lyrics
+            if not has_timestamps and lines:
+                # Untimed plain text -> put lines into unplacedLines pool, keep timeline clean
+                unplaced = []
+                for idx, l in enumerate(lines):
+                    unplaced.append({
+                        "id": f"Q-{idx+1}",
+                        "text": l.get("text", ""),
+                        "adlib": l.get("adlib"),
+                        "agent": l.get("agent", "v1"),
+                    })
+                matched_track["unplacedLines"] = unplaced
+                matched_track["lyrics"] = {"meta": parsed_lyrics.get("meta", {}), "lines": []}
+            else:
+                matched_track["lyrics"] = parsed_lyrics
             matched_track["inputFormat"] = input_fmt
             matched_track["status"] = status
             matched_count += 1
@@ -569,21 +595,56 @@ async def upload_album(files: list[UploadFile] = File(...)):
         input_fmt = "none"
         status = "empty"
 
+        unplaced_for_track = []
         if matched_lrc:
             canonical_lyrics = UniversalLyricsParser.parse(
                 matched_lrc["content"], filename=matched_lrc["filename"])
             input_fmt = canonical_lyrics.get("meta", {}).get("source", "lrc")
-            has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in canonical_lyrics.get("lines", []))
-            status = "syllable_synced" if has_syls else ("line_synced" if canonical_lyrics.get("lines") else "raw_lyrics")
+            lines = canonical_lyrics.get("lines", [])
+            has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in lines)
+            has_timestamps = any(l.get("start", 0) > 0 or l.get("end", 0) > 0 for l in lines)
+            if has_syls:
+                status = "syllable_synced"
+            elif has_timestamps:
+                status = "line_synced"
+            elif lines:
+                status = "raw_lyrics"
+                for q_idx, l in enumerate(lines):
+                    unplaced_for_track.append({
+                        "id": f"Q-{q_idx+1}",
+                        "text": l.get("text", ""),
+                        "adlib": l.get("adlib"),
+                        "agent": l.get("agent", "v1"),
+                    })
+                canonical_lyrics = {"meta": canonical_lyrics.get("meta", {}), "lines": []}
+            else:
+                status = "empty"
         else:
             embedded = UniversalLyricsParser.parse_embedded_audio_tags(track_path)
             if embedded and embedded.get("lines"):
                 canonical_lyrics = embedded
                 input_fmt = "embedded"
-                has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in canonical_lyrics.get("lines", []))
-                status = "syllable_synced" if has_syls else "line_synced"
+                lines = canonical_lyrics.get("lines", [])
+                has_syls = any(len(l.get("rawSyllabi", [])) > 0 for l in lines)
+                has_timestamps = any(l.get("start", 0) > 0 or l.get("end", 0) > 0 for l in lines)
+                if has_syls:
+                    status = "syllable_synced"
+                elif has_timestamps:
+                    status = "line_synced"
+                elif lines:
+                    status = "raw_lyrics"
+                    for q_idx, l in enumerate(lines):
+                        unplaced_for_track.append({
+                            "id": f"Q-{q_idx+1}",
+                            "text": l.get("text", ""),
+                            "adlib": l.get("adlib"),
+                            "agent": l.get("agent", "v1"),
+                        })
+                    canonical_lyrics = {"meta": canonical_lyrics.get("meta", {}), "lines": []}
+                else:
+                    status = "empty"
 
-        tracks.append({
+        track_obj = {
             "id": f"track-{idx+1}",
             "trackNumber": track_nr,
             "filename": track_fname,
@@ -595,7 +656,10 @@ async def upload_album(files: list[UploadFile] = File(...)):
             "inputFormat": input_fmt,
             "status": status,
             "lyrics": canonical_lyrics,
-        })
+        }
+        if unplaced_for_track:
+            track_obj["unplacedLines"] = unplaced_for_track
+        tracks.append(track_obj)
 
     tracks.sort(key=lambda t: t["trackNumber"])
 
@@ -700,9 +764,65 @@ async def update_project_track(project_id: str, request: Request):
                 tr["artist"] = data["artist"].strip()
             if "status" in data:
                 tr["status"] = data["status"]
+
+            # Persist project immediately to disk on every track update
+            try:
+                proj_file = Path(f"projects/{project_id}.json")
+                proj_file.write_text(json.dumps(project, indent=2, ensure_ascii=False), encoding="utf-8")
+                autosave_file = Path(f"projects/autosaves/{project_id}_latest.json")
+                autosave_file.write_text(json.dumps(project, indent=2, ensure_ascii=False), encoding="utf-8")
+            except Exception as e:
+                logger.warning(f"Failed to auto-write project to disk: {e}")
+
             return {"status": "ok", "track": tr}
 
     return JSONResponse({"error": "Track not found"}, status_code=404)
+
+
+@app.post("/api/project/{project_id}/autosave")
+async def autosave_project(project_id: str, request: Request):
+    data = await request.json()
+    if not data or not isinstance(data, dict):
+        return JSONResponse({"error": "Invalid project data"}, status_code=400)
+
+    projects[project_id] = data
+
+    # 1. Write to main project file on disk
+    try:
+        proj_file = Path(f"projects/{project_id}.json")
+        proj_file.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Autosave main file write error: {e}")
+
+    # 2. Write to latest autosave
+    try:
+        latest_autosave = Path(f"projects/autosaves/{project_id}_latest.json")
+        latest_autosave.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Autosave latest file write error: {e}")
+
+    # 3. Create timestamped rolling backup (keep last 15 per project)
+    try:
+        ts = int(time.time())
+        history_file = Path(f"projects/autosaves/{project_id}_{ts}.json")
+        history_file.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        existing_backups = sorted(
+            Path("projects/autosaves").glob(f"{project_id}_*.json"),
+            key=lambda p: p.stat().st_mtime
+        )
+        numbered_backups = [p for p in existing_backups if not p.name.endswith("_latest.json")]
+        if len(numbered_backups) > 15:
+            for old_p in numbered_backups[:-15]:
+                try:
+                    old_p.unlink()
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.warning(f"Rolling autosave error: {e}")
+
+    return {"status": "ok", "saved_at": time.time(), "track_count": len(data.get("tracks", []))}
+
 
 
 @app.post("/api/project/{project_id}/align_track")
@@ -713,7 +833,7 @@ async def align_project_track(project_id: str, request: Request):
 
     data = await request.json()
     track_id = data.get("track_id")
-    language = data.get("language", "en")
+    language = data.get("language") or project.get("language") or "de"
     mode = data.get("mode", "studio_ai") # "studio_ai" | "fast"
     use_whisper = (mode == "studio_ai") and data.get("use_whisper", True)
     whisper_model = data.get("whisper_model", "base")
@@ -739,26 +859,23 @@ async def align_project_track(project_id: str, request: Request):
     print(f"[AI Studio] Mode: {mode.upper()} | Language: {language} | Whisper: {use_whisper}", flush=True)
 
     align_audio_path = audio_path
-
-    # If Studio AI mode, isolate vocals with Demucs / UVR5 first
-    if mode == "studio_ai":
+    cached_vocals = target_track.get("vocalsPath")
+    if cached_vocals and Path(cached_vocals).exists():
+        print(f"[AI Studio Syllables] Verwende gecachtes Acapella: {cached_vocals}", flush=True)
+        align_audio_path = cached_vocals
+    else:
         try:
-            cached_vocals = target_track.get("vocalsPath")
-            if cached_vocals and Path(cached_vocals).exists():
-                print(f"[AI Studio] Using cached isolated vocals: {cached_vocals}", flush=True)
-                align_audio_path = cached_vocals
-            else:
-                print(f"[AI Studio] Step 1/2: Isolating vocals with UVR-MDX-NET model...", flush=True)
-                job_id = str(uuid.uuid4())
-                jobs[job_id] = {"status": "running", "progress": 10, "message": "Isolating vocals..."}
-                vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
-                if vocals_path and Path(vocals_path).exists() and vocals_path != audio_path:
-                    target_track["vocalsPath"] = vocals_path
-                    target_track["vocalsUrl"] = f"/api/audio/{Path(vocals_path).stem}"
-                    align_audio_path = vocals_path
-                    print(f"[AI Studio] Step 1/2 Complete: Vocals saved -> {vocals_path}", flush=True)
+            print(f"[AI Studio Syllables] Schritt 1/2: Isoliere Gesangsspur (UVR-MDX-Net) fuer Silben-Erkennung...", flush=True)
+            job_id = str(uuid.uuid4())
+            jobs[job_id] = {"status": "running", "progress": 10, "message": "Isolating vocals for syllables..."}
+            vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
+            if vocals_path and Path(vocals_path).exists() and vocals_path != audio_path:
+                target_track["vocalsPath"] = vocals_path
+                target_track["vocalsUrl"] = f"/api/audio/{Path(vocals_path).stem}"
+                align_audio_path = vocals_path
+                print(f"[AI Studio Syllables] Acapella erfolgreich isoliert -> {vocals_path}", flush=True)
         except Exception as e:
-            print(f"[AI Studio] Acapella separation error: {e}", flush=True)
+            print(f"[AI Studio Syllables] Acapella-Separation Fehler: {e}. Verwende Original-Audio.", flush=True)
 
     print(f"[AI Studio] Step 2/2: Running Phoneme & Syllable Alignment on: {align_audio_path}...", flush=True)
     aligned_lyrics = SyllableAligner.align_canonical_lyrics(
@@ -770,6 +887,14 @@ async def align_project_track(project_id: str, request: Request):
     )
     target_track["lyrics"] = aligned_lyrics
     target_track["status"] = "syllable_synced"
+
+    # Persist directly into project JSON on disk
+    proj_file = Path(f"projects/{project_id}.json")
+    if proj_file.exists():
+        try:
+            proj_file.write_text(json.dumps(project, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception as pe:
+            print(f"[AI Studio] Warnung beim Speichern des Projekts: {pe}", flush=True)
 
     syllable_count = sum(len(l.get("rawSyllabi", [])) for l in aligned_lyrics.get("lines", []))
     print(f"[AI Studio] Alignment Complete! Generated {syllable_count} syllable timestamps.", flush=True)
@@ -795,7 +920,7 @@ async def align_project_track_lines(project_id: str, request: Request):
 
     data = await request.json()
     track_id = data.get("track_id")
-    language = data.get("language") or None
+    language = data.get("language") or project.get("language") or "de"
     whisper_model = data.get("whisper_model", "base")
     uvr_model_id = data.get("uvr_model_id", "UVR-MDX-NET-Inst_HQ_3")
 
@@ -822,11 +947,17 @@ async def align_project_track_lines(project_id: str, request: Request):
     # Gather user lines from unplacedLines, or lines without timestamps, or provided in request
     user_lines = []
     if data.get("lines"):
-        user_lines = [l.strip() for l in data["lines"] if l.strip()]
+        user_lines = [l.strip() for l in data["lines"] if isinstance(l, str) and l.strip()]
     elif target_track.get("unplacedLines"):
-        user_lines = [l["text"].strip() for l in target_track["unplacedLines"] if l.get("text", "").strip()]
+        for l in target_track["unplacedLines"]:
+            txt = l.get("text", "").strip() if isinstance(l, dict) else str(l).strip()
+            if txt:
+                user_lines.append(txt)
     elif target_track.get("lyrics", {}).get("lines"):
-        user_lines = [l["text"].strip() for l in target_track["lyrics"]["lines"] if l.get("text", "").strip()]
+        for l in target_track["lyrics"]["lines"]:
+            txt = l.get("text", "").strip() if isinstance(l, dict) else str(l).strip()
+            if txt:
+                user_lines.append(txt)
 
     if not user_lines:
         return JSONResponse({"error": "No lyrics lines available to align. Please paste lyrics into the pool first!"}, status_code=400)
@@ -838,90 +969,72 @@ async def align_project_track_lines(project_id: str, request: Request):
     align_audio_path = audio_path
     cached_vocals = target_track.get("vocalsPath")
     if cached_vocals and Path(cached_vocals).exists():
+        print(f"[AI Studio Lines] Verwende gecachtes Acapella: {cached_vocals}", flush=True)
         align_audio_path = cached_vocals
+    else:
+        try:
+            print(f"[AI Studio Lines] Schritt 1/2: Isoliere Gesangsspur (UVR-MDX-Net) fuer praezise Zeilen-Erkennung...", flush=True)
+            job_id = str(uuid.uuid4())
+            jobs[job_id] = {"status": "running", "progress": 10, "message": "Isolating vocals for lines..."}
+            vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
+            if vocals_path and Path(vocals_path).exists() and vocals_path != audio_path:
+                target_track["vocalsPath"] = vocals_path
+                target_track["vocalsUrl"] = f"/api/audio/{Path(vocals_path).stem}"
+                align_audio_path = vocals_path
+                print(f"[AI Studio Lines] Acapella erfolgreich isoliert -> {vocals_path}", flush=True)
+        except Exception as e:
+            print(f"[AI Studio Lines] Acapella-Separation Fehler: {e}. Verwende Original-Audio.", flush=True)
 
-    # 1. Transcribe with Whisper to get all_words
-    all_words = []
+    # Run high-speed cached WhisperX + Wav2Vec2 CTC global monotonic alignment
     try:
-        import whisper
-        print(f"[Whisper] Loading model '{whisper_model}'...", flush=True)
-        model = whisper.load_model(whisper_model)
-        opts = {"word_timestamps": True, "verbose": False}
-        if language:
-            opts["language"] = language
-        print(f"[Whisper] Transcribing and extracting acoustic words from {align_audio_path}...", flush=True)
-        res = model.transcribe(align_audio_path, **opts)
-        for s in res.get("segments", []):
-            for w in s.get("words", []):
-                word = w.get("word", "").strip()
-                if word:
-                    all_words.append({
-                        "word": word,
-                        "start": round(w["start"], 3),
-                        "end": round(w["end"], 3),
-                    })
-        print(f"[Whisper] Transcribed {len(all_words)} acoustic words.", flush=True)
+        aligned_result = SyllableAligner.align_raw_lines_to_audio(
+            audio_path=align_audio_path,
+            user_lines=user_lines,
+            language=language or "en",
+            whisper_model=whisper_model or "base",
+        )
     except Exception as e:
-        print(f"[Whisper Error] {e}", flush=True)
-        return JSONResponse({"error": f"Whisper transcription failed: {e}"}, status_code=500)
+        print(f"[AI Studio Alignment Error] {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"error": f"Alignment fehlgeschlagen: {e}"}, status_code=500)
 
-    # 2. Match user lines against all_words
-    matched_segments = _align_lyrics(all_words, user_lines)
-
-    # 3. Create Canonical Lines
-    new_canonical_lines = []
-    for idx, seg in enumerate(matched_segments):
-        main_text = seg["text"]
-        adlib_text = None
-        if (main_text.startswith("(") and main_text.endswith(")")) or (main_text.startswith("[") and main_text.endswith("]")):
-            adlib_text = main_text[1:-1].strip()
-
-        new_canonical_lines.append({
-            "id": f"L-{idx+1}",
-            "start": seg["start"],
-            "end": seg["end"],
-            "text": main_text,
-            "adlib": adlib_text,
-            "rawSyllabi": [],
-            "adlibSyllabi": [],
-            "agent": "v1",
-            "side": "right",
-            "isSimultaneous": False,
-            "laneIndex": 0,
-        })
-
-    # Sort lines by start
-    new_canonical_lines.sort(key=lambda x: x["start"])
-
-    # Overlap detection for multi-lane
-    for i in range(1, len(new_canonical_lines)):
-        prev_line = new_canonical_lines[i-1]
-        curr_line = new_canonical_lines[i]
-        if curr_line["start"] < prev_line["end"] - 0.05:
-            curr_line["isSimultaneous"] = True
-            curr_line["laneIndex"] = 1
+    line_only_canonical = []
+    for l in aligned_result.get("lines", []):
+        line_copy = dict(l)
+        line_copy["rawSyllabi"] = []
+        line_copy["adlibSyllabi"] = []
+        line_only_canonical.append(line_copy)
 
     target_track["lyrics"] = {
         "meta": {
-            "source": "whisper_align",
-            "schemaVersion": 2,
+            **aligned_result.get("meta", {}),
             "timingType": "Line",
             "title": target_track.get("title", ""),
             "artist": target_track.get("artist", ""),
         },
-        "lines": new_canonical_lines,
+        "lines": line_only_canonical,
     }
     target_track["unplacedLines"] = []
     target_track["status"] = "line_synced"
     target_track["inputFormat"] = "lrc"
 
-    print(f"[AI Studio] Successfully aligned {len(new_canonical_lines)} lines!", flush=True)
+    # Persist directly into project JSON on disk
+    proj_file = Path(f"projects/{project_id}.json")
+    if proj_file.exists():
+        try:
+            proj_file.write_text(json.dumps(project, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception as pe:
+            print(f"[AI Studio] Warnung beim Speichern des Projekts: {pe}", flush=True)
+
+    print(f"[AI Studio] Successfully aligned {len(line_only_canonical)} lines!", flush=True)
     print(f"==================================================================\n", flush=True)
 
     return {
         "status": "ok",
         "track": target_track,
-        "line_count": len(new_canonical_lines),
+        "line_count": len(line_only_canonical),
+        "vocalsUrl": target_track.get("vocalsUrl"),
     }
 
 
