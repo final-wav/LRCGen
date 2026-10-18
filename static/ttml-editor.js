@@ -52,15 +52,32 @@ function initStudioEditor() {
   const scrollArea = document.getElementById('tlScrollArea');
 
   if (zoomSlider) zoomSlider.addEventListener('input', e => applyZoom(+e.target.value));
-  if (zoomInBtn)  zoomInBtn.addEventListener('click', () => applyZoom(Studio.pps * 1.3));
-  if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => applyZoom(Studio.pps * 0.77));
+  if (zoomInBtn)  zoomInBtn.addEventListener('click', () => {
+    applyZoom(Studio.pps * 1.3, Studio.lastMouseTimelineTime, Studio.lastMouseViewportPx);
+  });
+  if (zoomOutBtn) zoomOutBtn.addEventListener('click', () => {
+    applyZoom(Studio.pps * 0.77, Studio.lastMouseTimelineTime, Studio.lastMouseViewportPx);
+  });
 
   if (scrollArea) {
+    scrollArea.addEventListener('mousemove', e => {
+      const saRect = scrollArea.getBoundingClientRect();
+      const vx = e.clientX - saRect.left;
+      if (vx >= 0 && vx <= scrollArea.clientWidth) {
+        Studio.lastMouseViewportPx = vx;
+        Studio.lastMouseTimelineTime = (scrollArea.scrollLeft + vx) / Studio.pps;
+      }
+    });
+
     scrollArea.addEventListener('wheel', e => {
       if (e.ctrlKey) {
         e.preventDefault();
-        const redLineTime = (Studio.audio ? Studio.audio.currentTime : Studio.currentTime) || 0;
-        applyZoom(Studio.pps * (e.deltaY < 0 ? 1.18 : 0.85), redLineTime);
+        const saRect = scrollArea.getBoundingClientRect();
+        const mouseViewportPx = Math.max(0, Math.min(scrollArea.clientWidth, e.clientX - saRect.left));
+        const mouseTimelinePx = scrollArea.scrollLeft + mouseViewportPx;
+        const mouseTime = Math.max(0, mouseTimelinePx / Studio.pps);
+        const zoomFactor = e.deltaY < 0 ? 1.18 : 0.85;
+        applyZoom(Studio.pps * zoomFactor, mouseTime, mouseViewportPx);
       }
     }, { passive: false });
   }
@@ -814,24 +831,27 @@ function handleEditorResize() {
   layoutTimeline();
 }
 
-function applyZoom(newPps, anchorTime = null) {
+function applyZoom(newPps, anchorTime = null, viewportOffsetPx = null) {
   const scrollArea = document.getElementById('tlScrollArea');
   const oldPps = Studio.pps;
   const targetPps = Math.max(20, Math.min(1600, newPps));
   if (Math.abs(targetPps - oldPps) < 0.001) return;
 
-  // Anchor time: current playhead position (the red line)
-  const redLineTime = (Studio.audio ? Studio.audio.currentTime : Studio.currentTime) || 0;
-  const curTime = anchorTime !== null ? anchorTime : redLineTime;
+  let curTime;
+  let relOffset;
 
-  let relOffset = null;
   if (scrollArea) {
-    const playheadPx = curTime * oldPps;
-    relOffset = playheadPx - scrollArea.scrollLeft;
-    // If the red line was outside the visible screen, center it in the viewport
-    if (relOffset < 0 || relOffset > scrollArea.clientWidth) {
+    if (anchorTime !== null) {
+      curTime = anchorTime;
+      relOffset = (viewportOffsetPx !== null) ? viewportOffsetPx : (curTime * oldPps - scrollArea.scrollLeft);
+    } else {
+      // Default: anchor around viewport center
+      curTime = (scrollArea.scrollLeft + scrollArea.clientWidth / 2) / oldPps;
       relOffset = scrollArea.clientWidth / 2;
     }
+  } else {
+    curTime = anchorTime !== null ? anchorTime : ((Studio.audio ? Studio.audio.currentTime : Studio.currentTime) || 0);
+    relOffset = 0;
   }
 
   Studio.pps = targetPps;
@@ -846,8 +866,8 @@ function applyZoom(newPps, anchorTime = null) {
   layoutTimeline();
 
   if (scrollArea && relOffset !== null) {
-    const newPlayheadPx = curTime * Studio.pps;
-    scrollArea.scrollLeft = Math.max(0, newPlayheadPx - relOffset);
+    const newAnchorPx = curTime * Studio.pps;
+    scrollArea.scrollLeft = Math.max(0, newAnchorPx - relOffset);
   }
 }
 
