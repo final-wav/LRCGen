@@ -288,6 +288,7 @@ function isLineSelected(lineId) {
 
 function selectLine(lineId) {
   Studio.selectedLineId = lineId;
+  Studio.selectionAnchorLineId = lineId;
   Studio.lineSelected = true;
   if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
   Studio.selectedLineIds.clear();
@@ -344,6 +345,7 @@ function toggleLineSelection(lineId) {
   } else {
     Studio.selectedLineIds.add(lineId);
     Studio.selectedLineId = lineId;
+    Studio.selectionAnchorLineId = lineId;
     Studio.lineSelected = true;
     (line.rawSyllabi || []).forEach((syl, sIdx) => {
       Studio.selectedSyllables.set(getSyllableKey(line.id, false, sIdx), {
@@ -375,8 +377,8 @@ function rangeSelectLines(targetLineId) {
   if (lines.length === 0) return;
 
   if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
-  const lastSelectedId = Studio.selectedLineId || (lines[0] ? lines[0].id : null);
-  const startIdx = lines.findIndex(l => l.id === lastSelectedId);
+  const anchorId = Studio.selectionAnchorLineId || Studio.selectedLineId || (lines[0] ? lines[0].id : null);
+  const startIdx = lines.findIndex(l => l.id === anchorId);
   const endIdx = lines.findIndex(l => l.id === targetLineId);
 
   if (startIdx === -1 || endIdx === -1) {
@@ -1465,11 +1467,18 @@ function handleTimelineMouseDown(e) {
   if (!inner) return;
 
   const initialKeys = new Set((e.shiftKey || e.ctrlKey || e.metaKey) ? Studio.selectedSyllables.keys() : []);
+  const initialLineIds = new Set((e.shiftKey || e.ctrlKey || e.metaKey) ? (Studio.selectedLineIds || []) : []);
   if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
     Studio.selectedSyllables.clear();
+    if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+    Studio.selectedLineIds.clear();
     Studio.selectedSylIdx = null;
+    Studio.selectedLineId = null;
+    Studio.lineSelected = false;
     updateSelectionBadge();
     renderTimelineSyllables();
+    renderTimelineLines();
+    renderInspectorLines();
   }
 
   const innerRect = inner.getBoundingClientRect();
@@ -1484,6 +1493,7 @@ function handleTimelineMouseDown(e) {
     startInnerX,
     startInnerY,
     initialKeys,
+    initialLineIds,
   };
 }
 
@@ -1583,9 +1593,12 @@ function handleDragMove(e) {
       const selTop    = Math.min(Studio.marquee.startClientY, e.clientY);
       const selBottom = Math.max(Studio.marquee.startClientY, e.clientY);
 
-      // Test intersection with all chips in viewport client coordinates
+      // Test intersection with all chips and line blocks in viewport client coordinates
       const chips = document.querySelectorAll('.syl-chip');
+      const lineBlocks = document.querySelectorAll('.tl-line-block');
       const lyrics = getActiveLyrics();
+
+      if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
 
       chips.forEach(chip => {
         const chipLineId  = chip.dataset.lineId;
@@ -1597,6 +1610,7 @@ function handleDragMove(e) {
         const intersects = !(cr.right < selLeft || cr.left > selRight || cr.bottom < selTop || cr.top > selBottom);
 
         if (intersects) {
+          Studio.selectedLineIds.add(chipLineId);
           if (!Studio.selectedSyllables.has(key)) {
             const line = (lyrics.lines || []).find(l => l.id === chipLineId);
             if (line) {
@@ -1614,6 +1628,34 @@ function handleDragMove(e) {
             Studio.selectedSyllables.delete(key);
             chip.classList.remove('multi-selected');
             chip.classList.remove('selected');
+          }
+        }
+      });
+
+      lineBlocks.forEach(blk => {
+        const blkLineId = blk.dataset.lineId;
+        const br = blk.getBoundingClientRect();
+        const intersects = !(br.right < selLeft || br.left > selRight || br.bottom < selTop || br.top > selBottom);
+
+        if (intersects) {
+          Studio.selectedLineIds.add(blkLineId);
+          blk.classList.add('selected');
+          const line = (lyrics.lines || []).find(l => l.id === blkLineId);
+          if (line) {
+            (line.rawSyllabi || []).forEach((syl, sIdx) => {
+              Studio.selectedSyllables.set(getSyllableKey(line.id, false, sIdx), { lineId: line.id, isAdlib: false, sIdx, syl });
+            });
+            (line.adlibSyllabi || []).forEach((syl, sIdx) => {
+              Studio.selectedSyllables.set(getSyllableKey(line.id, true, sIdx), { lineId: line.id, isAdlib: true, sIdx, syl });
+            });
+          }
+        } else {
+          if (!Studio.marquee.initialLineIds || !Studio.marquee.initialLineIds.has(blkLineId)) {
+            const hasSyllableSelected = Array.from(Studio.selectedSyllables.values()).some(s => s.lineId === blkLineId);
+            if (!hasSyllableSelected) {
+              Studio.selectedLineIds.delete(blkLineId);
+              blk.classList.remove('selected');
+            }
           }
         }
       });
@@ -1901,6 +1943,17 @@ function handleDragEnd(e) {
           if (typeof updateSweepPlayer === 'function') updateSweepPlayer(false);
         }
       }
+    } else if (Studio.marquee.moved) {
+      if (!Studio.selectedLineIds) Studio.selectedLineIds = new Set();
+      Studio.selectedSyllables.forEach(item => {
+        if (item.lineId) Studio.selectedLineIds.add(item.lineId);
+      });
+      Studio.lineSelected = Studio.selectedLineIds.size > 0;
+      if (Studio.selectedLineIds.size > 0 && !Studio.selectedLineId) {
+        Studio.selectedLineId = Array.from(Studio.selectedLineIds)[0];
+      }
+      renderTimelineLines();
+      renderInspectorLines();
     }
 
     Studio.marquee = null;
@@ -1980,191 +2033,104 @@ function copySelectedSyllables() {
   const lyrics = getActiveLyrics();
   const lines = lyrics.lines || [];
 
-  const hasSelectedLines = Studio.selectedLineIds && Studio.selectedLineIds.size > 0;
-  const singleLineSelected = Studio.lineSelected && Studio.selectedLineId;
-
-  // Case A: Lines are selected (via Ctrl+Click, Shift+Click, or selectAll)
-  if (hasSelectedLines || (singleLineSelected && Studio.selectedSyllables.size === 0)) {
-    const targetLineIds = hasSelectedLines
-      ? Array.from(Studio.selectedLineIds)
-      : (Studio.selectedLineId ? [Studio.selectedLineId] : []);
-
-    const selectedLines = lines.filter(l => targetLineIds.includes(l.id));
-    if (selectedLines.length === 0) {
-      toast('No lines selected to copy.', 'error');
-      return;
-    }
-
-    selectedLines.sort((a, b) => a.start - b.start);
-    const minStartMs = Math.round(selectedLines[0].start * 1000);
-
-    const lineGroups = selectedLines.map(l => {
-      const lStartMs = Math.round(l.start * 1000);
-      const lEndMs = Math.round(l.end * 1000);
-      const rawSyls = (l.rawSyllabi || []).map(s => ({
-        ...s,
-        relTime: s.time - minStartMs,
-        isAdlib: false,
-        lane: s.lane !== undefined ? s.lane : (l.agent === 'v2' ? 1 : 0),
-      }));
-      const adlibSyls = (l.adlibSyllabi || []).map(s => ({
-        ...s,
-        relTime: s.time - minStartMs,
-        isAdlib: true,
-        lane: s.lane !== undefined ? s.lane : 3,
-      }));
-      const allSyls = [...rawSyls, ...adlibSyls].sort((a, b) => a.time - b.time);
-
-      return {
-        origLineId: l.id,
-        agent: l.agent || 'v1',
-        side: l.side || 'right',
-        laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
-        text: l.text || '',
-        adlib: l.adlib || null,
-        relLineStartMs: lStartMs - minStartMs,
-        relLineEndMs: lEndMs - minStartMs,
-        duration: l.end - l.start,
-        syls: allSyls,
-      };
-    });
-
-    const totalSyls = lineGroups.reduce((acc, grp) => acc + grp.syls.length, 0);
-
-    Studio.clipboard = {
-      type: 'lines',
-      minTime: minStartMs,
-      lineGroups: lineGroups,
-      items: lineGroups.flatMap(grp => grp.syls),
-    };
-
-    toast(`Copied ${lineGroups.length} line(s) (${totalSyls} syllables) [Ctrl+C]`, 'success');
-    return;
+  // Collect all unique line IDs across selectedLineIds, selectedSyllables, and selectedLineId
+  const allTargetLineIds = new Set();
+  if (Studio.selectedLineIds && Studio.selectedLineIds.size > 0) {
+    Studio.selectedLineIds.forEach(id => allTargetLineIds.add(id));
   }
-
-  // Case B: Individual syllables selected (via marquee or single syllable clicks)
-  if (Studio.selectedSyllables.size > 0) {
-    const items = [];
-    const lineMap = new Map(); // lineId -> { line, syls: [] }
-
-    Studio.selectedSyllables.forEach(sel => {
-      const l = lines.find(line => line.id === sel.lineId);
-      if (!l) return;
-      const list = sel.isAdlib ? l.adlibSyllabi : l.rawSyllabi;
-      const s = list ? list[sel.sIdx] : null;
-      if (!s) return;
-
-      const lane = s.lane !== undefined ? s.lane : (sel.isAdlib ? 3 : (l.agent === 'v2' ? 1 : 0));
-      const item = {
-        lineId: l.id,
-        agent: l.agent || 'v1',
-        side: l.side || 'right',
-        laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
-        text: s.text,
-        time: s.time,
-        duration: s.duration,
-        isSubSyllable: !!s.isSubSyllable,
-        lane: lane,
-        isAdlib: !!sel.isAdlib,
-      };
-      items.push(item);
-
-      if (!lineMap.has(l.id)) {
-        lineMap.set(l.id, { line: l, syls: [] });
-      }
-      lineMap.get(l.id).syls.push(item);
+  if (Studio.selectedSyllables && Studio.selectedSyllables.size > 0) {
+    Studio.selectedSyllables.forEach(item => {
+      if (item.lineId) allTargetLineIds.add(item.lineId);
     });
-
-    if (!items.length) {
-      toast('No syllables selected to copy.', 'error');
-      return;
-    }
-
-    items.sort((a, b) => a.time - b.time);
-    const minTime = items[0].time;
-
-    const lineGroups = [];
-    lineMap.forEach((val, lineId) => {
-      val.syls.sort((a, b) => a.time - b.time);
-      const lStartMs = Math.round(val.line.start * 1000);
-      const lEndMs = Math.round(val.line.end * 1000);
-      lineGroups.push({
-        origLineId: lineId,
-        agent: val.line.agent || 'v1',
-        side: val.line.side || 'right',
-        laneIndex: val.line.laneIndex !== undefined ? val.line.laneIndex : (val.line.agent === 'v2' ? 1 : 0),
-        text: val.line.text || '',
-        adlib: val.line.adlib || null,
-        minTime: val.syls[0].time,
-        relLineStartMs: val.syls[0].time - minTime,
-        relLineEndMs: (val.syls[val.syls.length - 1].time + val.syls[val.syls.length - 1].duration) - minTime,
-        duration: (lEndMs - lStartMs) / 1000,
-        syls: val.syls.map(s => ({
-          ...s,
-          relTime: s.time - minTime,
-        })),
-      });
-    });
-    lineGroups.sort((a, b) => a.minTime - b.minTime);
-
-    Studio.clipboard = {
-      type: 'syllables',
-      minTime: minTime,
-      lineGroups: lineGroups,
-      items: items.map(it => ({
-        ...it,
-        relTime: it.time - minTime,
-      })),
-    };
-
-    toast(`Copied ${items.length} syllables (${lineGroups.length} line(s)) [Ctrl+C]`, 'success');
-    return;
   }
-
-  // Case C: Single line selected fallback
   if (Studio.selectedLineId) {
-    const l = lines.find(line => line.id === Studio.selectedLineId);
-    if (l) {
-      const lineStartMs = Math.round(l.start * 1000);
-      const lineEndMs = Math.round(l.end * 1000);
-      const rawSyls = (l.rawSyllabi || []).map(s => ({
+    allTargetLineIds.add(Studio.selectedLineId);
+  }
+
+  const selectedLines = lines.filter(l => allTargetLineIds.has(l.id));
+  if (selectedLines.length === 0) {
+    toast('No lines or syllables selected to copy.', 'error');
+    return;
+  }
+
+  selectedLines.sort((a, b) => a.start - b.start);
+  const minStartMs = Math.round(selectedLines[0].start * 1000);
+
+  const lineGroups = selectedLines.map(l => {
+    const lStartMs = Math.round(l.start * 1000);
+    const lEndMs = Math.round(l.end * 1000);
+
+    const isWholeLineSelected = (Studio.selectedLineIds && Studio.selectedLineIds.has(l.id)) || (Studio.lineSelected && Studio.selectedLineId === l.id);
+
+    let rawSyls = [];
+    let adlibSyls = [];
+
+    if (isWholeLineSelected || Studio.selectedSyllables.size === 0) {
+      rawSyls = (l.rawSyllabi || []).map(s => ({
         ...s,
-        relTime: s.time - lineStartMs,
+        relTime: s.time - minStartMs,
         isAdlib: false,
         lane: s.lane !== undefined ? s.lane : (l.agent === 'v2' ? 1 : 0),
       }));
-      const adlibSyls = (l.adlibSyllabi || []).map(s => ({
+      adlibSyls = (l.adlibSyllabi || []).map(s => ({
         ...s,
-        relTime: s.time - lineStartMs,
+        relTime: s.time - minStartMs,
         isAdlib: true,
         lane: s.lane !== undefined ? s.lane : 3,
       }));
-      const allSyls = [...rawSyls, ...adlibSyls].sort((a, b) => a.time - b.time);
-
-      Studio.clipboard = {
-        type: 'lines',
-        minTime: lineStartMs,
-        lineGroups: [{
-          origLineId: l.id,
-          agent: l.agent || 'v1',
-          side: l.side || 'right',
-          laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
-          text: l.text || '',
-          adlib: l.adlib || null,
-          relLineStartMs: 0,
-          relLineEndMs: lineEndMs - lineStartMs,
-          duration: (l.end - l.start),
-          syls: allSyls,
-        }],
-        items: allSyls,
-      };
-
-      toast(`Copied line "${(l.text || 'Line').slice(0, 25)}" [Ctrl+C]`, 'success');
-      return;
+    } else {
+      (l.rawSyllabi || []).forEach((s, sIdx) => {
+        if (isSyllableSelected(l.id, false, sIdx)) {
+          rawSyls.push({
+            ...s,
+            relTime: s.time - minStartMs,
+            isAdlib: false,
+            lane: s.lane !== undefined ? s.lane : (l.agent === 'v2' ? 1 : 0),
+          });
+        }
+      });
+      (l.adlibSyllabi || []).forEach((s, sIdx) => {
+        if (isSyllableSelected(l.id, true, sIdx)) {
+          adlibSyls.push({
+            ...s,
+            relTime: s.time - minStartMs,
+            isAdlib: true,
+            lane: s.lane !== undefined ? s.lane : 3,
+          });
+        }
+      });
+      if (rawSyls.length === 0 && adlibSyls.length === 0) {
+        rawSyls = (l.rawSyllabi || []).map(s => ({ ...s, relTime: s.time - minStartMs, isAdlib: false, lane: s.lane !== undefined ? s.lane : (l.agent === 'v2' ? 1 : 0) }));
+        adlibSyls = (l.adlibSyllabi || []).map(s => ({ ...s, relTime: s.time - minStartMs, isAdlib: true, lane: s.lane !== undefined ? s.lane : 3 }));
+      }
     }
-  }
 
-  toast('No syllables or line selected to copy.', 'error');
+    const allSyls = [...rawSyls, ...adlibSyls].sort((a, b) => a.time - b.time);
+
+    return {
+      origLineId: l.id,
+      agent: l.agent || 'v1',
+      side: l.side || 'right',
+      laneIndex: l.laneIndex !== undefined ? l.laneIndex : (l.agent === 'v2' ? 1 : 0),
+      text: l.text || '',
+      adlib: l.adlib || null,
+      relLineStartMs: lStartMs - minStartMs,
+      relLineEndMs: lEndMs - minStartMs,
+      duration: l.end - l.start,
+      syls: allSyls,
+    };
+  });
+
+  const totalSyls = lineGroups.reduce((acc, grp) => acc + grp.syls.length, 0);
+
+  Studio.clipboard = {
+    type: 'lines',
+    minTime: minStartMs,
+    lineGroups: lineGroups,
+    items: lineGroups.flatMap(grp => grp.syls),
+  };
+
+  toast(`Copied ${lineGroups.length} line(s) (${totalSyls} syllables) [Ctrl+C]`, 'success');
 }
 
 function pasteSyllables() {
