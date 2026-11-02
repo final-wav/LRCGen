@@ -48,10 +48,10 @@
       </button>
       <span id="autosaveStatusBadge" style="font-size:10px; color:var(--text-muted); opacity:0.8; padding: 3px 6px; background: rgba(255,255,255,0.04); border-radius: 4px; border: 1px solid var(--border2);" title="Autosave runs every 60s and on every change to disk">Autosave: On</span>
 
-      <label class="btn btn-secondary btn-sm" title="Open saved .lrcproj project file">
+      <button id="openProjectBtn" class="btn btn-secondary btn-sm" title="Open saved .lrcproj project file">
         Open
-        <input type="file" id="projectFileInput" accept=".lrcproj,.json" hidden>
-      </label>
+      </button>
+      <input type="file" id="projectFileInput" accept=".lrcproj,.json" hidden>
 
       <div style="width:1px; height:20px; background:var(--border2); margin:0 2px;"></div>
 
@@ -178,11 +178,23 @@
           </div>
         </div>
 
-        <div class="setup-open-proj-bar" style="display:flex; justify-content:center; margin-top: 14px; gap: 10px;">
-          <label class="btn btn-secondary btn-sm" title="Open saved .lrcproj project file">
+        <div class="setup-open-proj-bar" style="display:flex; justify-content:center; align-items:center; margin-top: 18px; gap: 12px;">
+          <button id="welcomeOpenProjectBtn" class="btn btn-secondary btn-md" title="Open saved .lrcproj project file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
             Open Project File (.lrcproj)
-            <input type="file" id="welcomeProjectFileInput" accept=".lrcproj,.json" hidden>
-          </label>
+          </button>
+          <input type="file" id="welcomeProjectFileInput" accept=".lrcproj,.json" hidden>
+        </div>
+
+        <!-- Photoshop-style Recent Projects Section -->
+        <div id="recentProjectsSection" style="margin-top: 32px; width: 100%; max-width: 860px; margin-left: auto; margin-right: auto;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px; border-bottom: 1px solid var(--border2); padding-bottom: 8px;">
+            <h3 style="font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin: 0;">Recent Projects</h3>
+            <span style="font-size: 11px; color: var(--text-muted);" id="recentProjectsCount">Loading...</span>
+          </div>
+          <div id="recentProjectsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+            <!-- Rendered by ttml-album.js -->
+          </div>
         </div>
 
         <!-- Action bottom bar once at least audio is loaded -->
@@ -673,12 +685,12 @@
 
 
 <!-- Scripts -->
-<script src="/static/shared.js?v=20261018_mousezoom"></script>
-<script src="/static/ttml-state.js?v=20261018_mousezoom"></script>
-<script src="/static/ttml-album.js?v=20261018_mousezoom"></script>
-<script src="/static/ttml-player.js?v=20261018_mousezoom"></script>
-<script src="/static/ttml-editor.js?v=20261018_mousezoom"></script>
-<script src="/static/ttml-tap.js?v=20261018_mousezoom"></script>
-<script src="/static/ttml-app.js?v=20261018_mousezoom"></script>
+<script src="/static/shared.js?v=20261019_recent_home"></script>
+<script src="/static/ttml-state.js?v=20261019_recent_home"></script>
+<script src="/static/ttml-album.js?v=20261019_recent_home"></script>
+<script src="/static/ttml-player.js?v=20261019_recent_home"></script>
+<script src="/static/ttml-editor.js?v=20261019_recent_home"></script>
+<script src="/static/ttml-tap.js?v=20261019_recent_home"></script>
+<script src="/static/ttml-app.js?v=20261019_recent_home"></script>
 </body>
 </html>

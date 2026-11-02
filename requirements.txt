@@ -2,10 +2,10 @@ fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 python-multipart>=0.0.6
 openai-whisper>=20231117
+whisperx>=3.1.1
 audio-separator[cpu]>=0.24.0
 pyphen>=0.14.0
 langdetect>=1.0.9
 httpx>=0.25.0
 mutagen>=1.47.0
 numpy>=1.24.0
-

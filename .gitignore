@@ -47,3 +47,14 @@ desktop.ini
 # Archives & Temporary Audio
 *.zip
 *.wav
+
+# User projects & autosaves (protect personal lyrics & files)
+old_projects/
+projects/*/**
+projects/*.lrcproj
+projects/autosaves/
+projects/*.json
+
+# Internal AI rules & configs
+AGENTS.md
+GEMINI.md

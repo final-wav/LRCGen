@@ -60,39 +60,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Auto-Restore Active Session upon Page Reload
-  (async function restoreSession() {
-    try {
-      let proj = null;
-      const saved = localStorage.getItem('lrcgen_active_project');
-      if (saved) {
-        proj = JSON.parse(saved);
-      } else {
-        // Fallback: fetch latest project stored in backend
-        const res = await fetch('/api/project_latest');
-        if (res.ok) {
-          proj = await res.json();
-          if (proj) localStorage.setItem('lrcgen_active_project', JSON.stringify(proj));
-        }
-      }
+  // Load and display Recent Projects dashboard on Home Setup screen
+  if (typeof loadAndRenderRecentProjects === 'function') {
+    loadAndRenderRecentProjects();
+  }
 
-      if (proj && proj.tracks && proj.tracks.length > 0) {
-        Studio.project = proj;
-        if (proj.language) {
-          if (langSel) langSel.value = proj.language;
-          localStorage.setItem('lrc_preferred_lang', proj.language);
-        } else {
-          proj.language = langSel?.value || 'de';
-        }
-        if (proj.numLanes) Studio.numLanes = Math.max(4, proj.numLanes);
-        enterStudioWorkspace();
-        renderAlbumSidebar();
-        const lastTrackId = localStorage.getItem('lrcgen_active_track_id') || proj.tracks[0].id;
-        selectTrack(lastTrackId);
-        toast(`Project restored: ${proj.title || 'Project'} [${proj.language?.toUpperCase() || 'DE'}]`, 'success');
+  // Auto-load project and track from URL query parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const projParam = urlParams.get('project');
+  const trackParam = urlParams.get('track');
+  if (projParam && typeof openProjectFromRecent === 'function') {
+    openProjectFromRecent(encodeURIComponent(projParam)).then(async () => {
+      if (trackParam && typeof selectTrack === 'function') {
+        await selectTrack(trackParam);
       }
-    } catch (e) {
-      console.warn('Session restore error:', e);
-    }
-  })();
+    });
+  }
 });

@@ -534,12 +534,15 @@ class SyllableAligner:
             model = _WHISPERX_MODEL_CACHE[cache_key]
         else:
             print(f"\n[WhisperX Ultra] Initialisiere CTranslate2 ('{whisper_model}', Device: {device})...", flush=True)
-            model = whisperx.load_model(whisper_model, device, compute_type=compute_type, language=language)
+            asr_opts = {"temperatures": [0.0], "condition_on_previous_text": False}
+            vad_opts = {"chunk_size": 30, "vad_onset": 0.300, "vad_offset": 0.200}
+            model = whisperx.load_model(whisper_model, device, compute_type=compute_type, language=language,
+                                        asr_options=asr_opts, vad_options=vad_opts)
             _WHISPERX_MODEL_CACHE[cache_key] = model
 
         audio = whisperx.load_audio(audio_path)
         print(f"[WhisperX Ultra] Transkribiere Acapella mit VAD...", flush=True)
-        result = model.transcribe(audio, batch_size=4)
+        result = model.transcribe(audio, batch_size=4, chunk_size=30)
 
         align_cache_key = (language, device)
         if align_cache_key in _WHISPERX_ALIGN_CACHE:
@@ -614,7 +617,7 @@ class SyllableAligner:
                     import whisper
                     print(f"[Whisper] Lade Modell '{whisper_model}'...", flush=True)
                     model = whisper.load_model(whisper_model)
-                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False}
+                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False, "condition_on_previous_text": False, "temperature": 0.0}
                     if lang_code:
                         opts["language"] = lang_code
                     print(f"[Whisper] Transkribiere & extrahiere Wort-Timestamps aus: {audio_path}...", flush=True)
@@ -764,7 +767,7 @@ class SyllableAligner:
                         model = whisper.load_model(whisper_model)
                         _STANDARD_WHISPER_CACHE[cache_key] = model
 
-                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False}
+                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False, "condition_on_previous_text": False, "temperature": 0.0}
                     if lang_code:
                         opts["language"] = lang_code
                     print(f"[Whisper] Transkribiere & extrahiere Wort-Timestamps aus: {audio_path}...", flush=True)

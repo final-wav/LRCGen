@@ -70,6 +70,14 @@ function initAlbumExplorer() {
     e.preventDefault();
     saveAlbumProjectFile(true);
   });
+  document.getElementById('openProjectBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    pickAndOpenAlbumProject('projectFileInput');
+  });
+  document.getElementById('welcomeOpenProjectBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    pickAndOpenAlbumProject('welcomeProjectFileInput');
+  });
   document.getElementById('projectFileInput')?.addEventListener('change', e => {
     if (e.target.files && e.target.files[0]) openAlbumProjectFile(e.target.files[0]);
   });
@@ -113,6 +121,8 @@ function createNewProject() {
   // 2. Studio State leeren
   Studio.project = null;
   Studio.activeTrackId = null;
+  Studio.projectFileHandle = null;
+  Studio.projectDiskPath = null;
   Studio.history = [];
   Studio.historyIdx = -1;
   Studio.selectedLineId = null;
@@ -162,8 +172,9 @@ function createNewProject() {
   const mainWorkspace = document.getElementById('mainWorkspace');
   if (mainWorkspace) mainWorkspace.classList.add('hidden');
 
-  // 6. Sidebar zurücksetzen
+  // 6. Sidebar zurücksetzen und Recent Projects neu laden
   renderAlbumSidebar();
+  loadAndRenderRecentProjects();
 
   toast('New project ready. Upload your audio files now.', 'info');
 }
@@ -564,6 +575,7 @@ async function exportSingleTrackTTML() {
 }
 
 // ─── Project File Save & Load (.lrcproj) ────────────────────────────────────
+// ─── Project File Save & Load (.lrcproj) ────────────────────────────────────
 async function saveAlbumProjectFile(saveAs = false) {
   if (!Studio.project || !Studio.project.tracks || !Studio.project.tracks.length) {
     toast('No active project to save.', 'error');
@@ -580,12 +592,26 @@ async function saveAlbumProjectFile(saveAs = false) {
     artist: Studio.project.artist || 'Various Artists',
     language: Studio.project.language || document.getElementById('langSelect')?.value || 'de',
     numLanes: Studio.numLanes || 4,
+    disk_path: Studio.projectDiskPath || Studio.project.disk_path || null,
     tracks: Studio.project.tracks || [],
   };
 
   const jsonStr = JSON.stringify(projectData, null, 2);
 
-  // 1. Direct silent save to backend disk & browser localStorage
+  // 1. If FileSystemFileHandle is available and NOT saveAs, write directly into the real opened file on disk
+  let savedToHandle = false;
+  if (!saveAs && Studio.projectFileHandle) {
+    try {
+      const writable = await Studio.projectFileHandle.createWritable();
+      await writable.write(jsonStr);
+      await writable.close();
+      savedToHandle = true;
+    } catch (handleErr) {
+      console.warn('FileSystemFileHandle write failed, falling back to backend save:', handleErr);
+    }
+  }
+
+  // 2. Direct silent save to backend disk & browser localStorage
   try {
     localStorage.setItem('lrcgen_active_project', jsonStr);
     await fetch('/api/project/save_project', {
@@ -598,8 +624,29 @@ async function saveAlbumProjectFile(saveAs = false) {
     console.warn('Backend project persistence warning:', e);
   }
 
-  // 2. ONLY trigger browser file download dialog if user explicitly clicked 'Save As...'
+  // 3. Trigger browser file download dialog if user explicitly clicked 'Save As...' or has no direct disk write capability
   if (saveAs === true) {
+    // If File System Access API is supported, let user pick destination interactively
+    if (typeof window.showSaveFilePicker === 'function') {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: `${(projectData.title || 'Album').replace(/[/\\?%*:|"<>]/g, '_')}.lrcproj`,
+          types: [{
+            description: 'LRCGen Project File',
+            accept: { 'application/json': ['.lrcproj', '.json'] }
+          }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(jsonStr);
+        await writable.close();
+        Studio.projectFileHandle = handle;
+        toast(`Saved project directly to "${handle.name}".`, 'success');
+        return;
+      } catch (pickerErr) {
+        if (pickerErr.name === 'AbortError') return;
+      }
+    }
+
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -609,11 +656,45 @@ async function saveAlbumProjectFile(saveAs = false) {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     toast(`Project downloaded as "${projectData.title}.lrcproj".`, 'success');
   } else {
-    toast(`Saved project "${projectData.title}" directly to disk (Ctrl+S).`, 'success');
+    if (savedToHandle) {
+      toast(`Saved project "${projectData.title}" directly into opened file (Ctrl+S).`, 'success');
+    } else {
+      toast(`Saved project "${projectData.title}" directly to disk (Ctrl+S).`, 'success');
+    }
   }
 }
 
-async function openAlbumProjectFile(file) {
+// Interactive file open with File System Access API if available
+async function pickAndOpenAlbumProject(fallbackInputId = 'projectFileInput') {
+  if (typeof window.showOpenFilePicker === 'function') {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{
+          description: 'LRCGen Project File (*.lrcproj, *.json)',
+          accept: { 'application/json': ['.lrcproj', '.json'] }
+        }],
+        multiple: false
+      });
+      if (handle) {
+        const file = await handle.getFile();
+        await openAlbumProjectFile(file, handle);
+        return;
+      }
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      console.warn('showOpenFilePicker error, falling back to input:', e);
+    }
+  }
+
+  // Fallback: trigger standard hidden input
+  const inp = document.getElementById(fallbackInputId) || document.getElementById('projectFileInput');
+  if (inp) {
+    inp.value = '';
+    inp.click();
+  }
+}
+
+async function openAlbumProjectFile(file, handle = null) {
   if (!file) return;
 
   const loader = document.getElementById('albumLoadingOverlay');
@@ -621,10 +702,54 @@ async function openAlbumProjectFile(file) {
 
   try {
     const text = await file.text();
-    const data = JSON.parse(text);
+    let data = JSON.parse(text);
 
     if (!data.tracks || !Array.isArray(data.tracks)) {
       throw new Error('Invalid project file: No tracks found.');
+    }
+
+    // Retain persistent file handle and path
+    if (handle) {
+      Studio.projectFileHandle = handle;
+    }
+    const detectedPath = data.disk_path || file.name;
+    if (detectedPath) {
+      Studio.projectDiskPath = detectedPath;
+      data.disk_path = detectedPath;
+    }
+
+    // Check if there is a newer autosave available on disk for this project (checking its folder-bound .autosave)
+    const projId = data.id;
+    if (projId) {
+      try {
+        const qPath = detectedPath ? `?disk_path=${encodeURIComponent(detectedPath)}` : '';
+        const statusRes = await fetch(`/api/project/${projId}/autosave_status${qPath}`);
+        if (statusRes.ok) {
+          const autoStatus = await statusRes.json();
+          if (autoStatus && autoStatus.has_newer) {
+            const baseTime = data.savedAt ? new Date(data.savedAt).getTime() : 0;
+            const autoTime = autoStatus.saved_at ? new Date(autoStatus.saved_at).getTime() : (autoStatus.mtime * 1000);
+            
+            // If autosave is newer than file timestamp by at least 2 seconds
+            if (autoTime > baseTime + 2000) {
+              const autoRes = await fetch(`/api/project/${projId}/latest_autosave${qPath}`);
+              if (autoRes.ok) {
+                const newerData = await autoRes.json();
+                if (newerData && newerData.tracks && newerData.tracks.length) {
+                  data = newerData;
+                  // Preserve disk path & handle on restored data
+                  if (handle) Studio.projectFileHandle = handle;
+                  data.disk_path = detectedPath;
+                  const timeFormatted = autoStatus.saved_at ? new Date(autoStatus.saved_at).toLocaleTimeString() : 'vor kurzem';
+                  toast(`Neuerer Autosave-Stand (${timeFormatted}) wurde automatisch wiederhergestellt.`, 'info');
+                }
+              }
+            }
+          }
+        }
+      } catch (checkErr) {
+        console.warn('Autosave check warning:', checkErr);
+      }
     }
 
     Studio.project = data;
@@ -645,7 +770,7 @@ async function openAlbumProjectFile(file) {
     } catch (e) {}
 
     // Save to localStorage
-    localStorage.setItem('lrcgen_active_project', text);
+    localStorage.setItem('lrcgen_active_project', JSON.stringify(data));
 
     // Switch to workspace
     enterStudioWorkspace();
@@ -658,6 +783,118 @@ async function openAlbumProjectFile(file) {
     toast(`Project "${data.title || 'Album'}" loaded (${data.tracks.length} tracks).`, 'success');
   } catch (err) {
     toast(`Error opening project: ${err.message}`, 'error');
+  } finally {
+    if (loader) loader.classList.add('hidden');
+  }
+}
+
+// ─── Recent Projects Dashboard (Photoshop / Ableton Home Screen) ────────────
+async function loadAndRenderRecentProjects() {
+  const container = document.getElementById('recentProjectsGrid');
+  const countBadge = document.getElementById('recentProjectsCount');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/projects/recent');
+    if (!res.ok) throw new Error('Failed to load recent projects');
+    const projects = await res.json();
+
+    if (countBadge) {
+      countBadge.textContent = `${projects.length} Project${projects.length === 1 ? '' : 's'}`;
+    }
+
+    if (!projects || projects.length === 0) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-muted); background: rgba(255,255,255,0.02); border: 1px dashed var(--border2); border-radius: 8px;">
+          No recent projects found. Drop audio tracks above or click "Open Project File" to begin.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = projects.map(p => {
+      const timeStr = p.saved_at ? new Date(p.saved_at).toLocaleDateString(undefined, {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      }) : (p.mtime ? new Date(p.mtime * 1000).toLocaleDateString() : '');
+
+      return `
+        <div class="recent-proj-card" onclick="openProjectFromRecent('${encodeURIComponent(p.disk_path)}')" style="
+          display: flex;
+          flex-direction: column;
+          padding: 14px 16px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid var(--border2);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          position: relative;
+        " onmouseover="this.style.borderColor='var(--accent)'; this.style.background='rgba(255,255,255,0.06)'"
+           onmouseout="this.style.borderColor='var(--border2)'; this.style.background='rgba(255,255,255,0.03)'">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 6px;">
+            <div style="font-weight: 600; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 190px;" title="${p.title || 'Untitled'}">
+              ${p.title || 'Untitled'}
+            </div>
+            <span style="font-size: 10px; background: rgba(77, 163, 255, 0.15); color: #4da3ff; padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+              ${p.tracks_count} Trk
+            </span>
+          </div>
+
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            ${p.artist || 'Various Artists'}
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top: auto; font-size: 10px; color: var(--text-muted); opacity: 0.8;">
+            <span title="${p.disk_path}">${(p.disk_path || '').split('/').pop()}</span>
+            <span>${timeStr}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.warn('Recent projects load error:', err);
+    if (countBadge) countBadge.textContent = 'Error';
+  }
+}
+
+async function openProjectFromRecent(encodedPath) {
+  const diskPath = decodeURIComponent(encodedPath);
+  const loader = document.getElementById('albumLoadingOverlay');
+  if (loader) loader.classList.remove('hidden');
+
+  try {
+    const res = await fetch(`/api/project_load_by_path?path=${encodeURIComponent(diskPath)}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Failed to load project: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    Studio.project = data;
+    Studio.projectDiskPath = diskPath;
+
+    if (data.language) {
+      const langSel = document.getElementById('langSelect');
+      if (langSel) langSel.value = data.language;
+      localStorage.setItem('lrc_preferred_lang', data.language);
+    }
+    if (data.numLanes) Studio.numLanes = Math.max(4, data.numLanes);
+
+    localStorage.setItem('lrcgen_active_project', JSON.stringify(data));
+
+    enterStudioWorkspace();
+    renderAlbumSidebar();
+
+    if (Studio.project.tracks && Studio.project.tracks.length > 0) {
+      await selectTrack(Studio.project.tracks[0].id);
+    }
+
+    if (data._restored_from_autosave) {
+      toast(`Project "${data.title}" loaded (Restored from newer autosave).`, 'info');
+    } else {
+      toast(`Project "${data.title}" loaded (${data.tracks.length} tracks).`, 'success');
+    }
+  } catch (e) {
+    toast(`Error opening recent project: ${e.message}`, 'error');
   } finally {
     if (loader) loader.classList.add('hidden');
   }

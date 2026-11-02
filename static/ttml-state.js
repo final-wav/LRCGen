@@ -13,6 +13,8 @@ var Studio = {
     tracks: [],
   },
   activeTrackId: null,
+  projectFileHandle: null, // FileSystemFileHandle for direct desktop disk writes (Ctrl+S)
+  projectDiskPath: null,   // Relative or absolute path in projects/ directory
 
   // Playback
   audio: null,
@@ -221,6 +223,7 @@ async function triggerProjectAutosave(silent = true) {
     ...Studio.project,
     savedAt: new Date().toISOString(),
     numLanes: Studio.numLanes || 4,
+    disk_path: Studio.projectDiskPath || Studio.project?.disk_path || null,
     language: Studio.project.language || document.getElementById('langSelect')?.value || 'de',
   };
 
@@ -303,6 +306,7 @@ function startAutosaveLoop() {
         ...Studio.project,
         savedAt: new Date().toISOString(),
         numLanes: Studio.numLanes || 4,
+        disk_path: Studio.projectDiskPath || Studio.project?.disk_path || null,
       });
       try {
         localStorage.setItem('lrcgen_active_project', payload);

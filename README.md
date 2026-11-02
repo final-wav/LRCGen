@@ -1,191 +1,159 @@
-# LRCGen
+# LRCGen - TTML Lyrics Studio
 
-**The first open-source, free, fully local AI + manual lyrics sync tool.**
+**Professional, 100% local All-in-One Studio for time- and syllable-synchronized lyrics.**
 
-Create perfectly timed `.lrc` karaoke files from any audio — using OpenAI Whisper for AI transcription, or tap along yourself line by line. No subscriptions. No cloud. Runs entirely on your machine.
+Create industry-standard lyrics files for Apple Music, Spotify, YouTube Music, and streaming services:
+- **Apple Music TTML (`.ttml`)**: Syllable-by-syllable timed lyrics with smooth karaoke sweep animation, multi-singer duets (v1, v2), and background ad-libs (`x-bg`).
+- **Enhanced LRC (`.lrc`) & Standard LRC**: Word- and line-synchronized lyrics for music players and streaming platforms.
 
----
-
-## What it looks like
-
-### 1. Home screen — drop your audio, choose your mode
-
-![Home screen](docs/1-Home.png)
-
-Drop any audio file (MP3, FLAC, WAV, M4A, OGG) and choose how you want to generate your LRC:
-
-- **Transcribe** — let Whisper AI detect text and timing automatically
-- **Tap Sync** — tap along manually, line by line, in real time
-
-Optionally paste your own lyrics into the text box — Whisper will align them to the audio instead of guessing the words, which gives you much more accurate results.
+Zero cloud subscriptions. Zero API costs. Runs entirely on your local machine with NVIDIA GPU hardware acceleration.
 
 ---
 
-### 2. Vocal Isolation for Whisper — cleaner transcription
+## Highlights
 
-![Vocal Isolation enabled](docs/2-Home-Whisper.png)
+### 1. Multi-Track Studio Workspace
 
-Enable **Vocal Isolation** (UVR5) before transcription. This strips out all instrumentals and gives Whisper a clean vocals-only track — noticeably improves accuracy on music with heavy backgrounds. Choose from 4 models depending on speed vs quality preference.
+![TTML Studio Workspace](docs/1-Studio-Workspace.png)
 
----
-
-### 3. Vocals Preview for Tap Sync
-
-![Vocals Preview for Tap Sync](docs/3-Home-Tap.png)
-
-When using Tap Sync, enable **Vocals Preview** — the UVR5 AI isolates the vocals first, so the waveform you tap along to shows only the vocal track instead of the full mix. Much easier to follow when the beat is loud.
+Full-featured multi-track audio workstation:
+- **Multi-Lane Timeline**: 4 dedicated lanes for Lead Vocals, Duets (`v2`), and Background Ad-libs.
+- **Syllable-Level Alignment**: Waveform-anchored syllable blocks with Millisecond precision.
+- **Apple Music Sweep Preview**: Real-time karaoke sweep preview directly below the timeline.
+- **Full Album Inspector**: Synchronize entire albums track-by-track with unified project persistence.
 
 ---
 
-### 4. Processing screen — Whisper + optional vocal isolation
+### 2. Photoshop-Style Recent Projects Dashboard
 
-![Whisper loading screen](docs/4-Whisper-Load.png)
+![Home Dashboard](docs/2-Home-Dashboard.png)
 
-While processing, a progress screen shows you exactly which stage is running — Vocal Isolation first, then Whisper transcription. Models are downloaded automatically on first use. You can cancel at any time.
-
----
-
-### 5. Tap Sync — song waveform
-
-![Tap Sync with song waveform](docs/5-Tap-Song.png)
-
-The Tap Sync view shows every lyric line and a live scrolling waveform. The current line is highlighted in the center. Press **Space** to mark the start of the next line, **Backspace** to go back one step. The purple waveform here is the full song audio.
+- **Recent Projects**: Quickly resume recent albums and songs with modification timestamps and track counters.
+- **Non-Destructive Autosaves**: Automated snapshots saved directly inside each project folder (`.autosave/`).
+- **Direct Disk Overwrite (`Ctrl+S`)**: Instant local file saving without browser download dialogs.
+- **Universal Importer**: Drop any audio folder (FLAC, MP3, WAV, M4A, OGG, OPUS) and lyrics files (TTML, LRC, SRT, VTT, TXT).
 
 ---
 
-### 6. Tap Sync — isolated vocal waveform
+### 3. Precision Line & Syllable Alignment
 
-![Tap Sync with vocal waveform](docs/6-Tap-Voice.png)
+![Line Sync](docs/3-Line-Sync.png)
 
-Switch on Vocals Preview and the waveform turns **green** — now you're seeing (and hearing) only the isolated vocals. Individual words and phrases are much easier to follow, making it far simpler to tap at exactly the right moment.
-
----
-
-### 7. Timeline editor — review and fine-tune
-
-![Timeline editor](docs/7-Timeline.png)
-
-After Whisper or Tap Sync, every line appears in the **timeline editor**. You can:
-- Drag blocks left/right to shift timing
-- Drag edges to trim start/end of a segment
-- Double-click any block to edit the text inline
-- Add new lines at the playhead, delete unwanted ones
-- Undo/Redo up to 80 steps
-
-The full list of timestamps sits in the panel below. When you're happy, hit **Download LRC** or **Copy** on the right.
+- **Stage 0 (UVR AI)**: High-speed vocal separation isolates clean vocals from heavy instrumentals, drums, and bass.
+- **Stage 1 (Line Sync)**: Global alignment calculates start and end timestamps for every line using WhisperX and Wav2Vec2.
+- **Stage 2 (Syllable Tuning)**: Phonetic syllabification with Pyphen and acoustic phoneme boundary matching.
+- **Stage 3 (Studio Tuning)**: Precision trimming, splitting (`X`), merging (`J`), and lane shifting.
 
 ---
 
-### 8. Timeline — vocal waveform + drag to adjust
+## Requirements
 
-![Timeline with vocal waveform and drag](docs/8-Timeline-Vocal.png)
-
-Hit the **VOC** button next to the waveform track to switch to the isolated vocal waveform (green). Individual syllables become clearly visible, making precise timing adjustments easy. Drag any segment block to move it, or drag its edges to trim — exactly like a video editor.
-
-The top bar gives you **New Song**, **Tap** (redo tap sync), **Retry** (re-run Whisper), and sort/undo controls.
+- **Operating System**: Windows 10/11, Linux, or macOS
+- **Python**: Version **3.10 to 3.13** (Python 3.14+ is currently not supported due to CTranslate2 / WhisperX dependencies)
+- **GPU**: NVIDIA RTX (20xx / 30xx / 40xx / 50xx series) recommended for GPU acceleration; CPU fallback supported
 
 ---
 
 ## Quick Start
 
-### 1. Install
+### 1. Automatic Installation (Windows)
+
+Run the included installer:
 
 ```bat
 install.bat
 ```
 
-Then install PyTorch for your platform:
+The installer automatically:
+1. Validates your Python version (3.10–3.13).
+2. Sets up a local virtual environment (`venv`).
+3. Installs PyTorch with CUDA 12.6 support for modern NVIDIA GPUs.
+4. Installs WhisperX, FastAPI, UVR audio-separator, and all required tools.
+
+### 2. Manual Installation
 
 ```bash
-# CPU — works on any machine
-pip install torch torchvision torchaudio
+# 1. Create and activate virtual environment
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux/macOS
 
-# NVIDIA GPU — much faster (recommended)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# 2. Install PyTorch with CUDA 12.6 (or CPU)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+# 3. Install WhisperX and dependencies
+pip install whisperx
+pip install "audio-separator[gpu]>=0.24.0"
+pip install -r requirements.txt
 ```
 
-For GPU-accelerated vocal isolation:
-```bash
-pip install "audio-separator[gpu]"
-```
-
-### 2. Run
+### 3. Launch Studio
 
 ```bat
 start.bat
 ```
 
-Opens at `http://127.0.0.1:8000`
-
----
-
-## Manual Installation
+Or manually:
 
 ```bash
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Linux/macOS
-
-pip install fastapi "uvicorn[standard]" python-multipart openai-whisper
-pip install "audio-separator[cpu]"
-pip install torch torchvision torchaudio
-
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+python -m uvicorn app:app --host 127.0.0.1 --port 8001
 ```
+
+The application opens automatically in your browser at `http://127.0.0.1:8001`.
 
 ---
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `Space` | Play / Pause |
-| `Enter` | Add segment at playhead |
-| `←` / `→` | Seek ±2s |
-| `Shift+←` / `Shift+→` | Seek ±10s |
-| `Ctrl+Scroll` | Zoom in / out |
-| `Ctrl+Z` | Undo |
-| `Ctrl+Y` / `Ctrl+Shift+Z` | Redo |
-| `Delete` | Delete selected segment |
-| `↑` / `↓` | Navigate between segments |
-| `Space` *(Tap Sync)* | Confirm current line, advance to next |
-| `Backspace` *(Tap Sync)* | Go back one line |
-| `Escape` *(Tap Sync)* | Cancel and close |
+| Shortcut | Scope | Action |
+|---|---|---|
+| `Space` | Timeline | Play / Pause playback |
+| `Ctrl+S` / `Cmd+S` | Global | Save project directly to disk (`.lrcproj`) |
+| `X` | Timeline | Split syllable at playhead or mouse cursor |
+| `J` | Timeline | Join / merge selected adjacent syllables |
+| `B` | Timeline | Toggle background ad-lib status (`x-bg`) |
+| `L` / `Alt+↑` / `Alt+↓` | Timeline | Move selected line to adjacent lane (Lead / Duet / Adlib) |
+| `Shift+Click` / Marquee | Timeline | Multi-select blocks across lanes |
+| `Ctrl+C` / `Ctrl+V` | Timeline | Copy and paste selected lines or syllables |
+| `Ctrl+Scroll` | Timeline | Cursor-anchored horizontal timeline zoom |
+| `Delete` / `Backspace` | Timeline | Remove selected syllable or line block |
+| `Space` *(Tap Sync)* | Tap Sync | Mark line start timestamp and advance |
+| `Backspace` *(Tap Sync)* | Tap Sync | Step back to previous line |
+| `Escape` | Modal | Close open dialog or cancel tap sync |
 
 ---
 
-## Vocal Isolation Models (UVR5)
+## Vocal Separation Models (UVR5 / MDX-Net)
 
-| Model | Speed | Best for |
-|-------|-------|----------|
-| MDX-Net HQ3 | Fast | General use — **recommended** |
-| MDX-Net Voc_FT | Fast | Vocal-optimized tracks |
-| MDX-Net KARA 2 | Fast | Karaoke tracks, cleanest output |
-| Demucs htdemucs_ft | Slow | Best quality, complex mixes |
+| Model ID | Architecture | Best For |
+|---|---|---|
+| `UVR-MDX-NET-Inst_HQ_3` | MDX-Net | General use, fast and clean separation (recommended) |
+| `UVR-MDX-NET-Voc_FT` | MDX-Net | Vocal-heavy acoustic tracks |
+| `UVR_MDXNET_KARA_2` | MDX-Net | Karaoke tracks with faint backing vocals |
+| `htdemucs_ft` | Demucs v4 | Complex orchestral and multi-layered arrangements |
 
-Models download automatically on first use (~100–300 MB each).
+---
+
+## Supported Export Formats
+
+- **Apple Music TTML (`.ttml`)**: Complete Apple Music specification with syllable markers (`<span begin="..." end="...">`), singer IDs (`ttm:agent="v1"` / `"v2"`), and ad-lib styling.
+- **Enhanced LRC (`.lrc`)**: Line- and word-level timestamps (`[mm:ss.xx]<mm:ss.xx>word<mm:ss.xx>`).
+- **Standard LRC (`.lrc`)**: Line-synchronized karaoke file compatible with all players.
+- **Album Package (`.zip`)**: Bundles all synchronized TTML and LRC files for the complete album in one archive.
 
 ---
 
 ## Tech Stack
 
-| Component | Library |
-|-----------|---------|
-| Backend | [FastAPI](https://fastapi.tiangolo.com/) |
-| AI Transcription | [OpenAI Whisper](https://github.com/openai/whisper) |
-| Vocal Isolation | [audio-separator](https://github.com/nomadkaraoke/python-audio-separator) (UVR5) |
-| Waveform | [WaveSurfer.js](https://wavesurfer.xyz/) v7 |
-| Deep Learning | [PyTorch](https://pytorch.org/) |
-| Fonts | [Inter](https://rsms.me/inter/) + [JetBrains Mono](https://www.jetbrains.com/lp/mono/) |
+- **Backend**: FastAPI, Uvicorn, Python 3.10–3.13
+- **AI Speech Recognition**: OpenAI Whisper, WhisperX (CTranslate2 batched inference)
+- **Acoustic Phoneme Alignment**: Wav2Vec2 CTC Loss
+- **Stem Isolation**: audio-separator (MDX-Net / Demucs v4 ONNX)
+- **Frontend**: Vanilla JavaScript (Modular ES6), WaveSurfer.js v7, CSS3 Variables Design System
+- **Typography**: Inter & JetBrains Mono
 
 ---
 
 ## License
 
-◿ This program is free ✓ software! ◺
-
-◿ You can redistribute it and / or modify ◺
-
-◁◅◃ it under the terms of the ▹▻▷
-
-◹ GNU General Public License v3! ◸
+This program is free software licensed under the terms of the GNU General Public License v3 (GPL-3.0).
