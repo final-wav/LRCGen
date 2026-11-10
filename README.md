@@ -154,6 +154,12 @@ The application opens automatically in your browser at `http://127.0.0.1:8001`.
 
 ---
 
+## Community & Integrations
+
+- **[LRC-CheckEdGen](https://github.com/Oct4vyus/LRC-CheckEdGen)** by [@Oct4vyus](https://github.com/Oct4vyus) — Docker-based music library auditor and automated `.lrc` generator for **Jellyfin, Plex, and Navidrome** media servers powered by LRCGen.
+
+---
+
 ## License
 
 This program is free software licensed under the terms of the GNU General Public License v3 (GPL-3.0).
