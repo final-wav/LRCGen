@@ -603,8 +603,36 @@ class SyllableAligner:
         if not lines:
             return canonical_lyrics
 
-        has_line_timestamps = any(line.get("end", 0) > line.get("start", 0) + 0.1 for line in lines)
+        has_line_timestamps = any(float(line.get("end", 0)) > float(line.get("start", 0)) + 0.1 for line in lines)
         lang_code = (language or "en").lower().split("-")[0]
+
+        if not has_line_timestamps:
+            raw_user_lines = []
+            for line in lines:
+                txt = (line.get("text") or "").strip() if isinstance(line, dict) else str(line).strip()
+                adl = (line.get("adlib") or "").strip() if isinstance(line, dict) else ""
+                if txt and adl and adl != txt:
+                    raw_user_lines.append(f"{txt} ({adl})")
+                elif adl and (not txt or adl == txt):
+                    raw_user_lines.append(f"({adl})")
+                elif txt:
+                    raw_user_lines.append(txt)
+            if raw_user_lines:
+                print(f"[AI Studio] No line timestamps found -> running automatic Line Scan before Syllable Scan...", flush=True)
+                aligned_from_raw = cls.align_raw_lines_to_audio(
+                    audio_path=audio_path,
+                    user_lines=raw_user_lines,
+                    language=lang_code,
+                    whisper_model=whisper_model,
+                )
+                return {
+                    "meta": {
+                        **canonical_lyrics.get("meta", {}),
+                        **aligned_from_raw.get("meta", {}),
+                        "timingType": "Word",
+                    },
+                    "lines": aligned_from_raw.get("lines", []),
+                }
 
         word_detections = []
         if use_whisper and Path(audio_path).exists():

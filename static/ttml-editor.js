@@ -2802,13 +2802,39 @@ async function runTrackLineAlignment(explicitLines = null) {
   }
 
   try {
+    let linesToSend = explicitLines;
+    if (!linesToSend || !linesToSend.length) {
+      if (track.unplacedLines && track.unplacedLines.length > 0) {
+        linesToSend = track.unplacedLines
+          .map(l => {
+            if (typeof l === 'string') return l.trim();
+            const txt = (l?.text || '').trim();
+            const adl = (l?.adlib || '').trim();
+            if (txt && adl && adl !== txt) return `${txt} (${adl})`;
+            if (adl && (!txt || adl === txt)) return `(${adl})`;
+            return txt;
+          })
+          .filter(Boolean);
+      } else if (!track.lyrics?.lines || track.lyrics.lines.length === 0) {
+        const textArea = document.getElementById('textModeLyricsArea');
+        const importArea = document.getElementById('rawLyricsPasteArea');
+        const rawText = (textArea?.value?.trim()) || (importArea?.value?.trim()) || '';
+        if (rawText) {
+          linesToSend = rawText
+            .split(/\r?\n/)
+            .map(l => (typeof cleanLyricsLine === 'function' ? cleanLyricsLine(l) : l.trim()))
+            .filter(l => l && (typeof isSectionHeader === 'function' ? !isSectionHeader(l) : true));
+        }
+      }
+    }
+
     const payload = {
       track_id: track.id,
       language: lang,
       whisper_model: whisperModel,
     };
-    if (explicitLines && explicitLines.length) {
-      payload.lines = explicitLines;
+    if (linesToSend && linesToSend.length) {
+      payload.lines = linesToSend;
     }
 
     const resp = await fetch(`/api/project/${Studio.project.id}/align_lines`, {
@@ -2877,22 +2903,71 @@ async function runTrackAlignment() {
       }, 3000);
     }
 
+    let explicitLines = null;
+    const existingLines = track.lyrics?.lines || [];
+    const hasTimedLines = existingLines.some(l => (l.end || 0) > (l.start || 0) + 0.1);
+    if (!hasTimedLines) {
+      if (track.unplacedLines && track.unplacedLines.length > 0) {
+        explicitLines = track.unplacedLines
+          .map(l => {
+            if (typeof l === 'string') return l.trim();
+            const txt = (l?.text || '').trim();
+            const adl = (l?.adlib || '').trim();
+            if (txt && adl && adl !== txt) return `${txt} (${adl})`;
+            if (adl && (!txt || adl === txt)) return `(${adl})`;
+            return txt;
+          })
+          .filter(Boolean);
+      } else if (existingLines.length > 0) {
+        explicitLines = existingLines
+          .map(l => {
+            if (typeof l === 'string') return l.trim();
+            const txt = (l?.text || '').trim();
+            const adl = (l?.adlib || '').trim();
+            if (txt && adl && adl !== txt) return `${txt} (${adl})`;
+            if (adl && (!txt || adl === txt)) return `(${adl})`;
+            return txt;
+          })
+          .filter(Boolean);
+      } else {
+        const textArea = document.getElementById('textModeLyricsArea');
+        const importArea = document.getElementById('rawLyricsPasteArea');
+        const rawText = (textArea?.value?.trim()) || (importArea?.value?.trim()) || '';
+        if (rawText) {
+          explicitLines = rawText
+            .split(/\r?\n/)
+            .map(l => (typeof cleanLyricsLine === 'function' ? cleanLyricsLine(l) : l.trim()))
+            .filter(l => l && (typeof isSectionHeader === 'function' ? !isSectionHeader(l) : true));
+        }
+      }
+    }
+
+    const payload = {
+      track_id: track.id,
+      mode: mode,
+      language: lang,
+      use_whisper: mode === 'studio_ai',
+      whisper_model: whisperModel,
+    };
+    if (explicitLines && explicitLines.length > 0) {
+      payload.lines = explicitLines;
+    }
+
     const resp = await fetch(`/api/project/${Studio.project.id}/align_track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        track_id: track.id,
-        mode: mode,
-        language: lang,
-        use_whisper: mode === 'studio_ai',
-        whisper_model: whisperModel,
-      }),
+      body: JSON.stringify(payload),
     });
-    if (!resp.ok) throw new Error('Alignment failed');
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.error || 'Alignment failed');
+    }
     const data = await resp.json();
 
     track.lyrics = data.track.lyrics;
     track.status = data.track.status;
+    track.unplacedLines = data.track.unplacedLines || [];
+    Studio.pendingQueueId = null;
     if (data.vocalsUrl) {
       track.vocalsUrl = data.vocalsUrl;
       // Pre-decode vocals waveform for the vocals wave button

@@ -1017,51 +1017,121 @@ async def align_project_track(project_id: str, request: Request):
     if not target_track:
         return JSONResponse({"error": "Track not found"}, status_code=404)
 
-    file_id = target_track["fileId"]
-    audio_path = None
-    for ext in ALLOWED_EXTS:
-        p = Path(f"uploads/{file_id}{ext}")
-        if p.exists():
-            audio_path = str(p)
-            break
-
-    if not audio_path:
-        return JSONResponse({"error": "Audio file not found"}, status_code=404)
-
-    print(f"\n==================================================================", flush=True)
-    print(f"[AI Studio] Aligning Track: '{target_track.get('title')}'", flush=True)
-    print(f"[AI Studio] Mode: {mode.upper()} | Language: {language} | Whisper: {use_whisper}", flush=True)
-
-    align_audio_path = audio_path
-    cached_vocals = target_track.get("vocalsPath")
-    if cached_vocals and Path(cached_vocals).exists():
-        print(f"[AI Studio Syllables] Verwende gecachtes Acapella: {cached_vocals}", flush=True)
-        align_audio_path = cached_vocals
-    else:
-        try:
-            print(f"[AI Studio Syllables] Schritt 1/2: Isoliere Gesangsspur (UVR-MDX-Net) fuer Silben-Erkennung...", flush=True)
-            job_id = str(uuid.uuid4())
-            jobs[job_id] = {"status": "running", "progress": 10, "message": "Isolating vocals for syllables..."}
-            vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
-            if vocals_path and Path(vocals_path).exists() and vocals_path != audio_path:
-                target_track["vocalsPath"] = vocals_path
-                target_track["vocalsUrl"] = f"/api/audio/{Path(vocals_path).stem}"
-                align_audio_path = vocals_path
-                print(f"[AI Studio Syllables] Acapella erfolgreich isoliert -> {vocals_path}", flush=True)
-        except Exception as e:
-            print(f"[AI Studio Syllables] Acapella-Separation Fehler: {e}. Verwende Original-Audio.", flush=True)
-
-    print(f"[AI Studio] Step 2/2: Running Phoneme & Syllable Alignment on: {align_audio_path}...", flush=True)
-    aligned_lyrics = SyllableAligner.align_canonical_lyrics(
-        align_audio_path,
-        target_track["lyrics"],
-        language=language,
-        use_whisper=use_whisper,
-        whisper_model=whisper_model,
-    )
-    target_track["lyrics"] = aligned_lyrics
-    target_track["status"] = "syllable_synced"
-
+    file_id = target_track.get("fileId", "")
+    audio_path = None
+    for ext in ALLOWED_EXTS:
+        p = Path(f"uploads/{file_id}{ext}")
+        if p.exists():
+            audio_path = str(p)
+            break
+
+    if not audio_path and target_track.get("path"):
+        p2 = Path(target_track["path"])
+        if p2.exists():
+            audio_path = str(p2)
+
+    if not audio_path:
+        return JSONResponse({"error": "Audio file not found"}, status_code=404)
+
+    existing_lines = (target_track.get("lyrics") or {}).get("lines") or []
+    has_line_timestamps = any(
+        float(l.get("end", 0)) > float(l.get("start", 0)) + 0.1
+        for l in existing_lines if isinstance(l, dict)
+    )
+
+    user_lines = []
+    if not has_line_timestamps:
+        if data.get("lines"):
+            user_lines = [l.strip() for l in data["lines"] if isinstance(l, str) and l.strip()]
+        elif target_track.get("unplacedLines"):
+            for l in target_track["unplacedLines"]:
+                if isinstance(l, dict):
+                    txt = (l.get("text") or "").strip()
+                    adl = (l.get("adlib") or "").strip()
+                    if txt and adl and adl != txt:
+                        user_lines.append(f"{txt} ({adl})")
+                    elif adl and (not txt or adl == txt):
+                        user_lines.append(f"({adl})")
+                    elif txt:
+                        user_lines.append(txt)
+                else:
+                    txt = str(l).strip()
+                    if txt:
+                        user_lines.append(txt)
+        elif existing_lines:
+            for l in existing_lines:
+                if isinstance(l, dict):
+                    txt = (l.get("text") or "").strip()
+                    adl = (l.get("adlib") or "").strip()
+                    if txt and adl and adl != txt:
+                        user_lines.append(f"{txt} ({adl})")
+                    elif adl and (not txt or adl == txt):
+                        user_lines.append(f"({adl})")
+                    elif txt:
+                        user_lines.append(txt)
+                else:
+                    txt = str(l).strip()
+                    if txt:
+                        user_lines.append(txt)
+
+        if not user_lines:
+            return JSONResponse({"error": "No lyrics lines available to align. Please paste lyrics into the pool first!"}, status_code=400)
+
+    print(f"\n==================================================================", flush=True)
+    print(f"[AI Studio] Aligning Track: '{target_track.get('title')}'", flush=True)
+    print(f"[AI Studio] Mode: {mode.upper()} | Language: {language} | Whisper: {use_whisper}", flush=True)
+
+    align_audio_path = audio_path
+    cached_vocals = target_track.get("vocalsPath")
+    if cached_vocals and Path(cached_vocals).exists():
+        print(f"[AI Studio Syllables] Verwende gecachtes Acapella: {cached_vocals}", flush=True)
+        align_audio_path = cached_vocals
+    else:
+        try:
+            print(f"[AI Studio Syllables] Schritt 1/2: Isoliere Gesangsspur (UVR-MDX-Net) fuer Silben-Erkennung...", flush=True)
+            job_id = str(uuid.uuid4())
+            jobs[job_id] = {"status": "running", "progress": 10, "message": "Isolating vocals for syllables..."}
+            vocals_path = _run_vocal_separation(job_id, audio_path, uvr_model_id)
+            if vocals_path and Path(vocals_path).exists() and vocals_path != audio_path:
+                target_track["vocalsPath"] = vocals_path
+                target_track["vocalsUrl"] = f"/api/audio/{Path(vocals_path).stem}"
+                align_audio_path = vocals_path
+                print(f"[AI Studio Syllables] Acapella erfolgreich isoliert -> {vocals_path}", flush=True)
+        except Exception as e:
+            print(f"[AI Studio Syllables] Acapella-Separation Fehler: {e}. Verwende Original-Audio.", flush=True)
+
+    if has_line_timestamps:
+        print(f"[AI Studio] Step 2/2: Running Phoneme & Syllable Alignment on: {align_audio_path}...", flush=True)
+        aligned_lyrics = SyllableAligner.align_canonical_lyrics(
+            align_audio_path,
+            target_track["lyrics"],
+            language=language,
+            use_whisper=use_whisper,
+            whisper_model=whisper_model,
+        )
+    else:
+        print(f"[AI Studio] Step 2/2: No prior Line Scan detected -> Running automatic Line + Syllable Alignment ({len(user_lines)} lines)...", flush=True)
+        raw_aligned = SyllableAligner.align_raw_lines_to_audio(
+            audio_path=align_audio_path,
+            user_lines=user_lines,
+            language=language or "en",
+            whisper_model=whisper_model or "base",
+        )
+        aligned_lyrics = {
+            "meta": {
+                **(target_track.get("lyrics") or {}).get("meta", {}),
+                **raw_aligned.get("meta", {}),
+                "timingType": "Word",
+                "title": target_track.get("title", ""),
+                "artist": target_track.get("artist", ""),
+            },
+            "lines": raw_aligned.get("lines", []),
+        }
+        target_track["unplacedLines"] = []
+
+    target_track["lyrics"] = aligned_lyrics
+    target_track["status"] = "syllable_synced"
+
     # Persist directly into project JSON on disk
     proj_file = Path(f"projects/{project_id}.json")
     if proj_file.exists():
