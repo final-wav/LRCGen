@@ -105,6 +105,11 @@ UVR_MODELS = {
 @app.get("/")
 async def root():
     return FileResponse("static/index.html")
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
 
 
 @app.get("/api/uvr_available")
@@ -1542,21 +1547,21 @@ def _run_enhanced_job(job_id: str, audio_path: str, model_name: str,
             _set(job_id, status="loading_model", progress=50,
                  message=f"Loading WhisperX model '{model_name}'…")
 
-            asr_options = {
-                "temperatures": [0.0],
-                "condition_on_previous_text": False,
-            }
-            if lyrics:
-                # Prime Whisper with user lyrics vocabulary to suppress unwanted auto-correction
-                clean_lyrics_prompt = " ".join(lyrics.split())[:400]
-                asr_options["initial_prompt"] = clean_lyrics_prompt
-
-            vad_options = {
-                "chunk_size": 30,
-                "vad_onset": 0.300,
-                "vad_offset": 0.200,
-            }
-
+            asr_options = {
+                "temperatures": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                "compression_ratio_threshold": 2.4,
+            }
+            if lyrics:
+                # Prime Whisper with user lyrics vocabulary to suppress unwanted auto-correction
+                clean_lyrics_prompt = " ".join(lyrics.split())[:400]
+                asr_options["initial_prompt"] = clean_lyrics_prompt
+
+            vad_options = {
+                "chunk_size": 30,
+                "vad_onset": 0.500,
+                "vad_offset": 0.363,
+            }
+
             wx_model = whisperx.load_model(
                 model_name,
                 device,

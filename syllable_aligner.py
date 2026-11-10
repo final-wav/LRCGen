@@ -231,7 +231,7 @@ def match_line_words_acoustically(
     MIN_WORD_DUR = 0.16  # Absolute minimum time per sung word (160ms)
 
     if clean_candidates:
-        sm = difflib.SequenceMatcher(None, clean_text_words, clean_candidates)
+        sm = difflib.SequenceMatcher(None, clean_text_words, clean_candidates, autojunk=False)
         for t_idx, c_idx, size in sm.get_matching_blocks():
             if size <= 0:
                 continue
@@ -268,15 +268,15 @@ def match_line_words_acoustically(
                         break
 
                 best_cand = None
-                best_ratio = 0.65
+                best_ratio = 0.55
                 for cand_idx, cand in enumerate(candidates):
                     cw = clean_candidates[cand_idx]
                     if not cw:
                         continue
                     c_start = float(cand.get("start", 0))
                     c_end = float(cand.get("end", c_start + 0.3))
-                    if c_start >= prev_time + 0.05 and c_end <= next_time - 0.05:
-                        ratio = difflib.SequenceMatcher(None, tw, cw).ratio()
+                    if c_start >= prev_time - 0.02 and c_end <= next_time + 0.02:
+                        ratio = difflib.SequenceMatcher(None, tw, cw, autojunk=False).ratio()
                         if ratio > best_ratio:
                             best_ratio = ratio
                             best_cand = cand
@@ -534,8 +534,8 @@ class SyllableAligner:
             model = _WHISPERX_MODEL_CACHE[cache_key]
         else:
             print(f"\n[WhisperX Ultra] Initialisiere CTranslate2 ('{whisper_model}', Device: {device})...", flush=True)
-            asr_opts = {"temperatures": [0.0], "condition_on_previous_text": False}
-            vad_opts = {"chunk_size": 30, "vad_onset": 0.300, "vad_offset": 0.200}
+            asr_opts = {"temperatures": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0], "compression_ratio_threshold": 2.4}
+            vad_opts = {"chunk_size": 30, "vad_onset": 0.500, "vad_offset": 0.363}
             model = whisperx.load_model(whisper_model, device, compute_type=compute_type, language=language,
                                         asr_options=asr_opts, vad_options=vad_opts)
             _WHISPERX_MODEL_CACHE[cache_key] = model
@@ -645,7 +645,7 @@ class SyllableAligner:
                     import whisper
                     print(f"[Whisper] Lade Modell '{whisper_model}'...", flush=True)
                     model = whisper.load_model(whisper_model)
-                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False, "condition_on_previous_text": False, "temperature": 0.0}
+                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False, "compression_ratio_threshold": 2.4}
                     if lang_code:
                         opts["language"] = lang_code
                     print(f"[Whisper] Transkribiere & extrahiere Wort-Timestamps aus: {audio_path}...", flush=True)
@@ -795,7 +795,7 @@ class SyllableAligner:
                         model = whisper.load_model(whisper_model)
                         _STANDARD_WHISPER_CACHE[cache_key] = model
 
-                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False, "condition_on_previous_text": False, "temperature": 0.0}
+                    opts: Dict[str, Any] = {"word_timestamps": True, "verbose": False, "compression_ratio_threshold": 2.4}
                     if lang_code:
                         opts["language"] = lang_code
                     print(f"[Whisper] Transkribiere & extrahiere Wort-Timestamps aus: {audio_path}...", flush=True)
@@ -823,7 +823,7 @@ class SyllableAligner:
                 adlib_t = None
             parsed_lines_info.append({"raw": raw_line, "main": main_t or raw_line, "adlib": adlib_t})
 
-        # 3. Global monotonic matching against acoustic words
+        # 3. Global monotonic + fuzzy matching against acoustic words
         def _norm_token(s: str) -> str:
             return re.sub(r"[^\w]", "", s).lower()
 
@@ -835,39 +835,162 @@ class SyllableAligner:
             toks = [_norm_token(t) for t in re.findall(r"\b\w+\b", combined)]
             line_tokens_list.append([t for t in toks if t])
 
-        # Flatten user line tokens
+        # Flatten user line tokens and track offset within each line
         flat_user_tokens: List[str] = []
         token_to_line: List[int] = []
+        token_to_offset: List[int] = []
         for l_idx, toks in enumerate(line_tokens_list):
-            for t in toks:
+            for offset_in_line, t in enumerate(toks):
                 flat_user_tokens.append(t)
                 token_to_line.append(l_idx)
+                token_to_offset.append(offset_in_line)
 
         line_anchors: List[Optional[Tuple[float, float]]] = [None] * num_lines
-        line_matched_words: List[List[Dict[str, Any]]] = [[] for _ in range(num_lines)]
+        line_a_bounds: List[Optional[Tuple[int, int]]] = [None] * num_lines
+        line_matched_pairs: List[List[Tuple[int, int]]] = [[] for _ in range(num_lines)]
 
         if flat_user_tokens and ac_tokens:
-            matcher = difflib.SequenceMatcher(None, flat_user_tokens, ac_tokens)
-            for u_start, a_start, size in matcher.get_matching_blocks():
-                if size <= 0:
-                    continue
+            # Pass 3A: Global exact anchor blocks (with autojunk=False so chorus words are never skipped)
+            matcher = difflib.SequenceMatcher(None, flat_user_tokens, ac_tokens, autojunk=False)
+            blocks = [b for b in matcher.get_matching_blocks() if b[2] > 0]
+
+            for u_start, a_start, size in blocks:
                 for offset in range(size):
                     u_idx = u_start + offset
                     a_idx = a_start + offset
                     l_idx = token_to_line[u_idx]
-                    line_matched_words[l_idx].append(word_detections[a_idx])
+                    line_matched_pairs[l_idx].append((token_to_offset[u_idx], a_idx))
 
-            # Determine initial anchored lines
+            # Pass 3B: Fuzzy token matching in gaps between exact blocks (handles contractions/accents/typos)
+            prev_u_end, prev_a_end = 0, 0
+            gap_ranges = []
+            for u_start, a_start, size in blocks:
+                if u_start > prev_u_end and a_start > prev_a_end:
+                    gap_ranges.append((prev_u_end, u_start, prev_a_end, a_start))
+                prev_u_end = u_start + size
+                prev_a_end = a_start + size
+            if prev_u_end < len(flat_user_tokens) and prev_a_end < len(ac_tokens):
+                gap_ranges.append((prev_u_end, len(flat_user_tokens), prev_a_end, len(ac_tokens)))
+
+            for u_g0, u_g1, a_g0, a_g1 in gap_ranges:
+                if (u_g1 - u_g0) <= 60 and (a_g1 - a_g0) <= 80:
+                    cur_a = a_g0
+                    for u_i in range(u_g0, u_g1):
+                        ut = flat_user_tokens[u_i]
+                        if not ut:
+                            continue
+                        best_a, best_r = -1, 0.64
+                        search_limit = min(a_g1, cur_a + max(12, (a_g1 - a_g0)))
+                        for a_i in range(cur_a, search_limit):
+                            at = ac_tokens[a_i]
+                            if not at:
+                                continue
+                            r = difflib.SequenceMatcher(None, ut, at, autojunk=False).ratio()
+                            if (ut.startswith(at) or at.startswith(ut)) and min(len(ut), len(at)) >= 3:
+                                r = max(r, 0.78)
+                            if r > best_r:
+                                best_r = r
+                                best_a = a_i
+                        if best_a != -1:
+                            l_idx = token_to_line[u_i]
+                            line_matched_pairs[l_idx].append((token_to_offset[u_i], best_a))
+                            cur_a = best_a + 1
+
+            # Sort pairs per line and expand partial matches to cover leading/trailing words of the line
             for l_idx in range(num_lines):
-                matched = line_matched_words[l_idx]
+                pairs = sorted(set(line_matched_pairs[l_idx]), key=lambda x: x[0])
                 n_toks = len(line_tokens_list[l_idx])
-                if matched:
-                    if n_toks <= 2 or len(matched) >= 2 or (len(matched) / max(1, n_toks)) >= 0.3:
-                        s = min(w["start"] for w in matched)
-                        e = max(w["end"] for w in matched)
+                if pairs and (n_toks <= 2 or len(pairs) >= 2 or (len(pairs) / max(1, n_toks)) >= 0.25):
+                    first_off, first_a = pairs[0]
+                    last_off, last_a = pairs[-1]
+
+                    # Bounds from adjacent lines so expansion never crosses into another line
+                    min_a_bound = 0
+                    for prev_l in range(l_idx - 1, -1, -1):
+                        if line_matched_pairs[prev_l]:
+                            min_a_bound = max(p[1] for p in line_matched_pairs[prev_l]) + 1
+                            break
+                    max_a_bound = len(word_detections) - 1
+                    for next_l in range(l_idx + 1, num_lines):
+                        if line_matched_pairs[next_l]:
+                            max_a_bound = min(p[1] for p in line_matched_pairs[next_l]) - 1
+                            break
+
+                    # Step backwards up to first_off words if contiguous in audio (< 1.2s gap)
+                    while first_off > 0 and first_a > min_a_bound:
+                        gap_s = word_detections[first_a]["start"] - word_detections[first_a - 1]["end"]
+                        if gap_s <= 1.2:
+                            first_a -= 1
+                            first_off -= 1
+                        else:
+                            break
+
+                    # Step forwards up to (n_toks - 1 - last_off) words if contiguous in audio (< 1.2s gap)
+                    while last_off < n_toks - 1 and last_a < max_a_bound:
+                        gap_s = word_detections[last_a + 1]["start"] - word_detections[last_a]["end"]
+                        if gap_s <= 1.2:
+                            last_a += 1
+                            last_off += 1
+                        else:
+                            break
+
+                    s = min(word_detections[first_a]["start"], min( word_detections[a]["start"] for _, a in pairs ))
+                    e = max(word_detections[last_a]["end"], max( word_detections[a]["end"] for _, a in pairs ))
+                    if e <= s + 0.3:
+                        e = s + max(0.8, n_toks * 0.3)
+                    line_anchors[l_idx] = (s, e)
+                    line_a_bounds[l_idx] = (first_a, last_a)
+
+            # Pass 3C: v2.0 Sliding-Window Fuzzy Ratio Search for any remaining unanchored lines
+            for l_idx in range(num_lines):
+                if line_anchors[l_idx] is not None:
+                    continue
+                line_toks = line_tokens_list[l_idx]
+                n_toks = len(line_toks)
+                if n_toks == 0:
+                    continue
+
+                search_start_a = 0
+                for prev_l in range(l_idx - 1, -1, -1):
+                    if line_a_bounds[prev_l] is not None:
+                        search_start_a = line_a_bounds[prev_l][1] + 1
+                        break
+
+                search_end_a = len(ac_tokens)
+                has_upper_bound = False
+                for next_l in range(l_idx + 1, num_lines):
+                    if line_a_bounds[next_l] is not None:
+                        search_end_a = line_a_bounds[next_l][0]
+                        has_upper_bound = True
+                        break
+
+                if not has_upper_bound:
+                    search_end_a = min(len(ac_tokens), search_start_a + max(n_toks * 6, 45))
+
+                if search_end_a > search_start_a:
+                    win_n = min(n_toks, search_end_a - search_start_a)
+                    line_str = " ".join(line_toks)
+                    best_score = -1.0
+                    best_start_a = search_start_a
+                    max_start = max(search_start_a + 1, search_end_a - win_n + 1)
+
+                    for start_a in range(search_start_a, max_start):
+                        cand_slice = ac_tokens[start_a : start_a + win_n]
+                        tok_score = difflib.SequenceMatcher(None, line_toks, cand_slice, autojunk=False).ratio()
+                        char_score = difflib.SequenceMatcher(None, line_str, " ".join(cand_slice), autojunk=False).ratio()
+                        score = max(tok_score, char_score * 0.95)
+                        if score > best_score:
+                            best_score = score
+                            best_start_a = start_a
+
+                    if best_score >= 0.40:
+                        end_a = min(best_start_a + win_n - 1, len(word_detections) - 1)
+                        s = word_detections[best_start_a]["start"]
+                        e = word_detections[end_a]["end"]
                         if e <= s + 0.3:
                             e = s + max(0.8, n_toks * 0.3)
                         line_anchors[l_idx] = (s, e)
+                        line_a_bounds[l_idx] = (best_start_a, end_a)
 
         # 4. Fill unanchored lines via smooth interpolation
         anchored_indices = [i for i, a in enumerate(line_anchors) if a is not None]
